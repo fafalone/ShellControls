@@ -1,0 +1,46 @@
+Type=Exe
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\Windows\SysWOW64\stdole2.tlb#OLE Automation
+Reference=*\G{F9015E81-CAAC-45C0-94E8-42B7DA5D7558}#4.7#0#..\..\..\..\Windows\SysWow64\oleexp.tlb#OLEEXP - Modern Shell Interfaces for VB6, v4.7
+UserControl=..\ucShellBrowse.ctl
+Form=Form1.frm
+Form=frmDirOnly.frm
+ResFile32="..\resDemo.RES"
+IconForm="Form1"
+Startup="Form1"
+HelpFile=""
+Title="ShellBrowseDemo"
+ExeName32="ShellBrowse-v111-RC1-Std01.exe"
+Command32=""
+Name="ShellBrowseDemo"
+HelpContextID="0"
+CompatibleMode="0"
+MajorVer=11
+MinorVer=1
+RevisionVer=531
+AutoIncrementVer=1
+ServerSupportFiles=0
+VersionComments="Demo project for ucShellBrowse control."
+VersionCompanyName="Fafalonian Productions"
+VersionLegalCopyright="(c) 2015-2022"
+VersionProductName="ShellBrowseDemo"
+CompilationType=0
+OptimizationType=0
+FavorPentiumPro(tm)=0
+CodeViewDebugInfo=0
+NoAliasing=0
+BoundsCheck=0
+OverflowCheck=0
+FlPointCheck=0
+FDIVCheck=0
+UnroundedFP=0
+StartMode=0
+Unattended=0
+Retained=0
+ThreadPerObject=0
+MaxNumberOfThreads=1
+
+[Rubberduck]
+ProjectId=b573fd0d-46aa-4c6d-8b58-fe862a55a59c
+
+[CodeSMART]
+Task_UID=17_12_18_05_54_01

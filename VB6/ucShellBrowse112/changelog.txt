@@ -1,0 +1,3134 @@
+New in v9.6 R2 (Released 21 Apr 2021)
+
+-The StatusBar will now show the Security Zone of the current location, if
+ enabled with the ShowSecurityZone option, complete with the icon. The text
+ (and icon) are loaded from Windows, so don't need manual localization.
+
+-The StatusBar shows a size grip if the Control Border Style is SBCB_Thicker,
+ which makes it resizable.
+
+-(Bug fix) If the Search Box was grayed out, it couldn't receive focus and the
+           tab sequence got stuck.
+
+-(Bug fix) The status bar menu tips for the View Menu managed to stop working
+           again.
+
+-(Bug fix) If the Control Border was Thicker, which enables resizing, the
+           control would visually glitch.
+
+-(Bug fix) The ComboBox would not display the full path when clicked, and often
+           couldn't be edited, among other problems with it.
+
+
+
+New in Version 9.6 (Released 03 Apr 2021)
+
+-Replaced VB CommandButtons in Control Box with API-created ones, to avoid any
+ remaining focus issues. Will do the Columns and Search popups at some point.
+
+-The View Menu and Bookmark Menu now pop up under their respective buttons,
+ instead of wherever the mouse cursor is, which might be way off if it opened
+ from a keyboard press rather than click. The right-click on the ListView back
+ will still of course open at that point.
+
+-If the system shortcut overlay has been changed, used that instead. Only
+ currently supported in Med/L/XL icon and Thumbnail Views. Can be disabled with
+ the bUseCustomShortcutOverlay User Option.
+
+-(Bug fix) In certain modes, overlays wouldn't load.
+
+-(Bug fix) Fallback images for when ComCtl6 wasn't present, and the non-themed
+           back button image, had mysteriously vanished.
+
+-(Bug fix) If the Back/Fwd button were normal buttons, if they weren't enabled
+           the tab cycle would get stuck
+
+-(Bug fix) If you used a very large font for the file controls, but not for the
+           main UserControl font, and the Search Box was not visible, the bottom
+           of the Up/View/Bookmark buttons could be truncated.
+
+-(Bug fix) Memory leaks in thumbnail generation.
+
+-(Bug fix) .SelectedItems would cause an error if no items were selected when
+           it was called.
+
+-(Bug fix) .ItemsSelectedCount return 0 for both 0 and 1 items, then was off by
+           one for more.
+
+-(Bug fix) If you started in Files Only mode, and changed to Dir+Files or Dir
+           Only + Ctls during runtime, in some circumstances the control box
+           height would be too small and cut things off.
+
+-(Bug fix) If you turned on the FilterBar, applied a filter, and then turned off
+           the FilterBar, the filter match group isn't removed and is now stuck
+           with only those files until you turned the FilterBar back on and
+           cleared it, or manually shut off GroupMode.
+
+
+
+New in v9.5 R2 (Released 25 Mar 2021)
+
+-Added Context Menu items 'Copy names' and 'Copy full paths' to copy the selected
+ items to the clipboard.
+
+-Substantial delays could result from mousing over certain items like a folder
+ containing thousands of items while the InfoTip was generated, since the code
+ was set to go deep to generate the best tip. Using slow tips is now disabled in
+ High Perf Mode, as is looking up link targets and using their info. This doesn't
+ effect most items; pictures, mp3s, etc, will still show metadata... as far as I
+ can tell this only effects showing Size/Files/Folders in Folder infotips.
+ You can toggle this setting with the User Option bLimitInfoTipsInHighPerfMode.
+
+-(Bug fix) Changes to InfoTipMode were not being applied during runtime.
+
+-(Bug fix) The new tab/arrow key system set the focus in such in way that if you
+           clicked on a button (View/Up/etc) then click on the Search Box or the
+           Dropdown edit box (if present and editable), the enter key went to the
+           last button pressed. I found a workaround to resolve that without the
+           tab/arrow keys breaking again.
+
+
+
+New in v9.5 R1 (Released 22 Mar 2021)
+
+-Added DetailsOffsetX property, so that you can e.g. have a ShellTree that goes
+ all the way down to the StatusBar without also having the Details Pane under it.
+
+-(Bug fix) Eliminated memory leaks from unfreed font handles.
+
+-(Bug fix) After Tiles View is set, moving to a new directory causes there to be
+           a 4th line that duplicates the file name.
+
+-(Bug fix) Tabbing had stopped working. Also, when they were working, focus would
+           get stuck if you tabbed backwards between a VB and API control.
+
+
+
+New in v9.5 (Released 18 Mar 2021)
+
+-Completely redid the Detail Pane property placement from scratch. Properties are
+ no longer overlapping regardless of length, and are spaced according to their
+ actual length so a column with short properties doesn't take up way more space
+ then needed. The UserOption cxMaxProp specifies the maximum length of an edit
+ box for a property, cxMinProp specifies the minimum.
+ The file name/type display in the Details Pane also expands based on whether
+ there's enough room to show any properties.
+
+-Made fonts independent of eachother. There's now FontFileControls that sets the
+ ListView and ComboBox font, and FontDetails that sets the font for the Details
+ Pane. Everything else is controlled by the original Font property.
+ FontDetails and FontFileControls will default to the main font until you set them
+ to something different.
+ So if you're upgrading an existing project, no fonts will change, it will simply
+ inherit the existing ones, with the exception that there's no more defaulting to
+ a system font, so if you had DetailsPaneUseControlFont = False, it would now be
+ the main font until you changed it.
+
+-Added Items(), ItemsFullParsing(), ItemCount, ItemsSelected(), ItemsSelectedFull(),
+ ItemsSelectedCount, ItemsChecked(), ItemsCheckedFull(), and ItemsCheckedCount
+ functions to retrieve a list of these for both files and folders instead of one
+ or the other.
+
+-Added FilesCheckedCount and FoldersCheckedCount since there were counts for the
+ full list and selected list, but not the checked list.
+
+-All controls on the Column Select and Search popups now inherit the main control
+ font. Due to layout constraints, the size is limited to 9 points for now, so if
+ the main font is larger, it will be reduced *only for these controls* (and the
+ buttons in the Control Box); for the rest the full size is still used.
+
+-Added ControlBarHeight property. If you're using ListViewOffsetX to open a blank
+ space for e.g. a ShellTree, it's helpful to know the current height of the
+ control bar, since a larger font size will make it taller. (Get only).
+ The ShellOpenDemo project shows this in use.
+
+-Final sizing wasn't applied when the control was first loaded into the IDE form
+ designer; it now runs the full resize routine so it should better match the
+ runtime appearance. Always check that; some things can't/won't be reflected at
+ design time. Most notably, if it's view is Thumbnail View, that won't be applied
+ until runtime, so the designer will show it in the last normal mode it was in.
+
+-(Bug fix) Changing the font during runtime resulted in the font on the Command
+           Buttons being 'stuck'... it wouldn't fonts again until the app
+           restarted, or if in the IDE, until the entire IDE restarted.
+
+-(Bug fix) If you set the Details Pane to not inherit the main font, the spacing
+           and sizing were incorrect (and illegible). However, that option has
+           now been removed since it can be set separately.
+
+-(Bug fix) The black box overlay bug was not actually fixed for MD/L/XL icon view.
+
+
+
+
+New in v9.4 R5 (March 16, 2021)
+
+-(Bug fix) Fixed a number of memory leaks.
+
+-(Bug fix) File click events would be raised with empty paths if none selected.
+
+-(Bug fix) If the ListView font size was larger, thumbnail view labels would
+           overlap the one under it since the manual spacing that mode uses did
+           not account for different sizes.
+
+-(Bug fix) In High Performance Mode, overlays (shortcuts, etc) would show as
+           black boxes when you navigated to a new directory in Med/L/XL Icon
+           View, Thumbnail View, and Custom View (if you switched to those views
+           the current directory would be fine).
+
+-(Bug fix) Fixed icon sizing for the preview frame. I'm aware that on Win10 it
+           may only be loading very small sizes; this effects thumbnail view
+           as well, but this will have to be investigated in the future.
+
+-(Bug fix) If your initial control type is Files Only, there was a gap at the top
+           where the dropdown would be if it was enabled.
+
+
+
+
+New in v9.4 R4 (Released 15 Mar 2021)
+
+-Made major improvements to thumbnail view. The previous method would, for image
+ files, just show a chunk rather than a scaled down version. And sometimes lose
+ transparency in .ICO files. All that varying depending on monitor zoom. I've
+ redone things to take the best approach for each type, so it shows all extended
+ thumbnails and image thumbnails, scaled properly, etc.
+
+-Added a new demo: A pure thumbnail viewer. All parts besides the view are hidden
+ and disabled, all navigation is disabled, etc. DemoThumbView.
+
+-Added option for enabling the Group By.. submenu. It was previously controlled
+ with LockNavigation.
+
+-Added option to disabling pasting (and remove it from the menu).
+
+-(Bug fix) The Back/Fwd buttons would appear in the background menu (in the
+           situations they normally would) event if LockNavigation was enabled.
+
+-(Bug fix) Sorting appeared in the View Menu even if it was disabled.
+
+New in v9.4 R3 (Released 13 Mar 2021)
+
+-Full shift+tab to go backwards in the tab order is now working for all items.
+
+-(Bug fix) A workaround for having rename by label edit work with the new IPAO
+           stuff resulted in not being able to double-click an item that was
+           already selected (you had to double-click it while another item was
+           selected). Turns out the workaround wasn't even needed by ensuring
+           the IPAO init fires for the UC before the LV on load.
+
+-(Bug fix) Tabbing through Details with alt controls (datetime or combo) would
+           put you in an typeable edit box, which is obviously wrong. The alt
+           controls and everything in now handled by the focus message, so not
+           only will the alt control pop up, it will have arrow key/tab focus,
+           and can then tab to the next one.
+
+-(Bug fix) On load, the very first click to the ListView didn't set IPAO focus
+           for arrows.
+
+-(Bug fix) The Detail item edit boxes weren't having their white backgrounds
+           set during editing.
+
+
+
+New in v9.4 R2 (Released 13 Mar 2021)
+
+-Also was able to create a full Tab sequence: The start is the ListView. Then to
+ the combo, up button, back button and fwd button (std btns only), view button,
+ bookmark button, search box, then off the control.
+ In the Details Pane, you can tab through each property, then to the save and the
+ cancel buttons if present, then to the ListView to start that sequence.
+ For the Column Select and Search Popup, their tab loops are mostly working, but
+ they may still be a little buggy.
+
+
+
+New in v9.4 (Released 13 Mar 2021)
+
+-I was finally able to figure out how to implement IOleInPlaceActiveObject-based
+ keyboard focus control. The arrow keys work the first time in almost all
+ circumstances now; the FilterBars on ListViews don't seem to support them? But
+ besides that, they're working everywhere; ListView, Combo edit, search box, file
+ properties in the Details Bar, all controls on the Column Select and Search Ops/
+ Advanced Search popups.
+
+
+
+New in v9.3 Revision 2 (Released 11 Mar 2021)
+
+-Adjusted the Search Popup; now if there's a box to enter your query, it's placed
+ on the bottom after having made extra space, instead of cramming it in at the
+ top, which would overlap the controls if the font size was bigger than default;
+ the size of the font is now taken into account as well.
+ (Bug) It was sized for main font but didn't use the main font until now.
+
+-When using Group View to group by Type, the header now includes the default icon
+ for that type. This can be toggled on/off (on by default) with new UserOption
+ bGroupViewUseIconsForType.
+
+-(Bug fix) When the Column Select ListView was in Advanced Mode, moving an item
+           up, down, or to the top, via the UpDown buttons or the menu option
+           caused the System Name to be cleared.
+
+-(Bug fix) Using a font much smaller than defaults would result in the Search Box
+           being sized *too big* and over shooting the draw area.
+
+-(Bug fix) If startup went to a regular path, you couldn't go all the way to the
+           startup path going Back in History. Trying to do so produced an error
+           and broke display of the current location.
+
+
+
+New in v9.3 (Released 04 Mar 2021)
+
+-If there's a blank BrowserPath value and a Custom Root set, the control will
+ now open to (if not blank or previous location) the root, rather than App.Path.
+
+-BrowserPath now also supports using Environment Variables like %windir% or
+ %ProgramFiles% as startup paths.
+
+-Previously, Environmental Variables were only supported if the path was only a
+ single var, such as %WINDIR%. %WINDIR%\Fonts wasn't supported. The control now
+ uses the ExpandEnvironmentStringsW API to expand all the variables within a
+ path, so now you would have that load C:\Windows\Fonts, or even use a 2nd var,
+ like %ProgramFiles%\MyApp\%USERNAME% loads C:\Program Files (x86)\MyApp\Name.
+
+-Added an easier route to set the font of the ListView independently. Normally,
+ the main UserControl Font property is applied to everything. Now, there's two
+ new Public Sub methods:
+     ListViewSetFontOLE - Supply a StdFont object (the VB standard .Font for
+                          controls). nApplyScaling sets whether to apply a DPI
+                          based scale like is applied when setting the main UC
+                          Font property; 0=Do not apply, 1=Apply if the option
+                          FontScaleForDPI is True, 2=Always apply. Also includes
+                          an option to specify a different font for the header.
+
+   ListViewSetFontByHandle - If you have an HFONT handle for a font, this lets
+                             you apply it directly. You can optionally specify a
+                             different font for the column header.
+
+-Added the same as above for the Directory Dropdown, ComboSetFontByHandle and
+ ComboSetFontOLE, with the latter having the same nApplyScaling argument.
+
+-The Column Select ListView now inherits the same font as the main ListView by
+ default (and if you've set them independently with the new option above it will
+ inherit those instead); set via new User Option bColLVInheritFont
+
+-For sorting strings in the file list (e.g. File name), the control has used the
+ StrCmpLogicalW API, which is the same API that Explorer uses. This applies the
+ current system locale and the default options. There's now a public method named
+ SetAdvancedStringSort that allows you to use the CompareStringEx API instead,
+ allowing you to specify your own locale and options set. Note: No options are
+ specified by default, so leaving that parameter blank is not recommended. The
+ locale name can be left at its default, which applies LOCALE_NAME_INVARIANT.
+
+-The control has had an option to set a custom ImageList, but that wasn't really
+ useful without a way to link it to individual files. There's now a new view mode
+ called SB_VIEW_CUSTOM. See the 'Using Custom Icon Mode' section.
+
+-The DetailsPaneNoResizing option would leave the DetailsPaneHeightLocked option
+ set to True when it was set to False (allow resize), which gave the impression
+ that resizing was still not allowed unless the user figured out to right click
+ then unlock the height. To make things clearer, setting this option to False,
+ i.e. resizing allowed, will now also unlock the height until and unless that
+ option is set back to False.
+
+-Made the UserControl ScaleWidth and ScaleHeight available as Property Gets, but
+ these are read only, setting them caused problems.
+
+-Windows was doing something really funky after updating the properties in some
+ instances: It copied the file to a new .tmp file, created another new temp file,
+ deleted the original, renamed 1 tmp file, and deleted the other.
+ This caused a problem if you were using a filter to only show certain files.
+ The original was removed from the list upon deletion, then the new .tmp file
+ didn't match the filter so wasn't added, making the file simply disappear until
+ the folder was refreshed.
+ To address this, the rename handler responding to SHCNE_RENAMEITEM checks both
+ names against the filter, and if the old name didn't match the filter, but the
+ new name does, it now processes the newly renamed file as a file creation, sent
+ though LVAddEntry.
+ Additionally, if an item is renamed and no longer matches the filter, it will
+ now be removed.
+ These options are controlled by the new UserOptions bRemoveNewFilteredItem and
+ bInsertNewFilterMatches, which are True (enabled) by default.
+
+-The control now supports switching between all types during runtime; previously
+ only switching between FilesOnly and DirAndFiles worked well, with the other
+ combinations being unsupported and having various bugs.
+
+-BrowserPathItem now has a Let method too, that redirects to BrowserOpenItem.
+
+-(Bug fix) The BrowserPath would keep getting reset to App.Path if blank.
+
+-(Bug fix) In the Details Pane, if you started to edit a property, then hit the
+           cancel button, if you again started to edit the same property, it
+           would not trigger the Save/Cancel buttons to appear, you'd have to
+           edit a different property.
+
+-(Bug fix) In the Details Pane, if you edited a formatted number, then hit the
+           cancel button before saving, when you went to edit that property
+           again, it would show the full formatted string rather than just the
+           number that you need to edit, which would obviously then cause an
+           error if you attempted to save the non-numerical value.
+
+-(Bug fix) In the Details Pane, most of the time when you started editing a text
+           field, the arrow keys would move keyboard focus off to elsewhere.
+           Focus is now properly set so the arrow keys let you move around in
+           the box.
+
+-(Bug fix) The Search Box also now supports using the arrow keys most of the
+           time. A few circumstances you might need to click away then back to
+           get them working.
+
+-(Bug fix) The height of the StatusBar was factored into the Detail Pane min
+           height whether it was visible or not, resulting in a larger height
+           when the StatusBar was disabled.
+
+-(Bug fix) Some error messages were being displayed with a TaskDialog without
+           checking if ComCtl6 was available, leading to a 'Can't find entry
+           point' error.
+
+-(Bug fix) Menu tips for View Menu items had stopped working when accessed from
+           the View button.
+
+-(Bug fix) If the Control Type was DirOnly+Controls, changing the Navigation
+           Button type would reposition things completely wrong.
+
+-(Bug fix) In Drives Only mode, the initial path was incorrectly reported as
+           the configured startup path (App.Path by default). Also, not all
+           path related variables were set correctly since it was calling
+           LVLoadFolder with no ListView present; there's now a special handler
+           for this mode that skips that unneccessary routine.
+
+-(Bug fix) With a larger font size, the Directory Dropdown became larger in
+           height, and could overshoot the ListView and wind up partially on
+           top of it. Meanwhile, the Search Box stayed the height it was for a
+           default font size of 10, meaning letters would get cut off. The
+           ListView top and Search Box height now accomodate larger fonts.
+           ListControlBox buttons have their font point size limited to 10
+           because of physical size limits can change with new User Option
+           nLimitPointSizeForButtons. Additionally, ListControlBox buttons have
+           their height adjusted to match the combobox.
+
+-(Bug fix) When Group View is enabled, and the View Mode is set to Small Icon,
+           any groups with file names that run into the next column result in
+           items disappearing and sometimes, or sometimes not, reappearing with
+           mouse overs. This effects other API-based ListViews with Group View
+           and SmallIcon view as well. There's a User Option enabled by default,
+           bEnableFixForGVSMICON, that will fix the width of the columns that
+           are formed, then manually limit label lengths to prevent this bug.
+           Renaming still works normally (it will display the full name when
+           you begin the label edit), and names are restored when switching
+           to another view. I'm on the lookout for a better fix.
+           This fix is not currently implemented for High Performance Mode.
+
+
+
+New in v9.2 R3 (Released 11 Feb 2021)
+
+-Set the default for Multiselect to be True.
+
+-After a search, there's an option to repeat in 'Custom...'. This can select
+ multiple folders, and was just displayed as 'Search Results in Custom'. Now,
+ it takes the title of the folder(s) you chose, listing up to (a default) of
+ 3, e.g. 'Search Results in Folder1, Folder2, Folder3, ...', or if you just
+ selected a single folder, 'Search Results in Folder1'. You can change the
+ default of up to 3 names with the nMaxFoldersInCustomSearchLabel User Option.
+
+-The 'Search Again In...' footer bar (if enabled) now also appears when you
+ navigate back to a previous set of search results.
+
+-(Bug fix) When Group Mode is turned on from a view besides Sm/Md/Lg Icon or
+           Thumbnails, the first time switching to one of those view modes
+           results in no items being displayed until the view is refreshed
+           or a new location is loaded.
+
+-(Bug fix) Clicking the StatusBar while in a folder with hyperlinks as a column
+           could trigger a link click.
+
+-(Bug fix) Doing a 2nd search in a folder with the same name as a previous
+           search only created a 2nd label, e.g. Folder <2>, and if you then
+           conducted a 3rd search also in 'Folder' (even if in a different
+           parent), it then replaced Folder <2> instead of being Folder <3>.
+
+
+
+New in v9.2 R2 (Released 10 Feb 2021)
+
+-When selecting a new font, it would show in development mode when selected, but
+ after that whenever the form was reloaded in development mode the control would
+ appear with the default font (even though the one you selected was applied at
+ runtime). The control in development mode now always reflects the correct font.
+
+-(Bug fix) Switching to Thumbnails View in High Performance mode would stop the
+           enumeration when it hit a file with an overlay.
+
+-(Bug fix) If DropdownExpandChildren was enabled and the control was in Dir Only
+           or Dir Only + Ctl mode, the current selection wouldn't change.
+
+
+
+New in v9.2 (Released 09 Feb 2021)
+
+-NOTE: You may be noticing a pause after double clicking a folder with thousands
+       of items before the 'Listing items' status message starts appearing; this
+       isn't from loading the folder, it's from generating the info tip, which is
+       triggered by mousing over the folder. You can set the info tip mode to
+       LabelTipOnly or Disabled to eliminate this delay.
+
+-NOTE: As a reminder, the high performance loader has a significant difference
+       between IDE load times and the compiled exe. Refer to the following test:
+        Items      IDE          Compiled    (times = mean of 3 trials, dev<100ms)
+         7.5k      1510ms         610ms
+         20k       4540ms        2387ms
+         57k      15790ms        9780ms
+       The User Option bShowLoadTimeAsStatus has been added to display the load
+       times and whether the standard loader or high performance loader was used,
+       in the Status Bar after directory loads.
+
+
+-Added the ability to display NTFS Alternative Data Streams w/ the ShowAltStreams
+ option. These are hidden streams attached to files; the system uses these to
+ create Security Zone Identifiers that display a warning about opening internet
+ downloads. But other apps can create additional streams containing any data of
+ any size. These files can't be handled by Explorer, so it's display only, the
+ context menu can't take actions on them.
+
+-Improved drag and drop functionality. You can now drop on any files that support
+ a drop, such as dropping on a .exe to open with, or on a shortcut to move to the
+ target folder. The program now makes a better guess at what the default action
+ will be for a left button drop: There's no surefire way to know what Explorer
+ will do, since the methods it uses are not public, so previous versions might
+ say Move To ... only to copy it when you drop, or say Copy To and then move it.
+ It should now be correct the vast majority of the time; if it's going to a
+ different root (i.e. a different drive, or drive to network, or network share
+ to different network share on the same server), or being dropped on a zip file,
+ it's flagged as a Copy. Only if it's going to a regular folder on the same drive
+ is it flagged as a Move.
+ Also checked more deeply than just a folder attribute. This eliminates showing
+ the Control Panel and some others as a drop target, but a few that remain and
+ for some reason return valid drop target interfaces, but aren't actually drop
+ targets, like This PC, are still an issue.
+
+-New option: DetailsPaneUseControlFont. Up until now, the Details Pane has used
+ the system default caption font instead of the same font as the rest of the
+ control, whatever that may be set to. It will now by default use the same font
+ as the rest of the control, and you can set this option to False to go back to
+ using the caption font.
+
+-High performance mode now displays the shortcut overlay. This incurred no
+ performance penalty, but supporting the Share icon (or custom overlays) would,
+ so that will remain unsupported in this mode.
+
+-Searching within a set of search results is not currently supported, but the
+ search box stayed enabled and if let you execute a search that would always
+ return no results. To end the confusion and make it clear, the Search Box, and
+ the menu option to bring up the Search Popup, are now disabled when a Search
+ Results folder is being displayed.
+
+-The Search Box in the Control Box now uses the main font that the buttons and
+ ListView use.
+
+-Added SelectedFilesCount, FilesSelectedCount, and FoldersSelectedCount methods
+ to easily retrieve counts of those items. It saves having to calculate from the
+ actual lists, since there's a floor of 1 entry, and if that's the only item,
+ then you need to further check whether it's empty or not. These provide that
+ checking for you.
+ Reminder: SelectedFiles[Paths,Items] includes both files and folders; I didn't
+           want to break existing code by renaming that when I introduced items
+           to provide separate lists for files and folders.
+
+-(Bug fix) The new high performance mode doesn't load even the default columns
+           unless used, so if a folder wasn't displaying the 'Type' column, the
+           type wasn't set, which meant it wasn't displayed in the Details Pane
+           for that item.
+
+-(Bug fix) The ListModeMaxWidth option introduced last version was not being
+           applied in the High Performance loader.
+
+-(Bug fix) In the Column Select ListView, when Advanced Mode was enabled, the
+           'Send to top' command set the system name column to empty.
+
+-(Bug fix) When creating a new control in the IDE, if you set the mode to Dir
+           Only/Drives Only[+Ctls], you couldn't make the control height smaller
+           than the Dir+Files limit until you closed and re-opened the form.
+
+-(Bug fix) A debug test option was accidentally left enabled that would show the
+           shell background menu when right clicking a file instead of the file
+           context menu.
+
+-(Demo) Bug fix: In the DemoOpenDlg demo, the Open button would display the last
+                 set of selected files after the selection was cleared. It's
+                 important to note this was *not* a bug with the control, just
+                 with the demo not updating the var on frmOpen unless at least
+                 one item was selected.
+
+-(Code) The drag and drop labels that pop up over the cursor were still hard
+        coded in English. They're now constants in the main strings section if
+        you needed to localize them.
+
+
+
+New in v9.1 (Released 08 Jan 2021)
+
+-There was SelectedFiles and SelectedFilesNames, and these returned both files
+ and folders. There was FilesChecked() and FoldersChecked(), but these obviously
+ only applied to checkmarks. Now theres FilesSelected, FilesSelectedFull,
+ FoldersSelected, and FoldersSelectedFull (item names and their full paths,
+ respectively). These return lists of either only the selected folders, or only
+ the selected files.
+
+-You can now specify a fixed, manual tile width for Tile View with the TileWidth
+ option. The specified value will be multiplied by the DPI scale (m_ScaleX). Set
+ to 0 (the default) to keep using automatic width.
+
+-When the View Mode is set to List, all of the item labels are set to the width
+ of the largest one in the ListView. This leads to fantastically wide labels
+ because a single filename has dozens of characters in it. There's now the
+ ListModeMaxWidth option, to limit this to a more rational value. The default
+ is 200, and you can set it to 0 to disable this option and use the old behavior.
+
+-Added NavShowOnFilesOnlyCtxMenu, which will show Back/Forward as menu items in
+ the View Menu when it comes up as a right-click when Files Only Mode is set.
+
+-The Navigation Buttons will now also show up on the background View Menu when
+ they're normally in the control box, but the control box is invisible, like
+ is done with the Bookmarks menu.
+
+-A couple versions ago, a feature was added to add the children of the folder
+ selected in the Directory Dropdown. This was done by default only in the
+ Directory Only and Directory Only with Controls modes, and changing it was a
+ User Option (nExpandSelectedFolderInDropdown). This is now a standard property
+ called DropdownExpandChildren. It retains the same options (DirOnly/DirOnlyCtl,
+ Always, and Never) and same default (DirOnly/DirOnlyCtl).
+ Currently, this is not support in High Performance Mode. Any folder loaded using
+ the HPF loader won't expand.
+
+-Added options DetailsPaneNoResizing and PreviewPaneNoResizing. These lock the
+ respective controls dimensions then disable the menu with the option to unload.
+
+-Added option FoldersOnlyIncludeLinks[HPF]. If true, includes links whose targets
+ are folders in folders only mode. Enabled by default in normal mode, disabled by
+ default in High Performance Mode.
+ This option is ignored if FollowLinks is not True.
+ Shortcuts to zip files will only be displayed if BrowseZip is True.
+
+-(Bug fix) Shortcuts were flagged as zip files. Not sure of the implications, but
+           it probably caused a problem somewhere...
+
+-(Bug fix) Shortcuts to virtual locations were resolved to their display names
+           instead of parsing name or nothing, so never fell back to the pidl
+           when double clicking on one to follow. It will now try to get the
+           pidl first, and only fall back to strings if that fails. Virtual
+           locations work now.
+
+-(Bug fix) In LVLoadFolder, var li was declared in an If block then reused; the
+           right (or, here, wrong) set of config options would result in hitting
+           an 'undefined variable' error.
+
+-(Bug fix) In the View Menu for right-clicking the background in the file list,
+           the Bookmarks submenu should show if enabled but not visible, but the
+           check for visibility looked at if the control box was enabled, and not
+           when it was actually shown, so depending on the circumstances, the
+           Bookmarks menu would be missing when it should have been included.
+
+-(Bug fix) Back in V8.2 I added the ability to preview fonts in the font folder.
+           Now, I noticed this somehow broke the ability to preview fonts outside
+           of the fonts folder, as well as some other types of preview handlers.
+           I can't determine exactly why some previewers break and others don't,
+           but the method used now seems to cover all scenarios.
+
+
+
+New in v9.0 R5 (Released 15 Dec 2020)
+
+-(Bug fix) Some objects, such as some printer objects in Devices and Printers,
+           have properties that trigger the 'Browse' menu option to be enabled,
+           but obviously don't have anything to load. This broke the LVLoadFolder
+           at a bad point; the loading marquee would be stuck on and you couldn't
+           cancel or navigate elsewhere.
+
+-(Bug fix) If you used the menu option for New Folder then renamed it, it would
+           rename the parent folder instead of the new folder.
+
+
+
+New in v9.0 R4 (Released 15 Dec 2020)
+
+-Added SearchBoxBackColor and SearchBoxForeColor option.
+ Note: I tried giving this option for the ComboBox, but for the edit box, it
+       leaves a white border around the text, including behind the icon, so
+       it's basically just a stripe down the middle. Also, the ComboBoxEx
+       class is apparently using owner drawing on the dropdown list, so the
+       WM_CTLCOLORLISTBOX message just leaves a small stripe on the left side,
+       not coloring the rest. So I won't be able to offer back or fore options
+       for the directory combo :(
+
+-When the Directory Dropdown can be edited, a single click now sets the text
+ to the full path and selects all, instead of a double click.
+
+-Group footers always showed "files" even if all members were folders or even
+ virtual items. Group footers now just use 'item/items'. The StatusBar showing
+ folders/files is unchanged.
+
+-(Bug fix) The PreviewPaneWidth and DetailPaneHeight Property Lets were not
+           properly resizing the panels.
+
+-(Bug fix) Search queries containing a ';' (for multiple strings in a search,
+           such as '*.bas;*.cls') would fail.
+
+
+
+New in v9.0 R3 (Released 09 Dec 2020)
+
+-There's now a ListViewOffsetX option, which allows you to specify an x offset
+ for the ListView within the control. It is deducted from the width. This is
+ designed to allow the Details Pane to appear below, and the Control Bar appear
+ above, a paired ShellTree Control; see the new screenshot and implementation
+ in the DemoEx demo.
+ To assist, added the event DetailsPaneHeightChanged for when the size of the
+ pane changes within the control.
+
+-Also added a PreviewPaneWidthChanged event for completeness.
+
+-Note that for both the new events described above, toggling them on/off also
+ raises the events, with a width/height of zero when turned off.
+
+-For even more events, there's now ControlTypeChanged, ToggleDetailPane,
+ TogglePreviewPane, and ToggleStatusBar.
+
+-The Property Gets for Detail and Preview Pane width and height will now return
+ zero as the current value if they're not turned on, instead of the last value
+ before they were disabled.
+
+-(Bug fix) If you use Computer/This PC in Tile View, the next time you load a
+           different folder, the tiles display a repeat of the file name on the
+           3rd line, which looks particularly bad on folders which have a blank
+           second line. This is fixed for *almost* all circumstances, just have
+           fix navigating directly into non-top level mobile devices.
+           But in all cases, a refresh or navigating further resolves the issue.
+
+
+
+New in v9.0 R2 (Released 05 Dec 2020)
+
+-Changed the < = > symbols in the Search Options popup to words (Less than,
+ Equal to, Greater than' and improved a few alignments.
+
+-In the Details Pane, if there was more columns available than properties meant
+ to be displayed needed, the last column wouldn't expand to fill the space, so
+ sometimes text was truncated needlessly. It will now detect this scenario and
+ expand the last column *actually used* to the available space.
+
+
+-(Bug fix) Extended Thumbnails Mode would only load the thumb instead of the
+           icon if the view was changed to Thumbnails via the View menu in the
+           current folder. Changing folders or refreshing resulted in displaying
+           only the file type icon.
+
+-(Bug fix) The flag for unexpected errors in the high performance loader, the
+           LVLoadFolderExB sub, was not cleared, so if an error occured in one
+           folder, it would continue to be reported for all other folders and
+           thus triggering a fallback to the regular loader.
+
+-(Bug fix) One scenario that would trigger the above was that while there was a
+           check for the path being a zip, it only checked if the root of the
+           zip would be the the current folder; e.g. C:\file.zip and didn't
+           check if it was being asked to load an internal zip folder, e.g.
+           C:\file.zip\zipfolder, which of course can't be loaded by HPF either.
+
+-(Bug fix) For keyboard shortcuts, the status of all modifier keys wasn't being
+           taken into account: Ctrl+Shift+A would also trigger Select All, when
+           only Ctrl+A should.
+
+-(Bug fix) When using Tile View mode, folders are supposed to only have 1 extra
+           line, and this is how it appears when you switch into Tile View from
+           another view. But if you're already in Tile View and navigate to a
+           new folder, it adds a 2nd line that repeats the item name. This bug
+           has been around for a while; it's fixed now with workaround-- the
+           text was being correctly supplied as null, but to blank it out it
+           has to be a space. Still looking for a better solution.
+
+-(Bug fix) Setting the initial view mode in the IDE to Thumbnail View resulted
+           in no icons being loaded. This issue seems to date back years.
+
+-(Bug fix) A longstanding issue involves switching into Content View, then
+           switching to Tile View either directly or after another view, and
+           Tile View then missing a line-- the file size in normal folders,
+           and the free space line in Computer. I found a trick to work around
+           this bug; it seems to involve setting the tile size, which has to be
+           done for Content View, but then some information doesn't clear and
+           corrupts regular Tile View. So, I specified a zeroed rec for the
+           tile size when switching to regular Tile View, and that seems to
+           reset things. The missing text is now there, and no issues with the
+           size have been noticed.
+
+-(Code) Several overlooked Debug.Print statements were changed to DebugAppend.
+
+
+
+New in v9.0 (Released 28 Nov 2020)
+(Major update; version went from 8.5 directly to 9.0)
+(Includes changes from the public betas)
+
+-Added ColumnPreload option. To speed up performance, all columns besides name
+ will only be loaded the first time an item is scrolled into view. To load them
+ all first instead, set this option to True. In earlier versions, load time could
+ go up exponentially; e.g. 7000 items would take ~8s, but 50000 items would take
+ over 10 minutes (!). This only brings the 7000 item load time down to 4.5s, but
+ brings the time to allowing interaction with 50000 items down to 15-20s.
+ NOTE: This is unsupported in certain virtual locations. Libraries are supported,
+       but e.g. Network Connections is not.
+       Media devices like phones and cameras are not currently supported.
+       Unsupported locations will load as if this option was True-- how things
+       worked in all previous versions.
+-If not preloading, icons are now set on demand via a callback as well.
+
+-Added HighPerformanceMode option. This uses low-level APIs to load folders as
+ quickly as possible. 5-10,000 items are loaded in under 2s, 60,000 items are able
+ to be loaded in 10-12s. This method is highly limited in support: only regular
+ file system locations on local drives are supported. Virtual locations, network
+ resources, attached media devices, inside zip/cab files, and some special folders
+ like Fonts are all unsupported. Directory Only/Directory Only + Controls will not
+ use this mode. If ShowParentTreeInList is True, this mode is not supported. In the
+ case of an unsupported folder, it falls back to the standard method of loading
+ folders. The ColumnPreload option must also be False to use this.
+
+-Previously, Directory Only modes followed the standard loading procedure of not
+ adding items under the dropdown unless they were opened. Now, if the mode is
+ Directory Only or Directory Only With Controls, selecting a folder will add the
+ child folders under it.
+ You can change this behavior to be done in other modes, or never, through the
+ new User Option nExpandSelectedFolderInDropdown.
+ This feature is still a work in progress. Some folders will appear at the bottom
+ of the list, while others will appear in the proper place, and opening Libraries
+ will open included folders from their root, rather than under Libraries. This is
+ way more complicated than it would seem, so it'll take a while to sort out all of
+ the kinks, but I didn't want to delay the whole project for weeks or months while
+ this is ongoing.
+
+-You now have the option to specify the column set when creating a Custom Folder.
+ To use this feature, in the method where you call CreateCustomFolder, create an
+ array of PROPERTYKEY keys, e.g. apk(), representing the columns you want displayed.
+ Then when you call CreateCustomFolder, you call it as follows:
+ ucSB.CreateCustomFolder "Title", Paths(), [Icon], VarPtr(apk(0)), UBound(apk) + 1
+
+-Added SelectColumnOnSort to highlight a column when you sort by it.
+
+-The color of the highlight can be set with the new ColumnSelectColor option.
+
+-Added icon for Status Bar option in the Layout menu.
+
+-Added PlaySounds option. If enabled, the system navigation sound plays (if set
+ in the Control Panel), as well as the default beep / critical stop sounds (these
+ were already present, but used the Beep command; they now look up the sound that
+ is set in the Control Panel). If you want to enable/disable these sounds
+ individually, there's a new value in the User Options section below these comments
+ for each one. Default is enabled.
+
+-The Context Key will now bring up the Shell Context Menu (assuming the option
+ EnableShellMenu is True).
+
+-For the Column Select popup, you can now right click an item to display the menu
+ with the 'Send to top' option, instead of only being able to access it through the
+ column header dropdown.
+
+-Switching between DirOnly[WithCtl]/DriveOnly during runtime/updating the design
+ view was not possible since a ListView wasn't being created. These switches now
+ work in both the IDE and during runtime.
+
+-Added the SearchPopupInMenu option, which adds an 'Advanced search' item to the
+ layout menu to immediately show the Search Options popup. If the SearchBox option
+ is set to True, and the control bar is hidden, and this option is enabled, just the
+ 'Advanced search' item is added, since under those settings the two items would be
+ identical in behavior.
+
+-The preview for the last displayed file is now cleared when a new folder is loaded,
+ instead of staying up until a new file was clicked.
+
+-Previewing images is an ongoing challenge. What crops and zooms instead of scales
+ seems to vary between Windows versions. IShellItemImageFactory shouldn't have been
+ doing that, and should have returned the same image as IThumbnailProvider, but that
+ has not been the case.
+ The new first attempt uses IThumbnailProvider, which maintains aspect ratio as it
+ displays images less than full size, and will not enlarge past full size. The hope
+ is this behavior remains consistent with the various Win10 versions; if it doesn't,
+ please give me a shout.
+
+-(Bug fix) A long-standing bug would either add or not add the 'Browse' option
+           to the Shell Context Menu based on whether the very first item was a
+           folder, instead of the currently selected item. Clicking it would work
+           properly, but it shouldn't have been enabled at all.
+
+-(Bug fix) For items like in Programs and Features that have URLs as properties,
+           the links were created but no action was taken when clicked. Now, the
+           default is to open the URL with the default browser. There's a new
+           event: ItemLinkClick, which reports the URL, and the fExec argument,
+           which allows you to override the open action by setting it to anything
+           other than 0.
+
+-(Bug fix) If BrowseZip was set to true, zip files were not being separated from
+           regular folders in the sort order. Additionally, sometimes regular files
+           were not getting separated either.
+
+-(Bug fix) GetValue calls were set as functions when the last release of oleexp
+           expected a sub.
+
+-(Bug fix) The 'Advanced Mode' option was missing from the Column Select dropdown
+           menu under the Property header.
+
+-(Bug fix) If you switched the Control Type from Dir+Files to FilesOnly during
+           runtime, and then back to Dir+Files, the Preview Pane would have its top
+           aligned with the top of the control instead of the top of the ListView.
+
+-(Bug fix) There *was* a bug that was showing blank icons for small icons in icon
+           view mode (sm/med/lg), so a thumbnail was used for those and .exe's
+           instead. But that bug mysteriously vanished, to be replaced by a bug
+           that would now draw tiny icons for .exe's.
+           I don't know what to do. This is an ongoing an bizarre issue. Windows
+           seems to alternate bugs in the images returned by the various ways of
+           getting thumbnails. Every time I get everything working and stop looking
+           at every possible icon scenario, even though no code changes, Windows
+           has conjured a new bug to start giving me the wrong icons. So I apologize
+           in advance if whatever images Windows is returning today isn't handled by
+           the current code. It was all working last I checked.
+
+-(Bug fix) The check for unsupported directories for High Perf was case sensitive,
+           so the compiled version on Win10 incorrectly ok'd Fonts.
+
+-(Bug fix) Renaming items was broken.
+           Also, cleared up some issues with renaming .lnk files beyond that.
+
+-(Bug fix) It seems way back in v7.3, some functions, like Delete stopped working
+           if more than 1 item was selected. This didn't apply if done through the
+           context menu.
+
+-(Bug fix) There seems to have been some sort of highly unpredictable issues around
+           which items the shell context menu was applying to. This may be related
+           to some circumstances that cause the IContextMenu module-level variable
+           for the popup menu to not clear correctly, loading the previously selected
+           items. It's now cleared at the start of the menu routine, instead of at
+           the end, where some errors might have skipped clearing it.
+
+
+
+
+New in Version 8.5 (Released 14 Oct 2020)
+
+-The new ShowParentTreeInList option will, in Details View only (and only if Group
+ View is disabled), turn the file list into a view similar to a TreeView-- or, the
+ VB DirListBox. The first item will be the drive root, then each parent below it
+ indented slightly more, until the current folder, where all items are then listed
+ at the same level, e.g. :
+ C:\
+   vb6
+     ucShellBrowse
+       Demo
+       Demo2
+       Demo3
+ and so on. The folders always appear at the top, then the current folder contents
+ are sorted in their normal order, and this is preserved as you change the sort
+ column and direction.
+ The tree, by design, only go to Computer, if the Desktop is root, or the current
+ drive, if Computer is root. Custom roots will go all the way to the root.
+ There's also a User Option, bShowParentItemsInAllViews, to add these items to
+ other views, but they will not be visually distinguished from items in the same
+ location, so this is disabled by default.
+
+-The Column Select popup now reflects the current order of columns, and there's
+ a new UpDown control that lets you change the order of the columns in the popup,
+ and the ListView also supports dragging and dropping items to their location; an
+ insertion mark is displayed between the items you're dropping it in between.
+ Note that the new order won't be applied until the dialog is closed.
+
+-There's now a MinHeightDropdown option. Previously, it was hard coded to just
+ always be 300 * scale no matter what.
+
+-That option pairs with the DropdownFixedHeight option. If this option is set to
+ zero, the dropdown height is set to the UserControl height. Otherwise, it's set
+ to the value specified (*scale), or the MinHeightDropdown, whichever is larger.
+ Note: This cannot be changed at runtime.
+
+-Added SpecialFoldersInBookmarks to control whether the submenu full of special
+ folders like Downloads, Windows, Documents, etc, shows in the Bookmarks Menu;
+ previously there wasn't even a UserOption for this.
+
+-The Bookmarks menu no longer has 'Clear all bookmarks' enabled if no bookmarks
+ have been created.
+
+-(Bug fix) If starting blank and in Details View, some properties were listed in
+           the Column Select Popup that should be hidden (System.*).
+           Why that's the case and being unable to fix it takes the cake for the
+           single most bizarre behavior I've ever seen, but I found a workaround.
+
+-(Bug fix) If you specify a custom root, and lock it, the control loads the root
+           path instead of the initial path in BrowserPath. Additionally, if you
+           specified a BrowserPath during design time for the initial path, this
+           resulted in various glitches and improperly adding it to the tree.
+
+-(Bug fix) If you specify a custom root, and lock it, attempting to navigate to
+           a location that's not a child of the root, such as though bookmarks,
+           special folders, or shortcuts, the path won't load, however, it will
+           still be added to the dropdown under the root (Root\Computer\path).
+           Selecting it from the dropdown still wouldn't load the path, but the
+           item should never be added to the dropdown.
+
+-(Bug fix) The preference for Super Hidden items wasn't applied for items added
+           after the folder is already loaded (in LVAddEntry).
+
+-(Bug fix) If you navigated directly from a Search Results folder to a Custom
+           Folder, the Search Footer would not be removed.
+
+-(Bug fix) If you specify a custom root and lock it, Search will not work,
+           because the Results Folder would not be recognized as a valid child
+           of the path, since as a virtual object it had no path to compare.
+           Added manual check and override for both the initial action and
+           navigating away then re-selecting the results from the dropdown.
+
+-(Bug fix) With the above fix, this would have normally also loaded the Search
+           Footer, which would have the 'Search Again' options. The Search
+           Footer has been preemptively disabled to prevent loading items
+           outside the given root, until a method is added to ensure all the
+           locations are valid children of the root.
+
+-(Bug fix) In many circumstances when you sorted, then navigated to a different
+           location, the sort column wouldn't be cleared, the new location would
+           by sorted by that column except always processed as text, and the sort
+           arrow and column highlight wouldn't reset.
+
+
+
+
+
+New in v8.4 R2 (Released 19 Sep 2020)
+
+-Added a 'Copy path' item to the View menu, which copies the full path of the
+ current location to the clipboard. Can be disabled with bDisableCopyPathMenuItem
+ User Option. Copies the parsing path, so ::{GUID} paths for virtual locations.
+
+-Added option AlwaysShowExtendedVerbs for the Shell Context Menu. If set to False,
+ certain extended verbs like 'Open command window here' will only appear on the
+ Shell Context Menu (right-clicking on an item) when Shift is pressed, which is
+ how it works in Explorer.
+
+-(Bug fix) A large number of commands in the Shell Context menu (displayed when
+           right clicking an item) did not execute the right command. This is a
+           very strange bug, as there's no reason it should be reporting the wrong
+           item ID. I've found a fix that seems to have largely eliminated this
+           issue, but please let me know if it pops up with your extensions.
+           This change also allows some 3rd party shell extension icons to appear
+           which were previously not loading, and has additional items on the
+           Send To submenu, which now also shows previously missing icons.
+
+-(Bug fix) Most instances of UUID variables were not explicitly typed (they were
+           'As UUID' instead of 'As oleexp.UUID'). The result is show stopping
+           errors if anywhere in the project there was a Public Type UUID.
+           Additionally, I've gone ahead and replaced *all* non-explicit types
+           that were defined in oleexp, to eliminate any possible conflicts.
+
+
+
+
+New in v8.4 (Released 17 Sep 2020)
+
+-The sorting methods have been completely overhauled. All sorting is now done
+ via built-in algorithms unless disabled. Specifically:
+
+    -Sorting performance for all columns has been dramatically improved. All of the
+     column data is now cached in the main information structure for each item when
+     the folder is first loaded, eliminating several API calls to find the item in
+     the list then read the text from the column display.
+     This improved sorting speed by 200-600% in tests; the more items, the bigger
+     the improvement. Sorting 3,000 items went from 950ms to 170ms.
+
+   -(Bug fix) Sorting by default columns was broken in Libraries and some other
+       special folders. IShellFolder.CompareIDs, which was being used, is
+       now being disabled entirely unless you set AlwaysSortWithISF to True.
+       Otherwise, the new routine for extended columns is used on all of the
+       columns. This performs 200-500% better.
+
+   -(Bug fix) All extended columns were treated as strings by the sort algorithm.
+       This resulted in numbers that were formatted to partial text not
+       sorted- such as the Free Space column in This PC, which is displayed
+       as e.g. 502 GB. This would just be treated as a plain 502, which
+       might be smaller than 1.0 TB, which would be 1.
+       The new system records the raw number before formatting (in our
+       example, the value in bytes), and uses that in the sort algo.
+
+    -(Bug fix) For extended columns sorted by text, the ascending/descending arrow
+       in the column header didn't match whether the column was currently
+       sorted that way (it indicated the opposite).
+
+    -(Bug fix) There were some issues with how items added after the folder loaded
+       were sorted.
+
+-There's now a status message for searching/search done.
+
+-Added user option bScrollToSelectedAfterSort.
+
+-The StatusText property appeared in the design-time Properties window, but
+ setting it there neither showed the message or saved it. That property has
+ now been hidden from the Properties window- you can of course still read and
+ write it during runtime. In its place is a new StatusTextStart property, that
+ will display a message in the Status Bar when the control first loads.
+
+New in v8.3 R2 (Released 09 Sep 2020)
+
+-Implemented folder separation for extended columns. Previously, besides the
+ default columns (Name,Size,Type,DateC-A-M), folders would be mixed in with
+ all the items instead of appearing before or after. Now, like the defaults,
+ all columns will show folders separately.
+ This was tested in folders of several thousand items and did not add any
+ significant performance hit; under a second for 3,000 items. But if this was
+ causing problems, the block that checks folder status in LVSortProc->stdsort
+ is easily removed.
+
+-(Bug fix) Sorting order for extended columns could be incorrect if any items
+           in the folder had no value for the given column.
+
+-(Bug fix) Sorting for Type and the three default Dates was not being done with
+           IShellFolder.CompareIDs.
+
+
+
+
+New in v8.3 Final (Released 27 Aug 2020)
+
+-(Bug fix) On Windows 10, the 3D Objects item in This PC for some reason has a
+           property store that returns free space, percent full, and space used
+           values for the main hard drive. The progress bar showing % full is
+           now hidden for items like that which don't return a 'Decorated Free
+           Space' value ("x bytes free of y").
+
+-(Bug fix) Spacing and sizing in the Details Pane when multiple items were
+           selected was bad; some text was cut off or on top of other text.
+
+New in v8.3 Beta (Released 25 Aug 2020)
+
+-Added colored title bar to the Column Select popup and Search Options popup
+ to provide a visual cue indicating it can be moved around.
+
+-There's a new option called RestrictViewModes. You can specify that certain
+ view modes be hidden from the View Menu and unavailable to switch into via
+ the ViewMode property. At least one option must be available, if none are,
+ Large Icon view is enabled.
+ It is your responsibility to ensure the startup view is not restricted, as
+ that will not be blocked, and that if you make Tile and Contents the only
+ possible views, that ComCtl6 is present, since those are unsupported without
+ it. You can specify a list formatted like 0,1,2,... or 0123..., as follows:
+   0=XLIcon, 1=LgIcon, 2=MedIcon, 3=SmIcon, 4=List, 5=Details, 6=Tiles,
+   7=Contents, 8=Thumbnails
+
+-Added EnableLayout option, to toggle whether the Layout submenu appears in
+ the View Menu, without needing to disable each item individually (which is
+ still possible and would have the same effect).
+
+-In the Details Pane, you can now highlight and copy the values of properties
+ that are read-only. The box is still locked, so it won't appear enabled or
+ allow typing. This can be disabled with the bAllowCopyFromReadOnlyProps
+ user option in the section below this changelog.
+
+-Changed the Bookmarks menu to only show the add or remove menu item for the
+ current folder, instead of showing both and having one disabled.
+
+-There's now an option, AutoHideControlBox, for whether or not to automatically
+ hide the Control Box (Up, View, Bookmarks, Search, and Back/Fwd in certain
+ modes) when the UserControl width becomes too small, to allow a smaller size
+ without the directory dropdown disappearing. Default is True. A new User
+ Option, cyMinCombo, will apply when set to False.
+
+-Improved spacing/alignment of Details Pane properties. The biggest change here
+ is no longer truncating long property names in the first column, like with an
+ mp3's "Contributing Artists" that would get cut off.
+
+-Added event FileSearchPopup. This fires when the Search Popup is about to be
+ shown either from double-clicking the control box or through the menu. It
+ gives the current text for the control box search box, and the fCancel option
+ which will prevent the popup from being shown if fCancel is set to non-zero.
+ This is intended to allow you to replace the built-in Search Options screen
+ with your own. You'd hide the default with this event, show your own, then
+ use it to execute a custom search, using ExecFileSearch, ExecFileSearchEx,
+ or ExecFileSearchExB (advanced options require manually building your own
+ ICondition object. See GetCondition to see how to begin that path).
+
+-(Bug fix) If the Navigation Buttons (Back/Forward) were set to regular
+           command buttons (SBNB_Normal), the Forward button did not work; at
+           some point the click code was inadvertently deleted.
+
+-(Bug fix) For the option to include a toggle for a ShellTree control in the
+           layout menu, an icon was created and added to the control, but was
+           not assigned to the menu item.
+
+-(Bug fix) Without ComCtl6, the dropdown button on column headers is not
+           available, so Advanced Mode in the Column Select popup was not
+           accessible. It's now available by right-clicking the header.
+           -Related, since Group Mode is not available without CC6, the filter
+            bar is now hidden, pending a re-write to not rely on grouping.
+           -Neither of these change anything if Comctl6 is present.
+
+-(Bug fix) During runtime, if you switch NavigationButtons to Theme Buttons,
+           regular (not in box), from any of the other styles (or disabled),
+           the Back button would not be drawn.
+
+-(Bug fix) If you go to Computer/This PC, set the Group Mode to None, then
+           switch back to Category, then navigate to another folder, an error
+           occured and the folder didn't load.
+-(Bug fix) FullRowSelect couldn't be changed during runtime. There may have
+           been similar bugs where an extended style couldn't be disabled
+           during runtime; I adjusted all of them just in case.
+-(Bug fix) When switching control modes during runtime, when the Back/Fwd
+           buttons were drawn in theme mode (in box or on the left), they'd
+           initially be drawn as disabled when they should be enabled, until
+           a mouseover caused it to update to the correct status. They're now
+           drawn in the correct state from the start.
+
+
+
+New in v8.2 Final (Released 23 May 2020)
+
+-The file previewer now checks an alternate way to get file parsing names (a
+  *very* unusual one) that allows certain actual files represented virtually
+  to have their previews shown. So far, this is only known to apply to fonts
+  in the Fonts folder, but may be more widely applicable if there's similar
+  folders elsewhere.
+
+-(Bug fix) In the column right-click menu, in some circumstances some properties
+           would appear more than once.
+
+-(Bug fix) Small icons, sometimes, would load blank file type icons in Med/L/XL
+           icon modes. Switched to using the thumbnail routine since there's
+           no practical difference. There's sometimes a similar problem with
+           exe's so I did the same thing, but that appears unresolved and I
+           haven't been able to determine what makes a particle exe fail, since
+           all the Demo exe's of this control have the same icon, but some fail
+           and some do not.
+
+
+
+New in v8.2 Beta (Released 17 May 2020)
+
+-The Column Select popup now has a dropdown menu on the Property column header
+ which allows a new 'Advanced mode'. In this mode, *all* properties are loaded.
+ Many of these properties are not meant for columns, but some are, for instance
+ this mode has Longitude and Latitude columns for photos with GPS data. Since
+ many have duplicate labels, an additional column with the System Name will be
+ added to the list. Some don't have friendly names, so the canonical name appears
+ in both columns. Sorting is also enabled for both columns.
+ You can disable this with User Option bEnableColumnAdvancedMode.
+
+-Added a toggle for a FilterBar in the Column Select popup, allowing you to
+ search for specific columns. Like the filters for the file list, you can start
+ with the first letter(s) or use wildcards (*) to match partials inside.
+ The filterbar will be present and working for the System Name column if the
+ Advanced mode described above is enabled.
+
+-It's now possible to conduct a search of all Libraries from the library root
+ folder. Even Explorer on Windows 7 didn't support this because of the way the
+ libraries are structured.
+
+-When a search is completed, there's now an option to add a footer bar, which has
+ options to repeat the search in several places. Option ShowFooterAfterSearch.
+ The 'Custom' option loads a dialog, with its own GUID so it doesn't effect your
+ app. If you do want it to effect your app, or you want to ensure the last place
+ isn't automatically brought up in other ucShellBrowse controls, you can get/set
+ the Client GUID with the DialogGUID property (not shown in Properties window).
+ Note: The host form is *not* notified of a click to these buttons.
+
+-There's now a FileSearchStart event that notifies the host that a file search
+ has started, along with the details of the search. Changing the details will not
+ have any effect.
+
+-This control now implements IObjectSafety to mark it safe for untrusted calls
+ and data, as controls such as Krools Common Controls replacements do. This was
+ not done previously because it was not compatible with the self-sub code (it
+ would completely prevent subclassing and callbacks while throwing many errors),
+ but LaVolpe was able to figure out a fix for the issue (number of VTable entries
+ in zProbe).
+
+-The Custom Folder, if already created (this is *not* search results, it's the
+ single custom folder created with CreateCustomFolder), can now be opened with
+ DisplayCustomFolder. This is primarily for being able to add a custom item to a
+ accompanying ShellTree control to be able to navigate back to it from there.
+ This can also be done (also new) by passing "*CUSTOM" as the path for navigating
+ with the BrowserPath property.
+
+-Icons in the Preview Pane seemed to be a little small, so I switched to another
+ preview method for them that should load the largest applicable size.
+
+-(Bug fix) Custom root paths weren't being processed correctly, leading to being
+           unable to load the root folder from the dropdown, and the parent being
+           incorrectly added as a child even when navigating out of root was blocked.
+
+-(Bug fix) If the footer was enabled, and it was created in a folder with few
+           enough items to be on screen, it would stay on screen when changing
+           folders and new items would just be drawn on top of it.
+           In a mostly related bug, if it was off screen, it wouldn't reappear
+           in a new folder sometimes.
+           It's now re-created each time, including being re-created when you
+           navigate away from search results, replacing the custom search one.
+
+-(Bug fix) There was a needless redraw of the Details Pane on startup.
+
+-(Internal issue) The group header/footer text for item count was defined in the
+                  procedure instead of with the module-level string group.
+
+
+
+New in v8.1 R1 (Released 30 April 2020)
+
+-DragOver in the Library home now has e.g. "Move to Documents" instead of just
+ the default "Move here" tip.
+
+-Cleaned up dropping so that if the target can't be dropped on, it fails with a
+ skip of the drop handler and status message, instead of just erroring (silently).
+
+-Switched to using IShellItem.GetDisplayName SIGDN_NORMALDISPLAY instead of using
+ PKEY_ItemNameDisplay for the displayed name; the latter was including the '.lnk'
+ for links, which is normally hidden.
+
+-The sizer bar for the Preview Pane now covers the whole control height, so that
+ the user doesn't see the top and bottom, which could be confusing. The Details
+ Pane sizer already had this behavior.
+
+-(Bug fix) If you started in Files Only mode, then switched to Dir+Files, if your
+           Navigation Buttons were in ThemeButton mode, they would not be shown.
+           If the mode was ThemeButtonInBox, the spacing would be created, but the
+           actual buttons weren't drawn.
+
+-(Bug fix) If the current folder is the Libraries home folder, dropping items on the
+           library items wasn't working.
+
+-(Bug fix) Double-clicking on a folder to navigate was changed to a different method,
+           in order to better support Unicode and some virtual locations, and this
+           broke history; no items were added.
+
+-(Bug fix) Also due to the above change, once the Desktop was reached and 'Up' was
+           disabled, it would not become re-enabled when navigating elsewhere.
+
+-(Bug fix) Ensured 'Up' is disabled when reaching the root of a custom root.
+
+-(Bug fix) Renaming files when extensions were hidden broke at some point.
+
+
+
+New in v8.1 (Released 25 April 2020)
+
+-It's now possible to configure InfoTips with the InfoTipMode property. You can
+ disable them entirely, only use the ListView's default Label Tip, use the Explorer
+ style extended ones with several items properties, or supply a custom one via the
+ new QueryCustomInfoTip event (only raised if InfoTipMode is set to custom).
+
+-Added SimpleSelect option to toggle the LVS_EX_SIMPLESELECT style. Sets whether, in
+ Med/Lg/XL Icon views, when Checkboxes are enabled, pressing the space bar checks and
+ unchecks all selected items (True-Default) or only the focused item (False. Other view
+ modes are not effected by this style and do the former.
+
+-Can now also toggle the basic ListView styles NoLabelWrap, ShowSelAlways, AutoArrange,
+ and AlignTop. For AlignTop, if you set it to False, AlignLeft is used instead.
+
+-(Bug fix) Changing AllowRename during runtime was inverted. False allowed renames, and
+           True did not.
+
+-(Bug fix) Fixed out of place parenthesis triggering compile error.
+
+
+
+New in v8.0 (Released 23 April 2020)
+
+NOTE: As of this version, the images for the buttons and menus are no longer loaded
+      from the resource file. Thanks to an idea by LaVolpe and code by The_trick, now
+      they have been encoded into bitmaps are stored as Picturebox pictures, and are
+      decoded by the control (Bitmap data as binary content).
+      The control is pbIconData, and if you need to look up the images for whatever
+      reason, the control index is mapped to their old names; e.g. ICO_MNREFRESH is
+      now pbidx_ICO_MNREFRESH, and its value, 6, means its data is in pbIconData(6).
+      From now on, the resource file is only for the manifest, or application data.
+      The demo in \Demo shows a feature for the footer where the control will load
+      icons from the resource file, and these are still included in the demo res
+      file, but they are *not* required to be included in your project, they're
+      exclusively for the demo project's custom footer.
+
+-There's now an Autocomplete option for when the ComboType is Simple or Dropdown,
+ and ComboCanEdit is True, that by default will complete paths. The default flags
+ are ACO_AUTOAPPEND and ACLO_FILESYSDIRS. To change these flags, use the new Public
+ Sub AutoCompleteFlagAdjust. This is *not* enabled by default.
+
+-The DropFiles event now supplies a lot more information. Previous, it only included
+ a list of full paths and the drop effect. The following have been added:
+  :An IShellItemArray of the dropped files,
+  :The raw IDataObject received from IDropTarget_Drop,
+  :The full path of the folder it was dropped on (which would not be the current path
+    because of dynamic drag drop, it could be a folder or item within,
+  :An IShellItem of the item it was dropped on,
+  :The grfKeyState value (MK_LBUTTON, MK_RBUTTON, MK_SHIFT, etc),
+  :The x,y coordinate of the drop.
+ NOTE: This will require updating the event in any form that is using it, as this is
+       an update to the DropFiles event, and not a new event.
+       Private Sub ucShellBrowse1_DropFiles(sFiles() As String, siaFiles As oleexp.IShellItemArray, doDropped As oleexp.IDataObject, sDropParent As String, siDropParent As oleexp.IShellItem, iEffect As oleexp.DROPEFFECTS, dwKeyState As Long, ptPoint As oleexp.POINT)
+
+-Also now include the IShellItemArray and IDataObject for dragged files in the
+ DragStart event. This also requires updating the event args in any form using it.
+
+-The OneClickActivate style now does what it should have been doing; acts like the
+ similar option in Explorer and opens the clicked folder or executes the default
+ action on a file.
+
+-Moved the Status Bar/Details Pane/Preview Pane/Search Box toggles on the View Menu
+ to their own 'Layout' submenu; used the default Windows icons where available.
+
+-For the two most common modes, Files Only and DirAndFiles, there's now a menu option
+ to switch between them in the new Layout submenu. You can set whether this menu item
+ appears with the EnableUserModeSwitch property; it's enabled by default.
+
+-You can now drop files in attached USB locations. This had been deliberately excluded
+ because the code blocked drops on ::{ paths, which are usually non-droppable.
+
+-After noticing the above was sometimes slow and in at least some circumstances doesn't
+ display an external progress box, I added a wait cursor and status message indicating
+ that files are being dropped (applies to all drops everywhere).
+
+-Added EnableStatusBar property to set whether the toggle for the Status Bar appears
+ on the View Menu. Note that with this and the new Layout submenu, the submenu will
+ not appear at all if none of its subitems are present.
+
+-Added ShellTreeInLayout property. This is for projects that also use ucShellTree for
+ navigation: it adds 'Navigation tree' to the Layout submenu, and raises the new event
+ ShowShellTree with true/false when the user clicks it. To set the initial status, or
+ when the status is changed externally, of whether the tree is visible, use the added
+ ShellTreeStatus property (note: this does not appear in the Property Browser).
+
+-Added DisableOverlays option to entirely disable overlays. If Extended Overlays is set
+ to False, the Link and Share overlays are still shown; this disables those as well.
+ Extended overlays will not be shown either if this option is enabled.
+
+-Moved thumbnails closer together.
+
+-The ListKeyDown event now also reports the status of the Shift, Control, and Alt keys.
+
+-Added a ListKeyUp event, which responds to WM_KEYUP coming from the ListView.
+
+-New BackgroundKeyDown and BackgroundKeyUp events, for keypresses while the UserControl
+ has focus, but not on any of the controls.
+
+-New ComboEditChange event, which passes the new text when the combo text changes. If
+ you change the text received, the combo text will be set to the new value.
+
+-New ComboDropdown and ComboCloseUp events.
+
+-Added additional subs/functions to control the browser through code:
+  GetHistoryData(sEntries(), CurrentIndex, MaxDisplayed) : Retrieves the contents of
+    the history record. The return value is the count of entries.
+  GetPidlStoreEntry(path) : For history entries, and some other path scenarios, the
+    parsing path returned may not work for certain locations (virtual locations like
+    non-filesystem locations and devices like phones/cameras); so the control keeps
+    a record of the fully qualified pidl of these locations. IMPORTANT: This shares
+    a reference to the pidl, so it's critical the caller not free it. Copy it if you
+    need to, but don't free it.
+  GetCurrentColumnCount() : Get a count of the number of details columns loaded, for:
+  GetCurrentColumns(ptr_pk_ar, sDispNames()) : To get a list of the current columns,
+    first call GetCurrentColumnCount to get the count, then create an array of
+    oleexp.PROPERTYKEY and String to receive the data. Pass VarPtr(pkey(0)) and
+    Names() to this function to receive the data. This is used for:
+  GetSortColumn() : The index of the column set that the files are currently sorted by.
+  GetSortDirection() : 0 = Descending, 1 = Ascending
+  GetGroupColumn() : The index of the column set that the files are grouped by. If this
+                     returns -1, Group Mode is disabled.
+  InvokeSortByColumn(Index) : Sort by column index.
+  InvokeSortByPKEY(VarPtr(pkey)) : Sort by PROPERTYKEY. The column must be loaded.
+  InvokeSortAscending() : Sort ascending.
+  InvokeSortDescending() : Sort descending.
+  InvokeGroupByColumn(Index) : Group items by the given index of the column set.
+  InvokeGroupByPKEY(VarPtr(pkey)) : Group items by the given PKEY. Must be loaded.
+  InvokeColumnSelection() : Brings up the full list of available columns.
+  InvokeNewFolder() : Creates a new folder and begins the label edit for rename.
+  InvokeSelectAll() : Select all.
+  InvokeInvertSelection() : Invert selection.
+  DetailsPaneHeightLocked PropGet/Set : Note- not shown in Properties
+  PreviewPaneWidthLocked PropGet/Set : Note- not shown in Properties
+
+-(Bug fix) Toggling the .PreviewPane property during runtime resized the ListView over
+           the pane, but was accidentally showing it when set to False, so it became
+           visible when resizing.
+
+-(Bug fix) If the navigation buttons were enabled and set to Theme Buttons, and you
+           switched the Control Type during runtime to a mode where they were hidden,
+           and then switched back, they would not reappear.
+
+-(Bug fix) Switching from Dir+Files to Files Only during runtime caused an app crash
+           in some circumstances. Completely bizarre, just changing the order fixed it.
+
+-(Bug fix) If the DetailsPane/PreviewPane had their height/width set to Locked, then
+           were hidden, then turned back on, the sizer would become visible again, with
+           the popup menu incorrectly showing it to still be locked.
+
+
+
+New in v7.4 R4 (Released 03 April 2020)
+
+-The Column Select list now supports keyboard navigation better; as you move from
+ item to item with the keyboard, the default text with is adjusted. Previously,
+ you had to click an item to see the default width.
+
+-(Bug fix) In the compiled exe, if DPI scaling was above 100%, each time the Column
+           Select window was opened, it'd keep getting bigger. The whole sizing setup
+           was obscenely complex and out of control; it's been greatly simplified and
+           works consistently now.
+
+
+
+New in v7.4 R3 (Released 02 April 2020)
+
+-(Bug fix) See thread for details, but icons in Med/Lg/XL view were either too
+           large or too small depending on circumstance.
+
+-(Bug fix) Selecting 'Desktop' from the dropdown failed to load it.
+
+
+
+New in v7.4 R2 (Released 02 April 2020)
+
+-(Bug fix) The new thumbnail handler used for previews is broken in Windows 10 and causes
+           an app crash. Was able to find a workaround.
+
+
+
+New in v7.4 (Released 30 March 2020)
+
+-Large icons are now actually large.
+
+-Also added support for 'Medium' icons, which are the old large, and Extra
+ Large icons, which are 128x128 (*scale). These aren't 'true' modes; to make
+ the 'Large' icons like Windows 7 and 10 sized, the same general approach for
+ thumbnails had to be used; we load a copy of the 'Jumbo' 256x256 image list,
+ then scale down from that by copying the needed icons to a local ImageList.
+ So once that's done, we can add any other size by simply changing the scale
+ factor. You could easily look at SwitchView to see how it's done for XL and
+ Medium, and add more.
+ Note: By default, icons in Medium/Large/XL aren't loaded until the item first
+       comes into view; like with thumbnails, there's a new IconPreload option
+       if you want to load them all during the initial folder load.
+ Sizes: Medium is 48x48, Large is 96x96, and XLarge is 128x128, and you can
+        change these in the User Options section below this changelog if so
+        desired. It's not recommended to exceed 512x512.
+ Links: There's this weird glitch where the presence of some shortcuts to a
+        folder, in certain other folders, causes not only itself, but some
+        other links, to return the default document icon instead of the real
+        icon. This bizarrely goes away if you Refresh, but reappears if you
+        navigate away and come back (even though Refresh is just calling
+        LVLoadFolder again the exact same way).
+        I can't isolate the exact circumstance, and refreshing every time is
+        a huge performance hit, so a workaround was developed where links
+        have their icons loaded manually.
+        There's a User Option, nManualLinkIconLoadingMode, with 3 options
+        for this; 0=disable it and always just use the same automatic method
+        (IShellItemImageFactory), 1=Use it only for links to folders (which
+        trigger the bug, so this avoids it), and 2=Use it for all links.
+ Watch: This whole system seems to trigger a number of bugs where blank or
+        default or incorrect icons are loaded. I've added a bunch of work
+        arounds, but if you encounter any situation where the wrong icons,
+        or no icons, are being loaded, please let me know!
+
+-All View Modes are supported on startup via the ViewMode setting in the
+ Properties list, there's a minor tradeoff in that no change is reflected
+ in Design View.
+
+-Now the Bookmarks submenu is only added to the folder background right-click
+ menu if it's not already present in the control box.
+
+-Support for items marked as SFGAO_GHOSTED but not SFGAO_HIDDEN added.
+
+-(Bug fix) When Extended Overlays are enabled, the wrong method was called,
+           sometimes leading to incorrect overlays or crashing.
+
+-(Bug fix) Switching into Tile View lost the sorting order, so folders no
+           longer appeared first. Switching to Tile View now sorts by name.
+
+-(Bug fix) Some bizarre memory issue related to the order of things in the
+           LVLoadFolder routine broke loading more than 1 dir into Portable
+           Devices in compiled exes only.
+
+
+
+New in v7.3 (Released 20 March 2020)
+
+-Now using a new way of generating previews for image files; previous methods
+ showed images cropped, positioned poorly, sometimes sized incorrectly... the
+ new method uses GDI+ to render images smaller than the preview area at their
+ native size, and larger images are resized, maintaining aspect ratio, in their
+ entirety at the appropriate size.
+ This option falls back to the old one if it fails.
+
+-Changed how search works internally so multiple searches are better supported.
+ Search result folders are now named by path for ease of access, with multiple
+ searches in the same path possible and named e.g.:
+ Search Results in Demo
+ Search Results in Demo (2)
+ etc.
+
+-Added Select All and Invert Selection items to the View Menu.
+
+-(Bug fix) ExecFileSearchEx had issues if the current path was a library but the
+           target location wasn't.
+
+-(Bug fix) The History popup menu (right-click the Back/Forward buttons) was
+           only showing the first entry in the history list if the history
+           list had fewer items than the value for the maximum number of
+           displayed history items.
+
+
+
+New in v7.2 R5 (Released 16 March 2020)
+
+-(Bug fix) Search fix from R4 applied to ExecFileSearch and ExecFileSearchEx.
+
+-(Bug fix) Two timers were enabled by default, which caused problems with the
+           control flashing '[running]' for a fraction of a second when a Form
+           with the control was open, which in turn made the pop-up code menus
+           for List Properties/List Contents not work. This may not apply in all
+           circumstances, as it dates back to v6.5, and it appears something had
+           triggered the issue as it hadn't been noticed beforehand.
+
+
+
+New in v7.2 R4 (Released 15 March 2020)
+
+-(Bug fix) A previous fix to allow search to work in a Library root folder (e.g.
+           Documents, Music, etc) very unexpectedly broke it everywhere else.
+
+
+
+New in v7.2 R3 (Released 15 March 2020)
+
+-(Bug fix) The overlay issue from v7.2 should have left 'Shortcut' overlays to
+           always be displayed, but the index was wrong and it's been showing
+           the wrong overlay icon.
+
+
+
+New in v7.2 R2 (Released 07 March 2020)
+
+-Rereleased because I forgot to include the main demo.
+
+-Sorting system has an optional upgrade: AlwaysSortWithISF uses the IShellFolder
+ CompareIDs sorting method for all columns that are supported. This keeps folders
+ separated and sorts non-standard data types better, but *sometimes* carries a
+ significant performance hit, so it's off by default.
+
+-(Bug fix) For the CompareIDs sort for the standard types (always enabled), some
+           special folders contained the standard types, but in a non-standard
+           order. Since the order was hard-coded, this led to incorret sorting.
+           Now columns are mapped with each folder load to the correct column id.
+
+
+
+New in v7.2 (Released 05 March 2020)
+
+-Extended Icon Overlays (e.g. for Tortoise SVN, Dropbox, Github, etc) are now
+ an option, ExtendedOverlays, that default to false after finding that querying
+ for them causes a *massive* performance hit. I thought things were just slow
+ because of complexity and this being VB, but just eliminating the query speeds
+ up loading folders ***by a factor of 10-100**. 3000 items used to take over 100s
+ on a 7200rpm spinning drive, it now only takes 1.4s.
+ The Shortcut overlay, and Share overlay, can be determined by attributes, so these
+ are the basic overlays that will still appear when the extended ones are turned off.
+
+-Numerous other internal performance improvements have been made.
+
+-(Bug fix) The folders combining if one was selected while the previous was still
+           loading hadn't been fixed for manual calls to CreateCustomFolder or one
+           of the file search calls.
+
+
+
+New in v7.1 (Release 21 Feb 2020)
+
+-Added ItemIsFolder function to quickly determine if a given item is a folder.
+ You can specify either its position (unsorted, but as given by other functions),
+ by its name, or by its full path. Looked up in that order.
+
+-Added MaxHistoryDisplayed property to limit how menu items appear on the History
+ popup menu. If the limit is exceeded, it displays the n/2 items before and n/2
+ items after the current index. If that results in less than the limit shown, the
+ end not at its limits (0 or the upper bound) is expanded. See ShowHistoryMenu for
+ the calculation.
+
+-(Bug fix) If you selected a new folder from the dropdown while one was still being
+           loaded, both folders would have their files listed. Since a number of
+           features open folders, the combobox, control box, and menus are now
+           disabled during loading.
+
+-(Known Issue) If a constant is defined in an enum in the TLB, used in this control,
+               and then defined in a .bas module containing Sub Main, it triggers
+               the stripes-then-crash bug when normal VB controls are modified.
+               I've changed the ones in the Demo projects, but finding them all is
+               impractical.
+
+
+
+New in 7.0 (Released 18 Feb 2020)
+
+-New Control Mode: SBCTL_DirOnlyWithCtls (Directory Drop-down Only, With Controls)
+ This mode is the same as DirOnly except the control buttons are also available:
+ Back, Forward, Up, Bookmarks, View, and Search are all available, and although
+ it will almost always make sense to hide the View button, that's left up to the
+ user. The status bar is not available in this mode.
+
+-You can now specify a custom root for the directory dropdown with the CustomRoot
+ property. There's also the option CustomRootLocked, which if True means the user
+ will not be able to open any path that's not a child of the root. If the startup
+ path is not a child of the root, the root is then used as the startup path.
+--The custom root is parsed the same way as BrowserPath, so special locations with
+  ::{ are accepted, and environmental variables are expanded. If the mode is Drives
+  Only, the drive of the root is used if not locked out. FTP sites are supported.
+--If ComputerAsRoot is set, it will supercede the CustomRoot path.
+--CustomRootLocked does not restrict the appearance of invididual items in Custom
+  Folders or Search Results, but if one of the items is a folder, and not a child
+  of the root, you will not be able to navigate into it.
+
+-ComputerAsRoot can now be changed during runtime, as can the new CustomRoot prop.
+
+-When loading a folder, the edit box of the dropdown is now turned into a progress
+ bar in marquee mode (no way to get the item count in advance). This is set via
+ the LoadingMarquee property, which defaults to true.
+ The methods, StartLoadingMarquee and StopLoadingMarquee, are public in case you
+ ever wanted to use them manually, e.g. if you're using DirOnly mode and doing
+ your own loading.
+ Performance: I tested to make sure this wasn't creating performance issues for
+              large folders, and found it only adds 100ms per 3,000 items.
+
+-You can now add an entirely custom column. First, use the AddCustomColumn
+ function-- make sure to save the return as the column id (you can add as many
+ as you want). Then, respond to the CustomColumnQueryData event to supply the
+ column text for each item. Column can be removed via code with the
+ RemoveCustomColumn sub (and also via the UI like any other column).
+ Custom columns support images; specify when creating. The out_nImage value is
+ ignored when not being used. When in use, set out_nImage >= 0 for the system
+ image list index you want, if not set no icon appears.
+ The ListView control only supports one image list, so the image must just be
+ an index to the main one.
+
+-Some properties, right now AFAIK only in the Programs and Features folder, are
+ displayed as hyperlinks in Explorer. Now one of those can be displayed in the
+ control as hyperlinks as well. Only one such column at a time is supported due
+ to a graphical glitch that makes more impossible I haven't been able to resolve.
+ You can disable any column having links with the bDisableHyperlinkItems user opt.
+
+-Added ability to remove other columns through code as well; RemoveColumnByPropName
+ and RemoveColumnByPKEY have been added (the latter, you pass VarPtr(pkey)).
+
+-Portable Devices like phones and cameras are now added to the dropdown when added,
+ regardless of the current directory (an entirely separate limited changenotify
+ on the Computer/This PC folder).
+
+-Set the letter 'B' as a caption for the Bookmarks button if ComCtl6 is not
+ available. Since there's no support for image buttons without it, the button
+ wsa previously blank.
+
+-It's now possible to set custom image lists for the ListView and ComboBox.
+ SetCustomListViewImageLists takes a small, large, and jumbo imagelist. If all
+ goes well, return is S_OK. Otherwise the return code indicates which imagelist(s)
+ failed; &H2, &H4, and &H8 are Or'd together respectively for a failure in that list.
+ SetCustomComboImageList takes a single ImageList of 16x16 (or current DPI equiv),
+ and returns the result of the API that sets it.
+ You can pass -1 to not set a given image list, or pass 0 to clear.
+ There's also an optional argument to set a custom state imagelist; this is the
+ checkbox imagelist, and replaces the existing images of checkboxes when enabled,
+ and can have any number of images to cycle through.
+
+-(Bug fix) RefreshTree did not work.
+
+-(Bug fix) A number of properties in the design time property box had their
+           descriptions stop showing up. This didn't effect usage.
+
+-(Bug fix) History can be used through code, and previously, history wasn't being
+           set when the mode was DirOnly/DrivesOnly because it was set in the Load
+           Folder routine, which exited before the history block if no LV present.
+
+-(Bug fix) If a root item didn't support IShellIcon, the whole EnumRoot function
+           would fail and leave the dropdown empty.
+
+-(Bug fix) Names ending in a . or space are not valid names and Explorer silently
+           deleted them rather than throwing an error. In mimicking this behavior,
+           while the . or space was deleted from the file record and not sent to
+           Explorer, it was not deleted from the displayed name.
+
+-(Bug fix) After loading Computer/This PC, the size/type order in Tile View became
+           inverted in other folders.
+
+-(Bug fix) If the dropdown was in Simple mode, ComboCanEdit, double-clicking for
+           full path, and other edit box features did not work, because the normal
+           CBEM_GETEDITCONTROL message does not work with this style; had to switch
+           to using FindWindowEx to get the edit hWnd.
+
+-(Bug fix) When the dropdown was in Simple mode, the bottom border was truncated.
+
+-(Bug fix) The Search Box still had a left margin for the icon even if the icon was
+           not present (it's in the resource file).
+
+-(Bug fix) If a Private Enum defined in a UserControl had the same name as one that
+           is defined in a module containing Sub Main, placing more than one of the
+           UserControl in a project caused the control to be grayed out and then an
+           app crash when any other control was initially added to the form.
+           To fix this, all API enums in this control have been prefixed with ucsb_
+           If you're modifying the code of this control, just keep that in mind.
+           No change is needed for using this control or any other code as they're
+           all Private.
+
+-(Bug fix) File previewing on devices like cameras and smartphones had two bugs:
+           First, file parsing names were represented by GUIDs, so no extension
+           was being returned, breaking image previewing for most types.
+           Second, the GUID names also does not work with CreateFile, thereby
+           breaking any previewer that used IStream, like text files.
+           The extension is now read from the display data and an alternate way
+           of obtaining an IStream was implemented. All previews should work now.
+
+
+
+New in 6.7.2 - Released 17 Dec 2019
+
+-MAJOR BUG FIX
+-BrowserPath couldn't be changed in the Properties window. Apparently it's been
+ like this since v6.0. You could set .BrowserPath on Form_Load, but the default
+ folder (App.Path) was still loaded beforehand, resulting in lag and a history
+ entry for it.
+
+-Also fixed minor bug where the first time the status bar was shown (i.e. when
+ you created a ucShellBrowse on your form, or when it was hidden then shown),
+ there would be the space for it at the buttom but the word 'Status' appeared
+ at the top in a graphical glitch. This never effected runtime, and it also
+ appeared normally in design mode the rest of the time too.
+
+
+
+New in 6.7.1 - Released 16 Dec 2019
+
+-MAJOR BUG FIX
+-First off, FilesChecked didn't return anything, and further:
+-As of the previous version, for checked items, there was only FilesChecked(),
+ which returned only the names of both files and folders. I hadn't considered
+ search results and custom folders, where each item has a different path. There
+ is now the following:
+ FilesChecked() - Only files, only names
+ FilesCheckedFull() - Only files, full paths
+ FoldersChecked() - Only folders, only names
+ FoldersCheckedFull() - Only folders, full paths
+
+
+
+New in 6.7 - Released 16 Dec 2019
+
+-Added AllowRename option to set whether renaming items (Label Edit) is enabled,
+ previously it was always enabled with no option. If False, the Rename shell
+ context menu verb will not appear either.
+
+-Added DragStart event that gives file list / key state of a drag operation.
+
+-Added HideDropdownIcons option to toggle images in the directory dropdown.
+ NOTE: ComboHideIcons, added in the previous version, hides the edit image only,
+       icons are still displayed in the dropdown.
+
+-HideIcons can now be changed during runtime.
+
+-The View Mode will now update in design view if the view is supported (i.e. set
+ to Large Icon, Small Icon, List, or Details; the rest only apply during runtime.)
+
+-Added user option bLimitHideIconViewToLogical to allow Large Icon, Tile, etc,
+ when HideIcons is true if you really want that.
+
+-Added ShowHiddenItems and ShowSuperHidden options with 3 options: Use Explorer,
+ which uses the system setting for 'Show hidden files and folders', then Always
+ Show and Always Hide. Use Explorer is the default.
+
+-Added HeaderOverflowButton option for when there's additional columns; when the
+ button is clicked, the next column is brought into full view.
+
+-Added AutoCheckSelect option. If Checkboxes are enabled, selected items are
+ automatically checked, and unchecked when unselected.
+
+-FilesChecked() will now return only file names instead of full paths, so that
+ it's consistent with Files()
+
+-Added RedrawList method to call LVM_REDRAWITEMS, for when you change coloring
+ settings but don't need to reload the contents.
+
+-(Bug fix) The new Search feature did not support searching a library from the
+           root (as opposed to a folder within the library).
+
+-(Bug fix) A new feature in the previous version broke support for hiding column
+           headers in Details view when set in the IDE. And if applied during
+           runtime, it triggered a bug in the ListView COMCTL where the header
+           then wouldn't be fully hidden, and show it with a height of a ~5px.
+
+-(Bug fix) On Windows 10, virtual objects besides drives were included while in
+           Drives Only mode.
+
+-(Bug fix) When rating stars were displayed, mousing over items that didn't have
+           rating support would still draw, and lock in, a hot state of however
+           many stars the initial mouse position was in. Now stars never change
+           in any way for items that don't support them.
+
+-(Bug fix) Various issues with History navigation (forward/back/menu) arose when
+           BrowserStartLastPath was set but the last path no longer existed.
+
+
+
+New in 6.6 - Released 21 Nov 2019
+
+-In Thumbnail Mode, new IThumbnailHanderFactory/IThumbnailProvider routine will
+ load additional thumbnail types, most notably Album Art for MP3 files. Should
+ be faster too, as a factory is created for a folder then gets passed child
+ pidls, which we already had.
+ Additionally, the new IThumbnailCache routine is present as fallback for above.
+ These are not limited to media by default; if you want them to be, there's a
+ new User Option (below this changelog), as well as an option to always use them
+ even when Extended Thumbnails are not enabled (for non-extended types).
+
+-New BrowserStartBlank option allows for not opening any location on startup. The
+ BrowserPath property in the IDE will be ignored, but any actual code to open
+ somewhere will still be executed.
+
+-BrowserStartLastPath option will load the last path from the previous run as the
+ startup path (if set and valid). This does not override BrowserStartBlank.
+
+-The path from the previous run is stored in the registry, along with the list of
+ bookmarks. Previously, this was stored in such a way multiple controls and projects
+ would be using 'ucShellBrowse' as the key, so there'd only be the single data set.
+ Now, the key is set to ProjectFolderName.ProjectName.ControlParentName.ControlName,
+ so the ucShellBrowse demo would be Demo.ShellBrowseDemo.Form1.ucShellBrowse1 -- so
+ each control, even on the same form, will now have its own bookmarks and last path.
+
+-If you do wish to share bookmarks, there's a new .Bookmarks Property Get/Let, so
+ that you can retrieve/set the bookmark set for a control. The format is:
+ FullPath1|FullPath2|etc with the solid bar delimiter. This is not shown in the VB
+ Property Browser since that would break Unicode support.
+
+-Added HeaderMinWidth option to set a general absolute minimum for header item width.
+
+-In the Details Pane, only one active editing control appears at a time now (one
+ only among an active edit box, dropdown control, or datetime control). The value
+ of any hidden is then displayed as text, but is not final, clicking Cancel will
+ still revert it to the currently saved value.
+
+-Added DisableWhileLoading option to disable the ListView during new folder load
+ to prevent causing problems by clicking on stuff before it's done loading.
+
+-Added ThumbnailScaleForDPI option (default=True) to scale main thumbnail cxy
+ and framed small thumbnails to DPI scale factor
+-Added FontScaleForDPI option (default=True) to control whether the font scaling
+ intoduced a couple versions ago is done.
+-Frames around small icons are now adjusted for background color luminance; they
+ were hard to see on some backgrounds.
+
+-Added SelectedFileGetProperty and SelectedFileGetPropertyByPKEY. To use the
+ latter with an actual PROPERTYKEY, oleexp would have to be modified such that
+ you couldn't just overwrite old versions with new, you'd have to unregister,
+ then register the new version. So instead, as the argument name indicates,
+ you pass VarPtr(PKEY_whatever).
+ The property store for the selected file is cached the first time one of these
+ is called for the selected file, so subsequent calls will be quicker.
+-Also added FileGetPropertyByPKEY (by filename; FileGetProperty already exists)
+
+-When auto-adding the Percent Full progress bar, it's now inserted as the 2nd
+ column like Explorer, instead of down at the end. Also adjusted spacing and fill.
+
+-Adding status updates saying 'Opening...' before starting directory load, so
+ that the user knows the control isn't just frozen/doing nothing if there's a
+ wait for hard drive spin-up or other delay.
+ After the first 30 items, those 30 are rendered (without details) to show
+ progress while the status message (in the statusbar or StatusMessage event)
+ changed to 'Listing...'
+ Then every 97 items a status message saying 'Listing... n' where n is the file
+ count is sent (but no more redrawing as to not slow down large directories).
+
+-Added Hot Tracking options OneClickActivate, TwoClickActivate, UnderlineHot,
+ and UnderlineCold, applying those ListView Extended Styles.
+
+-Added ComboHideIcons option that hides the folder icons in the directory dropdown.
+ NOTE: This cannot be changed during runtime
+
+-(Bug fix) Fonts (in the font folder) were not displaying properties in the details pane.
+
+-(Bug fix) Some file types had empty, inapplicable properties listed in the details
+           pane; to address this, any property that is read only and blank is not shown.
+
+-(Bug fix) Sometimes, in an unpredictable way, Windows would send 2 SHCNE_CREATE messages
+           for the same file, resulting in 2 new entries as the existing dupe checker
+           wasn't catching them. Now it does.
+           In a somewhat related bug, if a file of the same name was deleted and then
+           pasted, it would not show up. Now it will.
+
+-(Bug fix) BrowserPathPidl should not have appeared in the 'Properties' IDE window.
+
+-(Bug fix) The AddColumnByPKEY sub was added as public last version, but you can't pass
+           a PROPERTYKEY directly like the argument called for (without it being more
+           trouble than it's worth in TLB registration issues), so it's now been changed
+           to pkey_varptr, which as the name suggests, mean you pass VarPtr(PKEY_Whatever)New in 6.5
+
+
+
+'New in 6.5
+-For Computer/This PC and attached devices with memory cards/drives, the second
+ line of the Tile View just contained a single size/number/drive type, but
+ there's a hidden property to make it display e.g. "1GB free of 10GB". This
+ column is now added for Tile View (and still hidden from Details View).
+--Additionally, changing the Details View columns before setting Tile View will
+  no longer effect drive space display tiles.
+
+-Computer/This PC has renames marked enabled the standard ways (SFGAO_CANRENAME
+ which enables label edit renaming, and the Rename context menu command), but
+ the rename cannot be executed in the normal way: The rename must be done using
+ the SetVolumeLabel API or others... this is now supported.
+--All types supporter; internal, removable, network, optical, etc.
+--Connected devices without a drive letter, like phones and cameras, are also
+  supported through the Portable Devices COM interfaces.
+
+-Minimum height was not really enforced. It's now set dependent on the sum of
+ the minimum heights of enabled items (navbar, listview, details pane, status).
+
+-Resizing the UserControl will now also refresh the Details Pane and/or Preview
+ Pane, on a timer with a 500ms delay after the last size change.
+
+-When Checkboxes are enabled, adjusted the check/uncheck all action that occurs
+ when clicking the column checkbox so that all items are processed at once, and
+ not one at a time causing a redraw and associated lag for each item.
+-That still left one scenario where it lagged: Mass-deselect without it being
+ a column uncheck. To address this, the selection update itself is now subject
+ to being queued. Before any update, it holds for 20ms, which is imperceptible
+ for just jumping around files manually, but catches all mass-deselects.
+
+-Added 'Recent Places' to the Special Folders menu. There's already a 'Recent
+ Items' entry, but that shows both folders and files, where Places shows only
+ the folders.
+
+-(Bug fix) The Special Folders entries for Devices and Printers + Programs and
+           Features did not work. This was a weird oversight where I had those
+           as regular bookmarks, and the entries got their paths from those.
+
+
+
+New in 6.4.1
+
+-(Bug fix) Critical bug: FileExecute event not being raised in almost all
+           circumstances. I had removed the one that always fired because that
+           led to firing on navigate, but failed to add code to raise it at the
+           normal points. Sorry about that.
+
+
+
+New in v6.4
+
+-Some virtual shell locations, like Devices and Printers, are represented by a
+ GUID, ::{GUID}, but cannot be resolved by the various name parsers. HOWEVER, if
+ you add the shell: prefix, shell:::{GUID}, they can now be resolved and opened.
+ Various updates have been made to check for this scenario, because when the
+ path is checked on these items, it doesn't include the shell:
+--Devices and Printers, and also Programs and Features, are now on the 'Special
+  Folders' submenu.
+
+-Folders like Computer have a special category system not represented in the
+ details columns, information set up by an ICategoryProvider/ICategorizer system.
+ Now if you enter one of these folders, that information is read and group mode
+ is actived to display them in categories.
+
+-Deleted folders and disconnected drives will now be removed from the directory
+ dropdown as well. Children are also removed. Note that for folders, this only
+ applies to items in the current directory, as that's all that's being monitored.
+
+-Added DetailsPaneBackColor, DetailsPaneForeColor, and DetailsPaneFileName options.
+ -Note: The property values in the text boxes cannot be changed; they're black.
+
+-The Column Select popup now inherits the UserControl back color and the ListView
+ fore/back colors. See bColumnSelectInheritBkColor user option to disable.
+
+-Added NoNavigateOnSelect option, so that instead of navigating into a selected
+ folder, that folder is treated as a selected item and the FileExecute event is
+ raised. The right-click menu now has a 'Browse' option so the user can still open
+ the folder if desired (subject to the LockNavigation option; this item doesn't
+ appear if locked).
+
+-Added SearchBoxWidth option. Specify the width in pixels, this is then multiplied
+ by the DPI scale factor.
+
+-Share overlay icon is now manually set on folders that don't already have a valid
+ overlay specified.
+
+-Font scaling for high-DPI has been improved. It's now scaled by DPI/96DPI and
+ rounded up if not a whole number (except for the buttons, which can handle fractions).
+
+(SEARCH ISSUES)
+-I thought you could just create multiple search conditions, like two sizes (>1KB, <10KB)
+ but it turns out that doesn't work; no files are returned. I explored other ways of
+ doing it that are allegedly supported, but to no avail. For the time being, I've had to
+ delete the 2nd size and 2nd date search options.
+ Search by name doesn't support multiple filters via the ; delimiter, but I was able to
+ find a way around that, however you will need to upgrade oleexp.tlb. Sorry, it required
+ a whole new set of interfaces.
+------------
+
+-(Bug fix) A FileExecute event was being raised, with a blank path and incorrect
+           IShellItem, for folders on double-click or enter pressed. No event is
+           raised now unless the new NoNavigateOnSelect option is set, in which case
+           the correct item and path are passed.
+
+-(Bug fix) If you switched to Thumbnails from folders with overlay errors, the error
+           handler was being ignored so enumeration stopped.
+
+-(Bug fix) If the current folder is Computer/This PC and a drive is removed, it
+           was not being removed from the ListView.
+
+-(Bug fix) Minor graphical glitches: Fixed gray edges around command buttons; also
+           the Bookmark button was shorter than the rest. Fixed sizing (icon not
+           fitting) and improved alignment of the Search Box.
+
+-(Bug fix) Non-default fonts weren't applied to the Forward button (when in the
+           standard mode; obviously theme buttons have no text).
+
+-(Bug fix) Under some circumstances, when the Preview Pane is enabled, the preview
+           doesn't change when a new item is clicked (unless you resized the panel
+           to trigger a refresh). This was happening after creating and clearing a
+           marquee selection box (the box you drag out to select multiple items),
+           and sometimes after right-clicks. A new trigger fixes the issue.
+
+-(Bug fix) Since all group columns besides name/size/type/dates were treated as
+           as the 'Extended' group mode, switching from one extended column to
+           another without one of the basic ones in between was ignored since
+           the main mode wasn't changing.
+
+-(Bug fix) If an item was removed, then re-added, it wouldn't get re-added to the
+           directory dropdown.
+
+-(Bug fix) Under some circumstances, the subitem progress bar for free space was
+           drawn in the wrong column, particularly the first time in attached
+           devices. Now a hard check of the position is done every time.
+
+-(Bug fix) The selected 'Details' columns were cached, but the list of them was
+           not. So if you e.g. went to Computer, then back to a folder previously
+           viewed, only the properties from Computer would be in the column select.
+
+
+
+New in v6.3 (Released 20 Sep 2019)
+
+-There's a new method of searching. This method is much more powerful and uses
+ the ICondition/ISearchFolderFactory system. You can now have multiple search
+ result sets added as folders, and you can go back to the old ones during the
+ current session (of the program). You can additionally specify your own search
+ to conduct.
+--Double-clicking the search textbox brings up a small pane with additional search
+  options, including size, type, and date. You can use any or all given options,
+  including leaving the original textbox blank if you choose.
+  The 'Kind' list is automatically populated with all valid values of the current
+  OS version.
+--The background color of the options popup is inherited from the main UserControl
+  background color; but you can force it back to the default gray with the
+  bSearchOptionsInheritBkColor User Const.
+--This new method does not use the Custom File Set functionality, so you can have
+  one of those and searches don't count as it (but you can still only have one of
+  those, no changes have been made on that front).
+--Searching is now supported even if the Control Box isn't visible (disabled or the
+  control is in Files Only mode). The options popup appears with an added textbox
+  for the search query. This option will not appear if the search box is disabled.
+--Finally, you can execute a custom search by passing a locations and conditions
+  object to ExecFileSearchEx. The old ExecFileSearch is still there and the
+  arguments unchanged, but now utilizes the newer method.
+--NOTE: While the folder will be added to an accompanying ucShellTree, as of this
+        release it can not be browsed back to from one; the other control will
+        need to be modified to support doing this, but the supporting changes to
+        this control have already been made (you can pass a string or shell item
+        with the full parsing path as 'Folder Search n'
+
+-Added BrowserPathPidl Property Get/Let so you can get the current pidl or open
+ a path by a pidl. Fully qualified pidls only.
+-Also added BrowserPathItem Property Get for the current path IShellItem; there's
+ no Let here as there's already BrowserOpenItem to navigate to an IShellItem.
+-Updated BrowserOpenItem to not reload current path and to just load the folder's
+ drive if in Drives Only mode; this behavior is now consistent with .BrowserPath
+
+-The DirectoryChanged event now reports the fully qualified pidl of the new path.
+
+-The 'More...' command in the Column Header menu to choose all the columns to show
+ will now be disabled if the column select popup is already visible; this prevents
+ an error stating 'This window has already been subclassed.' from being shown on a
+ second click, as well as some internal issues.
+
+-Rating stars are no longer applied in the view when the underlying file does not
+ support them, including both the mouseover effects and changing if clicked.
+
+-In Design Mode, the size, type, and date columns are now also filled in with some
+ temporary variables.
+
+-(Bug fix) Somehow somewhere in the last few versions a line mysteriously vanished
+           from SetFileRating2 and it stopped working.
+
+-(Bug fix) Under some circumstances in LVLoadFolder where sPath was blank, it would
+           also set m_sCurPath to blank, breaking, among other things, the ability
+           to create a new folder.
+
+-(Bug fix) When you navigated from one location with Percent Full progress bars to
+           another (e.g. Computer to attached phone), the progress bar showing the
+           percent would be drawn in the wrong column, with the right column there
+           and left blank.
+
+-(Bug fix) If you grouped by Type, then switched to another grouping, then switched
+           back to type, no items would be shown.
+
+-(Bug fix) Clicking on the search box caused the caret to jump back to the beginning.
+           This was done because of the only way that works to set focus for the
+           Enter button (or Enter would go to the last control focused even though
+           every other key went to the textbox), but now I thought of a way to keep
+           the caret where it is.
+
+-(Source) Finished trimming ListView_ macros, all unused ones have been removed, and
+          all simple ones have been changed and the macro deleted. All unused Header_
+          macros have been removed as well.
+
+
+
+New in v6.2 (Released 29 Jun 2019)
+---NOTE--- This control has a number of keyboard shortcuts, please remember that
+           the ListView must have focus to use them... However, if the host form
+           has the same shortcut, the command will go to the form even if the
+           ListView is focused.
+
+-Added ExecFileSearch public method to execute a search without having to go
+ through the search box.
+
+-Status updates are now given during a file search with the current folder which
+ is being searched.
+
+-Added optional Destroy flag for SetPreviewPictureWith____ functions.
+
+-Added option PreviewVideoAsThumb, which forces videos to display a thumbnail as
+ its preview in the Preview Pane, instead of loading the regular preview handler,
+ which typically loads an instance of a video player to play the first few seconds;
+ this might be slow, and a static image might be preferable. Off by default.
+
+-The Search Box toggle will no longer appear on the View menu if the control is in
+ Files Only or Drives Only mode.
+
+-Handling for WM_UNICHAR/WM_IME_CHAR
+
+-By request, SetFocusOnFiles now has an optional parameter that will set focus to the
+ first item if no item was previously focused, and a second option to specify if that
+ first item must be a file and not a folder.
+
+-(Bug fix) If the shell context menu was disabled, it would also prevent the View menu
+           from popping up on a background click even if it was enabled.
+
+-(Bug fix) FilterBarApplyManually was not working.
+
+-(Bug fix) In Thumbnail View, the thumbnail for the first file loaded in a folder
+           was not being generated in some circumstances (it fell back to the normal
+           file type icon).
+
+-(Bug fix) With previews, there may have been a memory leak due to not freeing a
+           pointer to GlobalAlloc memory before reassigning it or exiting app.
+           Potentially related to mysterious crashes as well.
+
+-(Bug fix) If you enabled one of the control box items while the control box was
+           disabled, it would show the control box anyway, and in the wrong spot to
+           compound the problem. Now, enabling a control box item won't show the
+           control box, but the setting change is made and will be reflected if you
+           re-enable the control box.
+
+-(Bug fix) Pressing the Alt key while the host form has focus, then setting focus
+           onto the control, resulted in it being like the Alt key was held, leading
+           unintentional commands being performed.
+
+-(Bug fix) Under some particular Windows 10 versions and/or circumstances, the ComboBox
+           would not stay down. To prevent this, in CBWndProc I added a sanity check to
+           block a closeup if the box had been opened in the previous 10ms (i.e. much
+           faster than a human could be doing it). This doesn't seem to cause any issues
+           but if it does let me know.
+
+
+
+
+New in v6.1 (Released 23 May 2019)
+-Substantially improved virtual device navigation on Windows 10. Up and Refresh
+ should always work, Back/Forward should normally work, and infotips now work (on
+ files only, folders apparently do not support them).
+
+-The graphical percent free progress bar (if enabled) is now auto-added wherever
+ it's likely to appear, instead of just Computer, since it also appears in attached
+ devices like phones showing their internal storage. This is done by checking if it
+ also has a Free Space column, I don't think that would appear without the other.
+
+-(Bug fix) IsIDE was accidentally being called from the demo module, so an error
+           occured in a project without it. It's now been added to the .ctl.
+
+-(Bug fix) The Forward button was not disabled if you created a new end of the
+           history list by going back then going to a new location.
+
+
+
+
+New in v6.0 (Released 19 May 2019)
+-Added an optional Search Box to the control box. You can type in a search string,
+ press enter, and it will search the current folder and its subfolders, then use
+ the Custom File Set functionality to display the results. Includes Enable prop
+ to control whether it appears on the View menu, and Ctrl+F keyboard shortcut to
+ set focus on it if present.
+ Note: Running a search will replace any existing custom file set you previously
+       loaded; the search counts as a custom set and currently only one custom set
+       is supported. ****NO LONGER APPLICABLE AS OF V6.3****
+
+-Main control border styles now include non-standard Thick/Thicker (resizable)
+ options like the ListView border styles. These will only show during runtime.
+
+-If loading a folder failed, an empty directory would be brought up, and if the
+ failure was from a now-deleted item from the dropdown, that would change as well
+ Now, the browser will display an error and remain in the current location if
+ nothing is going to be loaded.
+
+-Debug logging to a file has now been implemented. This most importantly allows
+ complete logging from a compiled .exe. See the User Consts section below this
+ changelog to enable/disable it and set some configuration options for it.
+ Also, the sample logger included, cLog.cls, did not support Unicode. Unicode is
+ now supported for both the file name and the contents.
+ The log can also be activated/deactivated at runtime using the .LogActive property.
+
+-(Bug fix) SetFocusOnFiles/SetFocusOnDropdown were having focus invisibly taken
+           by something; all visual indicators showed proper focus but keypress
+           would move focus to other controls. Fixed by setting an API timer to
+           execute the focus change after a 10ms delay.
+
+-(Bug fix) When using the control with another ucShellBrowse control or with a
+           ucShellTree control, an external variable had to be used to prevent
+           an infinite loop of directory change notifications and reloading; this
+           was due to a failure to implement a sanity check in .BrowserPath to
+           not proceed if NewPath=CurrentPath.
+
+-(Bug fix) A debug call on ShowShellContextMenu that shouldn't have had any effect
+           was actually causing a number of problems with icons and submenus.
+
+-(Bug fix) When compiled with the manifest from the included resource files on
+           certain versions of Windows 10, the exe would not run because the
+           manifest file was not a multiple of 4 bytes.
+
+-(Bug fix) A while back, the UserControl_Show code was moved to pvCreate and then
+           called from the UserControl_ReadProperties method. This created an issue
+           where RaiseEvent did not work from pvCreate or UserControl_Initialize,
+           most critically preventing startup debug messages from being logged in
+           the compiled .exe. The new internal logger described above corrects this.
+
+-(Bug fix) On Windows 10, navigation into certain virtual objects was limited to
+ (Partial) the first level due to different behavior of some shell interfaces;
+           a workaround was added by storing certain pidls at module level.
+           Back, forward, up, refresh, and history are all effected by this issue
+           as well, and I haven't been able to come up with an effective workaround.
+           Straight-ahead navigation is working, but Back/Fwd/Up/Rfr/Hist rarely
+           will work. Will have to write whole new navigation system.
+
+-(Control) Manually destroyed additional API windows and freed resources in the
+           Terminate event in an effort to prevent memory leakage.
+
+-(Known Issue) When you add a new instance of the control, the 'Status' text of the
+               statusbar may appear up top, but it appears normally when you run the
+               program, or close/reopen the form, and then is permanently correct.
+
+
+
+
+New in v5.3 (Released 08 Mar 2019)
+-There is now a Forward button in addition to the Back button. The 'BackButton'
+ option has been replaced with the 'NavigationButtons' option, which provides the
+ same options; hidden, standard buttons, or themed buttons.
+ Additionally, right-clicking either of the buttons will display the history as a
+ menu where you can pick any item to navigate to (current location is in bold).
+
+-The themed back (and now forward) button now have the option to be placed in the
+ control box immediately to the right of the combo.
+
+-Thumbnails can now be generated on demand the first time they're requested, so
+ the control isn't slowed down creating off-screen thumbsnails. This behavior is
+ controlled through the new ThumbnailPreload option which you can set to True if
+ you still want to generate them all in advance (it's False by default).
+
+-Added the following keyboard shortcuts:
+   Alt+Left - Navigate back
+   Alt+Right - Navigate forward
+   Alt+Up - Open parent (Backspace key also does this)
+   Alt+D - Set focus on directory dropdown
+   Alt+P - Toggle Preview Pane
+   Ctrl+Shift+N - Create new folder
+   Ctrl+Y/Ctl+Z - Redo/Undo. Suppose to call Explorer's undo, but I'm getting an error when
+                  reading the Undo verb off the context menu; leaving this in because
+                  it might just be my system, but I can't guarantee this will work.
+
+-Added Public methods for navigation: NavGoBack, NavGoForward, and NavOpenParent.
+
+-Navigation, i.e. .BrowserPath and the Dropdown edit box, will now also open
+ environmental variable shortcuts, e.g. %windir% will open C:\Windows (or whatever
+ your Windows folder is). Must include the % on both sides.
+
+-Added PreDirectoryChange event that fires before the new location is enumerated.
+ Includes fCancel option to block the switch.
+
+-Added SelectionCleared event. The normal SelectionChanged now also fires with empty
+ variables and null shellitem.
+
+-Added SetFocusOnFiles and SetFocusOnDropdown methods for when items are selected but
+ out of focus and you want to restore an active selection state again.
+
+-Added BorderStyleControl option to place a border around the entire control; the
+ BorderStyle property is just for the file view.
+
+-Added an UpButton option to set whether that button is visible in the control box or
+ not. This is the only button that wasn't optional; now that they are all, if you don't
+ want any of them visible, please use the ListControlBox setting to hide the box itself
+ instead of leaving it enabled but with zero items.
+
+-Added a few more Property Gets for control component hWnds.
+
+-There is now a StatusBarHeight property. The default is set at runtime so it can be
+ scaled for DPI, so because of this the property won't be shown in the Design-Time
+ property browser; nor is it in the PropertyBag for saving. The new property is just
+ there in case of a rare circumstance where you might want to adjust it manually (this
+ is not recommended without good cause).
+
+-The width and height the Back/Forward Theme Buttons are drawn at is now set by using
+ GetThemeMetric, instead of the fixed Win7 value of 30, in case other Windows versions
+ use different sizes-- eliminating potential degraded quality of an incorrectly scaled
+ image size. 30 is still the fallback value if the API fails.
+ Note: The value returned is already DPI-scaled, so scaling factors on the button offset
+       variables were removed; please note if there's ever incorrect sizing/positioning.
+
+-An ItemFilterFolder property and FilterFolder event were added to allow for an identical
+ filtering setup to ItemFilter/FilterFile which applies to folders.
+
+-Added HeaderHotTracking property that toggles mouseover highlighting of the ListView's
+ Column Headers when Common Controls 6.0 are not loaded. If CC6 are loaded then there is
+ always mouseover highlighting.
+
+-Added code option bDisableProgressItems to disable drawing progress bars as ListView
+ subitems. This is set below this comment area in the 'User Consts' code block.
+-Added code option bStatusBarInheritCtlBkColor; only applies without ComCtl6.
+
+-Adjusted the height of the Control Box buttons to better fit with the Navigation Theme
+ Buttons, and the ComboBox when at high DPI. Allows better quality images as well.
+ Note: At this time, the images on the Navigation Buttons when they're standard buttons
+       instead of themed are not scaled, so if you're on a scaled high-DPI monitor it's
+       advisable to always use one of the Theme Button options.
+
+-A number of potential memory leaks on unload have been addressed by thoroughly expanding
+ the references released and handles destroyed when the control terminates.
+
+-(Bug fix) Overlay icons were missing in Thumbnail View when ComCtl6 was enabled.
+
+-(Bug fix) The Windows lock overlay icon triggered an error when being copied, when
+           in Thumbnail View, that would stop the file enumeration at that point.
+           In other modes, a different overlay is shown, there's no known fix for this.
+
+-(Bug fix) Some FileDragDropMode options were only applied if set at runtime.
+
+-(Bug fix) When changing the Back Button (now NavigationButtons) style, the themed
+           buttons were sometimes not redrawn right away, especially at design time.
+
+-(Bug fix) The CBES_EX_TEXTENDELLIPSIS Combo style was causing repaint issues where the
+           combobox would disappear until mouseover/resize. Applying it after the call
+           to CreateWindowEx instead of in it fixed the issue without removing the style.
+
+-(Bug fix) The StatusBar height is now adjusted for DPI; previously the bottom of letters
+           might have been cut off depending on the font.
+
+-(Bug fix) If the NavigationButtons were set to ThemeButtons and the control was in DirOnly
+           or DrivesOnly mode, artifacts of the buttons were visible behind the dropdown as
+           these buttons were still being mistakenly drawn.
+
+-(Bug fix) The ComboCanEdit property introduced in the last version couldn't be changed
+           from the default because the Property Let didn't actually change the variable.
+
+-(Source Code) All Enums have been case-locked. Previously only some were.
+
+-(Source Code) Consolidated all English-language strings to module-level consts in the User
+               Options below this changelog, so that it's much easier to localize into a
+               different language. All English-language strings are now either in that group
+               or in the QueryMenuTip function.
+
+
+
+New in v5.2 (Released 06 Feb 2019)
+-Added ComboType option to make the directory dropdown appear as the DropdownList
+ style instead or, if in DrivesOnly or DirOnly mode, a simple combobox.
+
+-Added ComboCanEdit option, which allows (except in ComboType=DropdownList) you to
+ edit the combo text. Double-clicking will set it to the full path of the current
+ folder, and pressing enter will navigate to the given location- specify a full path
+ or the name of a folder in the currently displayed location.
+ This is accompanied by the ValidateTextNav event, if you wanted to set shortcuts
+ or otherwise adjust/replace the text entered into the box when enter is pressed.
+
+-Added FilterBar option to show filter bars in the column headers. The filter is
+ matched by default as follows: If a wildcard (*) is present, the comparison uses
+ VB's Like statement; otherwise, it's matched char by char from the left, e.g. ab
+ would match abc.txt, but not cabc.txt.
+--FilterCaseSensitive option was also added to control case sensitivity for the filter.
+--Event FilterBarOverride was added to allow for custom handling/more complex filters.
+  The filter text, column text, and filename are provided. Set fShow to 1 for a match,
+  0 for no match, and do not set it at all if you are not using this feature.
+--This feature is compatible with Group View: If Group View is not enabled, it creates
+  a single group with the matches. If Group View is enabled, it simply removes items
+  that don't match from their groups.
+--Also included is the FilterBarApplyManually public sub, so that a filter bar action
+  can be executed without even having to enable the filter bar.
+
+-Added HeaderInAllViews option, which if enabled shows column headers in the other
+ view modes besides Details. The FilterBar can be used in this scenario.
+
+-The Details list of all properties to show (Column menu->More...) can now be moved
+ around and resized.
+
+-Default column width is now pegged to m_ScaleX (DPI zoom).
+-Folder dropdown height is now pegged to m_ScaleY.
+
+-Made various positioning updates to Details Pane.
+
+-Added rudimentry support for thumbnails without Common Controls 6. The images won't
+ appear nearly as nice, as semi-transparent pixels stay black, but fully transparent
+ pixels use masking to change them to the background color.
+
+-It is now possible to switch view modes at runtime without Common Controls 6. This
+ isn't possible by default, so the entire ListView is destroyed and recreated in the
+ new view. Details are still supported, but tile view, content view, and group view
+ modes are still all unavailable.
+--Unsupported modes are no longer shown on the View Menu, and automatically switched
+  to Large Icon view if set during design-time.
+
+-(Bug fix) If the control was on a secondary form, unloading that form did not unload
+           the control, and it stayed loaded in the background until the whole program
+           ended. Thanks to dz32 and Eduardo- for figuring out the solution.
+
+-(Bug fix) Ratings stars were not rendering if the ListView was scrolled horizontally.
+
+-(Bug fix) The global variable containing the current path was updated in .BrowserPath
+           before the location was validated; this could lead to various problems with
+           interacting with files in the current view after entering an invalid path.
+
+-(Bug fix) The Details Pane and Preview Pane were still visible if enabled when the
+           control type lacked a file view (DirOnly/DrivesOnly).
+
+**NOTE** This control is nearing feature-complete. I expect the next update will be to
+         finalize things; massively clean up the code, remove all unused methods, pare
+         down debug output and switch off by default...
+         SO... If there's any features you'd like to see in this control, or ucShellTree
+         which will be finalized at the same time... now would be a great time to drop by
+         the thread or e-mail me!
+
+
+
+New in v5.12 (Released 11 Jan 2019)
+-Added FilesOnly property to hide folders in the main ListView.
+
+-Added FilterFile event to query whether or not to show a file, in case you want to
+ use criteria more complex than ItemFilter allows. If you respond to this event it
+ will override ItemFilter as well.
+
+-Progress bars in Computer now use blue instead of green.
+
+(Bug fix) Progress bars in Computer for Tile View mode were only showing if Tile View
+          was switched on while in the folder. And after that, navigating away then
+          back also did not redraw correctly.
+
+(Bug fix) When the control was in DrivesOnly mode, a call to BrowserPath with a full
+          subfolder directory would open to that path, adding the folders when they
+          should not have been.
+
+(Bug fix) With certain configurations, a very odd bug was that changing the dropdown
+          loaded the correct folder but the selection displayed in the combobox
+          somehow changed back, without any code doing it, and clicking again changed
+          it normally. A check was added to detect when this occurs and force the
+          correct item to be displayed on the first click.
+
+
+
+New in v5.11 (Released 23 Dec 2018)
+-Added option FollowLinks to open links to folders in the control instead of treating
+shortcuts as normal files.
+
+-Ctrl+Shift+P on the file view will bring up version information.
+
+
+
+New in v5.1 (Released 13 Dec 2018)
+-For high-DPI scaling, the control will now attempt to load the Control Box icons
+ from the resource file, which contains icons with multiple resolutions for scale.
+
+-The menu icons, when available in the resource file, now also scale to DPI. The
+ backup icons from picture boxes remain available for projects without the .res
+--Additionally, numerous positioning adjustments were made to make item positions
+  consistent with the standard appearance when running in high DPI.
+
+-In the Computer folder, the Percent Full (Space Used) is now displayed as a
+ progress bar like in Explorer instead of just the number. Details View, Tile View,
+ and Contents View are supported.
+
+-In Details View, the column set will be remembered when the folder is refreshed
+ or navigated to again after leaving.
+
+-Added option to use an Explorer-style round back button on the left of the combo,
+ or a new option to hide the back button entirely (Backbutton Property).
+
+-Added FileGetProperty function to retrieve properties.
+
+-Added HeaderNoSizing option to prevent header resize.
+
+-Added ControlBackColor option.
+
+-When Checkbox mode is enabled, a checkbox now appears in the 'Name' column
+ header that allows you to check/uncheck all items.
+
+-Changes to the Control Box are applied during design-time as well.
+
+-Added SortItems event with column, direction, and property sorted by.
+
+-Added HighlightColumn[ByProperty] methods to change the background of a given column;
+ the above SortItems event was added with highlighting the sort column in mind, but
+ it can be used in any other way as well. NOTE: This uses undocumented interfaces and
+ calls; it was working on Win7-10 as of release but be wary of future issues.
+
+-The main Libraries folder is now expanded by default in the directory dropdown.
+
+-Added EnableShellMenu option to control whether the right-click Explorer context menu shows.
+
+-The ListView border style can now be immediately changed during both design-time and runtime.
+
+-Added FoldersOnly option that controls whether files are listed in the main view area, as
+ opposed to the dropdown (this option does not effect the dropdown).
+
+-In the Details Pane, fields that can be edited are now highlighted with a border during
+ mouseover (and while editing).
+
+-(Design mode) Control Type changes are now applied in design time without close/reopen.
+               But it is not possible to change the control type at runtime.
+
+-(Bug fix) If the Bookmarks Button was enabled, but the View Button wasn't, the
+           Bookmark Button wasn't positioned right and would not show up.
+
+-(Bug fix) The Bookmarks Menu icons were not DPI scaled.
+
+-(Bug fix) The stars for the Rating column were mistakenly drawn after the column
+           was removed in a directory change.
+
+-(Bug fix) The status message containing the selection count, while in Checkbox
+           mode, was only updated after a normal select action instead of the
+           checkbox toggle.
+
+-(Bug fix) The AllowSorting option couldn't be turned off during runtime.
+
+-(Bug fix) When you double-click a folder, the '1 file selected' didn't clear after
+           the new location was opened, therefore incorrectly indicating that a file
+           was still selected.
+
+-(Bug fix) Checkboxes were being handled as if they were the selection; this was
+           causing issues with previews, details, and some other areas. 'Selected'
+           now always refers to just the highlight, and 'Checked' is an entirely
+           different thing.
+
+-(Bug fix) Some registered preview handlers fail to load. This situation is often
+           fixed by trying different arguments in CoCreateInstance; all 3 ways are
+           now attempted before giving up.
+
+
+
+v5 (Released 16 Nov 2018)
+-Can display a custom set of files from anywhere on the system. Call the method
+ CreateCustomFolder with a list of full paths and other options. Shell context
+ menus wont work with multiple files (will execute on focused item), but some
+ custom handlers have been added, and it works normally for a single file.
+ nIcon can be left as 0 for a standard folder icon, -1 for a search folder icon,
+ or any icon index in the system imagelist.
+
+-Control now fully supports high DPI scaling. This requires the dpiAware=True
+ value in the manifest. The default manifest, resImages.res, includes that
+ setting, but if you want to disable it, resImages-NoDpiAware.res is identical
+ except for that setting, and can be readily swapped into this project instead.
+
+-If the Rating column is loaded in Details View, either as a default column
+ or selected from the column list, the rating will now appear as a series of
+ stars that you can manipulate just like Explorer. Fully supports groups.
+ NOTE: This requires the PNG_RT* images in the resource file.
+
+-Additional checks were added before renaming files. This catches errors not
+ caught by watching keys, like reserved filenames, invalid filenames made of
+ valid characters, and overall path being too long.
+
+-Some virtual folders, like Network Connections for example, have a custom set of
+ columns that are not part of the regular property system, so previously could
+ not be loaded. Theyre now viewable through some custom handling.
+ This routine also exposes custom columns in virtual folders like Network where
+ prior versions could only show the columns that were standard.
+
+-Added a Special folders submenu on the Bookmarks menu containing a number of
+ common special folders. You can adjust/add/remove the ones you want in the
+ GenerateSpecialFolderMenu/GetSpecialFolderMenuItem methods. Virtual folders are
+ supported.
+
+-Added the Bookmarks menu to the View Menu when showed from a folder background
+ right click. This is still controlled by the Bookmark Button property, so the
+ submenu is only added if the button is (or would be) visible. This allows the use
+ of bookmarks without the List Control Box or in Files Only Mode.
+
+-The font for the ListView/Combo/Status can now be changed. (Borrowed from Krools
+ ListView. Thanks!)
+
+-Added CustomColor event, which allows you to set a custom font color and background
+ color on an individual item and subitem basis. The file index and file name are sent,
+ along with the column index and the system name of the property its displaying --
+ e.g. if the 1st column after the name is size, SubItemIndex=1 and SubItemProp="System.Size"
+
+-Better support for drag-out of virtual objects that can have shortcuts created.
+
+-Added property to control whether sorting is allowed or not.
+
+-Added option to disable Wow64 file system redirection.
+
+-Added ExplorerStyle option to toggle visual styles (defaults to Explorer Theme)
+
+-Added SnapToGrid option. This only applies in icon / small icon / tile views.
+
+-Added HeaderDragDrop option.
+
+-Added TrackSelect option (the selected item follows the mouse pointer).
+
+-Added BorderStyle select with None, Standard, Thick, and Thicker options for the LV.
+
+-Added property SelectedColumn (for runtime only, wont appear in Properties design box).
+
+-Added additional methods to get file info: FileCount, FolderCount, FilePathFromPos and
+ FileItemFromPos (which returns a files IShellItem).
+
+-You can now set a background image for the file browser ListView. There are 3 sources
+ supported: A normal VB picture you can set in the UserControl Properties box, a Sub
+ to directly pass an HBITMAP, and a Sub to pass a URL.
+ PictureAlignment and PictureWatermark options are present and apply to all three image
+ sources. Special thanks to Krool, the Picture option was adapted from his ListView
+
+-Added BackColor property, added ForeColor property for the main item text, and also
+ ForeColorSubitem for the subitems when using Details View (Report Mode).
+
+-Added experimental Extended Tiles view mode. The layout is similar to Explorers Content
+ view, but I dont know how to use columns other than the ones that Detail View had.
+ This option is disabled by default. If you want to try it, go down to the User Consts section
+ immediately after these comments and change bHideContentViewMenuItem to True.
+
+-Added Enabled option to enable/disable everything on the control.
+
+-Groups can now be subsetted: Only a certain number of items are shown with a link at the
+ bottom to show more. Set the count with GroupSubsetCount and the text of the link with
+ GroupSubsetLinkText. It defaults to no subsetting and theres default text of "Show more items"
+
+-Groups are now collapsible. Added GroupStartCollapsed option to set them collapsed by default.
+
+-Misc. adjustments to the Details Pane layout to support different DPI scaling and make better
+ use of the space to avoid unneeded truncations.
+
+-When you click on a text field you can edit in the Details Pane, the textbox background will now
+ turn white like it does in Explorer, and back to transparent when out of focus. This is to make
+ it more clear that an edit is in progress.
+
+-Checkboxes can now be toggled during runtime, and theres a FileCheck event when checked/unchecked.
+ Also, added FilesChecked() method to get list of checked items, FileGetCheck and FileSetCheck to
+ toggle checkmarks by name.
+
+-(Bug fix) View Menu and Bookmarks Menu did not work on Windows 10 due to missing FOLDERID_ values.
+
+-(Bug fix) Some internal file data was not being updated after a rename, which
+           caused failures in the shell context menu commands.
+
+-(Bug fix) There were a number of circumstances where actions on virtual objects,
+           usually in virtual folders, failed. Most of these have been corrected
+           thanks to the methods developed for the virtual folder custom colsets.
+
+-(Bug fix) New folder and Paste commands are now disabled in the menu when in
+           folders where they will not work.
+
+-(Bug fix) Corrected some spacing issues in the Details Pane when DPI scaling is on.
+
+-(Bug fix) In Files Only mode, the ListControlBox would slight reappear if the control
+           was resized to a small width then resized back. This was related to the
+           feature to auto-hide it; the control didnt check the mode so always restored.
+
+-(Bug fix) If the UserControl was not placed in the top left of the form, the column
+           select popup would appear in the wrong place. The reason was that the only
+           way I could get it to appear on top of everything was to set its parent
+           as UserControl.ContainerHwnd; no other method including SWP HWND_TOP worked.
+           So it was being placed relative to the form, instead of to the UC. Fixed.
+
+-(Bug fix) Some virtual locations, like Network Connections, were not showing the help text
+           (for the status bar) with the right-click menu; these folders seem to not support
+           the IContextMenu2 interface that was used. But the text only needs the base
+           IContextMenu, so that was made into a module-level var as well used in 2s place.
+
+-(Bug fix) When Group Mode was active and the folder changed, sometimes the group item count
+           was not updated or displayed the wrong number.
+-----------
+
+
+
+v4 Rev 2 (Released 22 Jul 2018)
+
+-Added support for Recent Places
+
+-The browser can handle the Recycle Bin just fine, including loading its default
+ columns (Deleted On, Original Location), so the directory dropdown now shows it.
+ An unavoidable side effect is also showing the Control Panel, but that just shows
+ a couple applets when opened, and those just lead to an empty folder message; so
+ no errors can happen from this change.
+
+-Added hWndUserControl property get.
+
+-The Details Pane now supports viewing icon and information while browsing in zips.
+
+-(Bug fix) Dropdown was not changing
+
+
+
+v4 Rev 1 (Released 24 Apr 2018)
+
+(Code/Control) The reference to Windows Common Controls 6.0 (MSCOMCTL.OCX) has been
+               removed. They were used for the StatusBar and Column Selection list;
+               these are now created entirely with API. This leaves oleexp as the
+               only outside dependency.
+
+-Removed delays when selecting/deselecting large numbers of items. Each change was
+ being rendered to the Details Pane, which could cause several seconds of visible
+ refreshing. Now, when an item changes, a timer is set, so that any more items
+ selected in the next few milliseconds is included in a single update. See the
+ nSelUpdateMillisecs constant in the section below these comments to adjust.
+
+-When a new folder is loaded, focus is now automatically set to the files list.
+
+-Added option to hide labels (file names). This doesnt impact any operations, just
+ display. Useful for e.g. just showing thumbnails without filenames in the way.
+
+(Bug fix) Rename-in-place did not support renaming files with extended Unicode
+          characters; after also adding support to valid name checking from paste
+          and several more issues, its now fully supported-- you can rename and
+          type, paste, delete, etc, with the full set of characters.
+
+(Bug fix) When Details Pane fields were saved, Unicode characters were replaced with
+          question marks. This effects v4 but not v3/v2.
+
+(Bug fix) Sometimes when files are pasted, if they have a custom icon (like a .exe
+          or .ico), only the generic file icon was shown.
+
+
+
+v4 (Released 13 Apr 2018)
+(Code/Control) mSBSubclass is no longer needed. All subclassing/callbacks are now
+               done with Paul Caton/LaVolpes Self-Subclass/Callback code.
+               Special thanks to LaVolpe and Victor Bravo VI for helping me on that.
+
+-A footer control can now be added to the view. Be advised this is done
+ using undocumented interfaces and messages; it works as of the latest
+ version of Windows 10 at the time of this release, and back to Vista.
+
+ The calls are FooterCreate, FooterAddButton (to add another one after the initial
+ set), FooterClearButtons (not possible to remove a single one), and FooterRemove.
+ Its recommended to use the lParam to store a unique identifier, but both that and
+ the button index are passed in the FooterButtonClick event thats raised on click.
+ The number of buttons is limited only by practical space.
+
+ You have two options for footer icons:
+ 1) Create an API ImageList (or IImageList then ObjPtr() to it), and pass an array of
+    Long with the index for each item as the tButtonIcons argument.
+ 2) If you have a resource file, add the .ico files to it as a CUSTOM resource, with
+    a name in quotations, e.g. "ICO_FOOTER1". The icons can be 32bit alpha icons or any
+    other ICO file type. The control will then create the ImageList itsself... pass 0&
+    as the value of hImageList, then pass a String array with the resource name for each
+    item as the argument for tButtonIcons.
+ See the Demo project for code showing both approaches.
+
+-Hovering over an item now shows an InfoTip like Explorer; a multiline tooltip with the
+ full file name (only if the label is truncated), then several properties depending on
+ file type and whether the property is blank or not.
+
+-The columns are more like Explorer several ways; in special folders, like Computer,
+ Fonts, and Network, only the limited cols that are shown in Explorer are listed (and are
+ added to the right-click column menu if theres only a few of them). Columns added
+ recently are now listed (if available in the current folder).
+
+-Theres a resource file in the ucShellBrowse folder, resImages.res, that you can add
+ to the control or to a project with the CTL (the Demo has it now) to make the icons
+ on the View menu transparent, and add a few more icons. There was no way to do this
+ without an extra file. If you do not add the resource file, the old icons with the
+ slightly off-color background are still present and are loaded instead. You can also
+ use this resource file to add icons for the footer (see above).
+
+-Additional options have been added to give you more control over the runtime:
+  EnablePreview - Show/hide Preview Pane from the View menu (keeps it locked to design
+                   time setting)
+  EnableDetails - Same for Details Pane
+  EnableViewMenu - Toggles whether the View menu pops up for LV background right-click
+  LockView - Keeps the design-time view (Details, Large Icons, etc) by hiding menu options
+  HideColumnHeader - Show/hide the column header in Details view.
+  MinDroppedWidth - Set a minimum width for the ComboBox; useful for simple modes.
+-Properties to get the major control hWnds also added: hWndCombo and hWndListView
+
+-Previews are now centered in the frame instead of in the top left
+
+-You can now manually set an image in the Preview Pane, theres subs SetPreviewPicture
+ and then StdPic, hBitmap, and hIcon.
+
+-The width of the preview pane, and height of the details pane, now have a get/let
+
+-Tile View now shows 3 details instead of 2; type, size, and date modified
+ property. The preview height/detail width are Get only; adjust the control itself
+ to change the other dimension.
+
+-The column menu popup (when right-clicking the column header), recently used columns
+ that have been removed are now listed.
+
+-The Status Bar now shows the number of files that are selected.
+
+-On the Details Pane, properties cant be edited on a read-only file even if the prop is
+ normally able to be edited-- in this situation empty properties are no longer displayed.
+
+-The items listed in the columns checklist included many that were unsupported in Explorer;
+ theyre now limited to supported columns (i.e. the same set you see in Explorer).
+
+-For the More... columns popup frame, it now increases in height if the main ListView
+ height is large enough. Also, its no longer clipped by the UserControl being shrunk while
+ its visible, it will be on top of the host form (and will be clipped by total form height).
+
+-Added shortcut to de-select all items when Escape is pressed (and ListView has focus).
+
+-Alt+Enter on the ListView will now display properties of the selected items (or the current
+ folder if nothing is selected).
+
+-Shift+Delete has been added as a shortcut to permanently delete files (no Recycle Bin).
+
+-Added event for debug message; logging to file will not be added to this control, so
+ this allows for it to be implemented by the host project.
+
+-Back button is now disabled when theres no further previous locations.
+
+-The Up button is now disabled when the root is reached (Desktop, or Computer if
+ using the ComputerAsRoot option).
+
+-Extended columns that are dates or numbers are now sorted as such (instead of plain text),
+ however the number sorting is currently imperfect as it takes the Val() of the text, in
+ the future this will be changed to compare the raw numbers (not easy to set up).
+
+-Added StatusSinglePanel option to only show the first panel of the StatusBar; mainly for
+ when the control width is small.
+
+(Bug fix) If the Details Pane was turned on via code at runtime, it came up blank until
+          something was clicked. Now, it renders the background view (folder icon+count)
+
+(Bug fix) In Tile View mode, if a new file is created and added (i.e. not part of the
+          list when tile view was activated), including switching dirs, the extra lines
+          were not displayed.
+
+(Bug fix) When new items are added via shell notify, details (column subitems) were not
+          loaded, despite the fact the normal property enumerator function was called. This
+          was fixed, oddly enough, by simply calling it twice.
+
+(Bug fix) For some reason, if a button in the control box had focus when a new folder was
+          created, all keys went to the name label... *except* enter... so youd type a new
+          name, hit enter, then the View menu would pop up, or the control would navigate to
+          Up or Back. The new name was still applied when the label edit ended.
+
+(Bug fix) Sort Ascending/Sort Descending menu options on the view menu had not yet been
+          implemented (though clicking the column to change sort direction was).
+
+(Bug fix) The initial ViewMode property was stuck on 1 - Details due to that mode entirely
+          breaking if column initialization didnt run while it was on. I dont understand
+          why the behavior is different versus loading a new directory while in non-details
+          mode, and havent been able to identify a direct fix, so it was locked. But this
+          version adds an indirect workaround-- temporarily switching to Details, running the
+          default column init, then switching back before items are added; allowing it to
+          work as expected. All View Modes, including Tile and Thumbnail, can now be chosen
+          as the initial view, without breaking the display of any other mode switched into
+          during runtime.
+
+(Bug fix) When Keep same columns option was enabled, only columns present when enabled would
+          be remembered, forgetting any columns added to the current view afterwards. Now, the
+          current column set is retained as displayed at the time of the switch.
+
+(Bug fix) When adding additional columns from the checklist, if more than one was selected, only
+          one of the details would be filled in until the folder was refreshed or changed.
+
+(Bug fix) On the Details Pane, the mouse cursor no longer changes when over properties that cant
+          be modified. The text box was still read-only, but this clears up the visual confusion.
+
+(Bug fix) Computer As Root mode still loaded the Desktop when you clicked Computer in the combo.
+
+(Bug fix) Sorting by date accessed or date created wasnt working.
+
+(Bug fix) Sorting by extended columns required 2 clicks because the column index lagged one behind.
+
+(Bug fix) File name colors (blue for compressed, green for encrypted) stopped working sometime
+          between version 1 and this one.
+
+(Bug fix) Renaming files in response to shell notifications deleted and re-added, resulting in the
+          property fields turning blank. Now theres a proper rename that just updates the item, so
+          the properties stay filled.
+
+(Bug fix) The control uses a few common types, like RECT, POINT, and SIZE, that are defined in
+ (code)   oleexp.tlb. If these were publicly defined in your project, the priority would be higher
+          and youd get Type Mismatch errors. The generic types have been explicitly changed to
+          As oleexp.RECT etc. A private type wouldnt have worked without more trouble; cant
+          pass them to tlb interfaces. Less common types and APIs were also preemptively changed
+          to explicit calls just to prevent potential conflicts; e.g. API is different or takes
+          an oleexp type; these would error if conflicted with a Public Declare.
+
+(Bug fix) Setting the mode to Files Only then changing it back to Dir+Files caused ListControlBox
+          to get switched off and stick a little.
+
+(Bug fix) In Dir Only or Drives Only mode, there was an artifact from the Status Bar if it was enabled,
+          and since thats the default, its now hidden in those modes regardless of ShowStatusBar.
+
+(Bug fix) In Files Only mode, the top of the ListView was not the top of the control, resulting in the
+          status bar being overlapped if it was visible, and the blank space at the top of the control.
+
+
+
+v3 (Released 22 Mar 2018)
+NOTE: If you had moved the functions from mSBSubclass, be advised this version adds
+      one more wndproc, DthWndProc.
+-Added an optional Bookmarks button in the control box (hidden by default). Note that
+ the entries are stored in the system registry, under ucShellBrowse (UserControl.Name)
+ in the VB programs section. See the variable in the section just below this readme to
+ set the max number of entries (initial default = 48)
+-Alternate modes for ControlType are now available; control can be Directory Only,
+ Drives Only, or Files Only, showing only the combo or ListView, in addition to the
+ normal mode of dir+files with both controls.
+-Added option to select files by using checkboxes (off by default).
+-Detail Pane can now be sized with a bar; this also includes correctly scaling
+ the icons. The height is 70 by default.
+-The Preview Pane now also uses a resize bar.
+-The Lock Width|Height menus for the panes are still present, and now serve to remove
+ the sizing bars. Both sizing bars are active by default.
+-Panes are now redrawn automatically when resized
+-Property columns on the Details Pane will now be widened if theres room.
+-Automatically make a single column match the listview width on startup
+-Added SelectedFile/SelectedFiles property get/let to retrieve just the filename, and
+ the let allows changing the selected item(s) to the given name(s)
+ NOTE: Since Property Lets cannot accept an array directly, SelectedFiles uses a
+       Variant to hold the (string) array (applies to the Get as well since they must
+       use the same type).
+-Added some additional UserControl event forwards (mouse actions, these only apply to
+ the small background areas of the UC, not the controls on it)
+-Added ItemAdded/ItemRemoved event for changes in the currently displayed folder (does
+ not fire during the location changing)
+-Added FileDetailsWrite event for when file metadata is written from the Details Pane
+-Added StatusMessage event that fires when the control updates its status message
+-Added Files() and Folders() function to get a list of *all* files/folders instead of
+ just the selected ones, also FilesFullParsing/FoldersFullParsing to supply a list of
+ full paths/filenames with the absolute names (SIGDN_DESKTOPABSOLUTEPARSING). Whether
+ ZIP files are counted as files or folders is controlled by whether the BrowseZip option
+ is enabled or not-- if its treated as a folder its counted as one.
+-Added additional sizing restrictions to prevent elements from being sized to 0
+(Bug fix) The file name caption in the Details Pane used a standard label, so could
+          not display Unicode. It has been replaced with an API-created label to allow
+          tbat. Additionally, the label uses the system default caption font.
+(Bug fix) After dropping on a folder or zip file, the hilite didnt clear when
+          another item was clicked or it was deselected
+(Bug fix) Dropping on libraries wasnt working; now works for both background and
+          dynamic dragdrop
+(Bug fix) When on the Desktop, any file created/deleted anywhere was added/removed
+          from the list
+(Bug fix) The column right-click menu default properties (name,size,etc) were hard
+          coded instead of using the language of the system; now only the More..
+          item remains non-localized.
+(Bug fix) The Preview Pane may have overlapped the Details Pane when the height was
+          below a certain point.
+(Bug fix) When changing control properties in the IDE, the PreviewPane property would
+          get stuck in the True position.
+(Bug fix) When changing the ListControlBox property, the path combobox didnt adjust
+          to not overlap it. It now does in both design time and run time.
+
+
+v2 Rev1
+-Added ability to paste files from clipboard into current dir or highlighted
+ folder.
+-Added std keyboard shortcuts for up, paste, select all, delete, cut, and copy
+-Files cut with both the new shortcut and the normal context menu are now ghosted,
+ and automatically unghosted if still in the folder when new items are cut
+-Added event for ListView keydown, can optionally override shortcuts
+-Added option to use Computer folder as the root instead of Desktop
+
+
+
+v2 (Released 31 Jan 2018)
+-The Details Pane is now available. It displays what Explorer would. Editing
+ values is supported, now for all types (string, number, datetime, list) except
+ boolean, which does not appear to be used (if you find where it is, let me know)
+-Added active drag/drop: folders (and zip files) are highlighted as items are
+ dragged over them, and can be dropped on directly
+-Active drag/drop allows internal drag/drop as well
+-Added option to disable drag, drop, or both
+-Added option to browse inside zip/cab files (on by default)
+-Current folder is monitored for changes (new item, deletion, update). On by default
+-A splitter bar was impractically complex, but you can now have either the ListView
+ or the Preview frame size horizontally-- right click the "Preview" text in the frame
+ to set the Lock width option
+-If the control box is on (Back,Up,View) and the width gets so small the directory
+ dropdown would disappear, the control box is automatically switched off, then restored
+ when the width becomes wide enough again
+-Added option LockNavigation that prevents the user from changing directories. The path
+ can still be changed in code with .BrowserPath.
+(Bug fix) Switching from thumbnail view to other views resulted in loss of icons
+          and/or detail column text
+(Bug fix) Command box buttons were cut off in different DPI
+(Bug fix) Combo overlapped top of ListView with different DPI
+(Bug fix) Preview pane and ListView height for different DPI
+(Bug fix) View button icon was different in Win10; now just stored internally
+(Bug fix) Navigation couldnt handle certain functionality in the Fonts folder
+(Bug fix) Crash occured after mouseover of shell context menu seperators with id -1
+(Bug fix) Clicks/double clicks on statusbar were interpreted as clicks on the ListView,
+          click events changed to verify origin hWnd now
+(Bug fix) At certain control widths a background image holder control was mistakenly visible
+(Bug fix) If multiselect was enabled and your selection drag finished outside an item, item 0
+          was set as the focused item (main selection) even if it wasnt selected. If that
+          happens now, the first item in the multiselect group (or the real selected item when
+          its the only selected item) is reported as the single selection result
+(Bug fix) If you clicked on a control box button (Back,Up,View) then clicked on the ListView
+          again, keystrokes were sent to the buttons instead of the ListView
+==============================
+
+
+v1 (First CodeBank release - 08 Oct 2017)
+-Added support for advanced thumbnail view, using the code from the project
+ of the same name. This provides extensive features and fallbacks, including
+ thumbnails of videos, high-res file type icons, and placing images smaller
+ than the thumbnail size inside of a frame, using GDI+. Set the thumbnail
+ size with the ThumbnailSize property. Video (extended) thumbs can be toggled.
+ Thumbnail size can be arbitrary-- doesnt have to be a multiple of 16. It cant
+ be less than 16. The upper limit needs testing; higher than 256x256 is unadvised.
+-Added a Preview Pane option. This adds a frame to the right of the file view that
+ will show a preview of the currently selected file. Image files have theirs
+ manually generated, all other types use IPreviewHandler to load the custom
+ handler for that type (if one exists)
+-Added option for StatusBar, which shows menu tips and the number of files
+ and their total size. It loads some menu tips from the shell context menu.
+-Fixed shell context menu Open With submenu being empty; now filled and works
+-Added custom toolbox icon for ucShellBrowse (a folder)
+-Can get/set status text (first panel)
+-Revamped column display system to work like Explorer. Explorer is queried for
+ the default columns the first time a folder is opened, so for example when you
+ open Computer you see Name,Type,Capacity,FreeSpace instead of Size/DataMod,
+ since those are empty. If you browse to your Music library, the columns are
+ Album/Title/Artist/Track. From there columns are customized/remembered for the
+ current session. Also reduced column management complexity so its less prone
+ to errors happening with dupe columns or wrong/missing values.
+
+0.2 (Beta)
+-Added New Folder support, autostarts a rename like Explorer, and will
+ pick next name in sequence, New folder->New folder (2)->New Folder (n)
+-Group view doesnt disappear on change folder
+-Can rename when file extensions are hidden without losing extension
+-Rename from the shell context menu rename command now works
+-Added Properties to background menu (right click with no file sel)
+-Added option to always show extensions or use Explorer pref
+-Added FileClick, FileRename, and FileExecute (double click/enter) events
+-Added RefreshView function as View Menu entry and public method
+-BrowserPath will now manually navigate to the given location (must be folder)
+-Like in Explorer, encrypted files are shown in green, and compressed files
+ are shown in blue (added option to use Explorer pref or manual)
+-Fixed bug where loading a folder caused both this project and Explorer
+ itself to hang/crash when a rename was attempted.
+
+0.1 (Beta) - Initial test release for dev feedback

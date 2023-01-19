@@ -1,0 +1,4 @@
+[History]
+1=#P0#=mb	#P1#=PropFont_FontChanged	#P2#=Project1/ucShellBrowse/PropFont_FontChanged	#P3#=	#P4#=	#P5#=MembEventProcPrivate	#P6#=20210318044242	#P7#=0	#P8#=6	.
+2=#P0#=mb	#P1#=Font	#P2#=Project1/ucShellBrowse/Font [Set]	#P3#=	#P4#=	#P5#=MembPropertyPrivate	#P6#=20210318044053	#P7#=0	#P8#=29	.
+3=#P0#=mb	#P1#=CreateGDIFontFromOLEFont	#P2#=Project1/ucShellBrowse/CreateGDIFontFromOLEFont	#P3#=	#P4#=	#P5#=MembMethodPrivate	#P6#=20210318044012	#P7#=0	#P8#=3	.
