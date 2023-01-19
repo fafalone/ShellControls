@@ -11,7 +11,7 @@ See the original threads for a full list of all of the extensive features of the
 
 ### These are beta versions. 
 
-There's still some work to do in twinBASIC to complete user control support, but it's now far enough along even a massively complex control like ucShellBrowse can run. Notably, there's numerous issues with sizing and scaling. The demos included in this repository have worked around them as best I could.
+There's still some work to do in twinBASIC to complete user control support, but it's now far enough along even a massively complex control like ucShellBrowse can run. Notably, there's numerous issues with sizing and scaling. The demos included in this repository have worked around them as best I could. Also, I haven't exhaustively tested all features. Please don't hestitate to create an issue for any bugs you encounter.
 
 ### Using these controls in your project
 
