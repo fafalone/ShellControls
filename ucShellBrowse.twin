@@ -2472,7 +2472,7 @@ Private Const m_sVerbRedo As String = "redo" 'For Ctrl+Y redo
 '
 '=================================================================================
 '
-'---------------------------------------------------------------------------------                ' close for each entry to ensure file buffers flushed
+'---------------------------------------------------------------------------------
 #End Region
 
 #Region "APIDeclares"
@@ -9748,7 +9748,7 @@ Private Function HiWord(ByVal DWord As Long) As Integer
 HiWord = (DWord And &HFFFF0000) \ &H10000
 End Function
 
-Public Function LPWSTRtoStr(lPtr As LongPtr, Optional ByVal fFree As Boolean = True) As String
+Private Function LPWSTRtoStr(lPtr As LongPtr, Optional ByVal fFree As Boolean = True) As String
 SysReAllocString VarPtr(LPWSTRtoStr), lPtr
 If fFree Then
     Call CoTaskMemFree(lPtr)
