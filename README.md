@@ -22,7 +22,9 @@ The demos are all set to open and run, to set these up in your project:
 
 These projects use tbShellLib, the x64-compatible successor to oleexp.tlb written in twinBASIC. First add a reference to 'twinBASIC Shell Library' in Settings->COM Type Library / Active-X References by clicking TWINPACK PACKAGES and selecting it from the list, or manually downloading it from it's [repository](https://github.com/fafalone/tbShellLib).
 
-Then for ucShellTree, you need to import ucShellTree.twin and ucShellTree.tbcontrol. For ucShellBrowse, import ucShellBrowse.twin and ucShellBrowse.tbcontrol.
+ShellControls.twinpack contains both controls as a tB Package and can be added via the same references location (Import the file, it's not on the package server yet). This reference must come before WinNativeForms; tbShellLib must still be added. Note that packages are read-only when added to a project.
+
+As an alternative, to have them in an editable form, for ucShellTree, you need to import ucShellTree.twin and ucShellTree.tbcontrol. For ucShellBrowse, import ucShellBrowse.twin and ucShellBrowse.tbcontrol.
 
 ### The Demos
 
