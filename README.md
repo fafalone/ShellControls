@@ -15,6 +15,8 @@ There's still some work to do in twinBASIC to complete user control support, but
 
 ### Using these controls in your project
 
+**Requires [twinBASIC Beta 236](https://github.com/twinbasic/twinbasic/releases) or newer**
+
 The demos are all set to open and run, to set these up in your project:
 
 These projects use tbShellLib, the x64-compatible successor to oleexp.tlb written in twinBASIC. First add a reference to 'twinBASIC Shell Library' in Settings->COM Type Library / Active-X References by clicking TWINPACK PACKAGES and selecting it from the list, or manually downloading it from it's [repository](https://github.com/fafalone/tbShellLib).
