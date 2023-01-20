@@ -220,6 +220,9 @@ Private Const mVersionMnr = 3
 '
 '-IPAO hooking code integrated so as to not conflict with ucShellTree.
 '
+'-Navigation sound is disabled by default on Windows 10; it's now manually loaded
+' with a user option to disable this behavior.
+'
 'New in v11.3
 '
 '-Added option to apply filter to ComboBox; a FilterDropdown event has been
@@ -642,6 +645,7 @@ Private Const bShowLoadTimeAsStatus As Boolean = False 'Default: False. After lo
 Private Const bSoundNavigate As Boolean = True 'Provide more granular control for the PlaySounds option
 Private Const bSoundDefBeep As Boolean = True
 Private Const bSoundCritical As Boolean = True
+Private Const bNavSoundOverrideExplorer As Boolean = True 'Load the navigation sound even when disabled by default (i.e. Windows 10)
 Private Const nMaxFoldersInCustomSearchLabel As Long = 3& 'Default: 3. After a search, you can click to search again in Custom. It will display Search Results in Folder1, Folder2, nMaxFolders, ...
                                                           'Must be >0
 Private Const bInsertNewFilterMatches As Boolean = True 'Default: True. If an item in the current folder is renamed, and now matches the filter where it didn't before, add it as a new item.
@@ -6135,6 +6139,11 @@ Private Sub UserControl_Initialize() Handles UserControl.Initialize
     SND_NAVIGATESTART = GetRegistryValueW(HKEY_CURRENT_USER, "AppEvents\Schemes\Apps\Explorer\Navigating\.Current", "")
     SND_DEFAULTBEEP = GetRegistryValueW(HKEY_CURRENT_USER, "AppEvents\Schemes\Apps\.Default\.Default\.Current", "")
     SND_CRITICAL = GetRegistryValueW(HKEY_CURRENT_USER, "AppEvents\Schemes\Apps\.Default\SystemHand\.Current", "")
+    If bNavSoundOverrideExplorer Then
+        If SND_NAVIGATESTART = "" Then
+            SND_NAVIGATESTART = Environ("WINDIR") & "\media\Windows Navigation Start.wav"
+        End If
+    End If
     
     dwAutoCompFlags = ACO_AUTOAPPEND Or ACO_AUTOSUGGEST
     dwAutoCompListFlags = ACLO_FILESYSDIRS
