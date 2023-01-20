@@ -3,8 +3,7 @@
 [ COMControl ]
 Public Class ucShellTree
 Option Explicit
-Private mItv As Long
-Private m_ScaleX As Single, m_ScaleY As Single
+
 Private Const mVersionStr As String = "Shell Tree Control 2.8 R1"
 ''*********************************************************************************************
 '
@@ -97,7 +96,7 @@ Private Const mVersionStr As String = "Shell Tree Control 2.8 R1"
 '           been fixed by syncing the check data before reporting it. .ExcludedPaths does
 '           this too now.
 '
-'-(Bug fix) SelectedItems did not fill in the string array of paths. **TODO BEFORE RELEASE: TEST
+'-(Bug fix) SelectedItems did not fill in the string array of paths. 
 '
 '-(Bug fix) Renamed items did not have their name updated in the TreeView (though the rename
 '           itself succeeded)
@@ -371,6 +370,7 @@ Public Event ExitFocus()
 
 Public Event DebugMessage(sMsg As String, iLevel As Integer)
 
+Private m_ScaleX As Single, m_ScaleY As Single
 Private bLoadDone As Boolean
 Private pDTH As IDropTargetHelper
 Private Const CLSID_DragDropHelper = "{4657278A-411B-11D2-839A-00C04FD918D0}"
@@ -3676,6 +3676,7 @@ Public Property Let AlwaysShowExtendedVerbs(bVal As Boolean): mAlwaysShowExtVerb
 Public Property Get ShowHiddenItems() As ST_HDN_PREF: ShowHiddenItems = m_HiddenPref: End Property
 Public Property Let ShowHiddenItems(lVal As ST_HDN_PREF): m_HiddenPref = lVal: End Property
 Public Property Get ShowSuperHidden() As ST_SPRHDN_PREF: ShowSuperHidden = m_SuperHiddenPref: End Property
+Attribute ShowSuperHidden.VB_Description = "Show protected operating system files (marked Hidden+System)"
 Public Property Let ShowSuperHidden(lVal As ST_SPRHDN_PREF): m_SuperHiddenPref = lVal: End Property
 Public Property Get ShowFavorites() As Boolean: ShowFavorites = mFavorites: End Property
 Attribute ShowFavorites.VB_Description = "Show the 'Favorites' link group at the top like Explorer."
