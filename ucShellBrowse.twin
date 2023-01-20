@@ -2472,7 +2472,7 @@ Private Const m_sVerbRedo As String = "redo" 'For Ctrl+Y redo
 '
 '=================================================================================
 '
-'---------------------------------------------------------------------------------
+'---------------------------------------------------------------------------------                ' close for each entry to ensure file buffers flushed
 #End Region
 
 #Region "APIDeclares"
@@ -6980,12 +6980,6 @@ mEnableGrp = mDefEnableGrp
 mEnablePaste = mDefEnablePaste
 mDispSecZn = mDefDispSecZn
 pvCreate
-End Sub
-
-Private Sub UserControl_Show() Handles UserControl.Show
-  '-- Initialize IOLEInPlaceActiveObject
-Call pvInitIPAO
-UserControl_Resize
 End Sub
 
 Private Function ExplorerSettingEnabled(lSetting As SFS_MASK) As Boolean
@@ -14706,6 +14700,7 @@ End Sub
         ReDim ic(UBound(tButtonCaps))
             For i = 0 To UBound(tButtonCaps)
                 hImg = ResIconTohIcon(CStr(tButtonIcons(i)), 16, 16)
+                
                 ic(i) = ImageList_AddIcon(himlFooter, hImg)
             Next i
         SendMessage hLVS, LVM_SETIMAGELIST, LVSIL_FOOTER, ByVal himlFooter
@@ -38229,150 +38224,16 @@ End Function
         pvShiftState = lS
     End Function
     
-    ' === Call InterfaceMethod ===============================================
-    ' This function was made by ANDRay, wich can be found in http://www.planetsourcecode.com/vb/scripts/ShowCode.asp?lngWId=1&txtCodeId=72856
-    ' Private Function CallInterface(ByVal pInterface As Long, ByVal Member As Long, ByVal ParamsCount As Long, Optional ByVal p1 As Long = 0, Optional ByVal p2 As Long = 0, Optional ByVal p3 As Long = 0, Optional ByVal p4 As Long = 0, Optional ByVal p5 As Long = 0, Optional ByVal p6 As Long = 0, Optional ByVal p7 As Long = 0, Optional ByVal p8 As Long = 0, Optional ByVal p9 As Long = 0, Optional ByVal p10 As Long = 0) As Long
-    '   Dim i As Long, t As Long
-    '   Dim hGlobal As Long, hGlobalOffset As Long
-      
-    '   If ParamsCount < 0 Then Err.Raise 5 'invalid call
-    '   If pInterface = 0 Then Err.Raise 5
-      
-    '   ' 5 Bytes por parametro (4 bytes + PUSH)
-    '   ' 5 Bytes = 1 push + Puntero a interfaz
-    '   hGlobal = GlobalAlloc(GMEM_FIXED, 5 * ParamsCount + 5 + 5 + 3 + 1)
-    '   If hGlobal = 0 Then Err.Raise 7 'insuff. memory
-    '   hGlobalOffset = hGlobal
-      
-    '   If ParamsCount > 0 Then
-    '     t = VarPtr(p1)
-    '     For i = ParamsCount - 1 To 0 Step -1
-    '       Call PutMem2(hGlobalOffset, asmPUSH_imm32)
-    '       hGlobalOffset = hGlobalOffset + 1
-    '       Call GetMem4(t + i * 4, hGlobalOffset)
-    '       hGlobalOffset = hGlobalOffset + 4
-    '     Next
-    '   End If
-      
-    '   ' PUSH y ponemos el puntero a la interfas
-    '   Call PutMem2(hGlobalOffset, asmPUSH_imm32)
-    '   hGlobalOffset = hGlobalOffset + 1
-    '   Call PutMem4(hGlobalOffset, pInterface)
-    '   hGlobalOffset = hGlobalOffset + 4
-      
-    '   ' Llamamos
-    '   Call PutMem2(hGlobalOffset, asmCALL_rel32)
-    '   hGlobalOffset = hGlobalOffset + 1
-    '   Call GetMem4(pInterface, VarPtr(t))     'äåðåôåðåíñ: íàõîäèì ïîëîæåíèå vTable
-    '   Call GetMem4(t + Member * 4, VarPtr(t)) 'ñìåùåíèå ïî vTable, ïîñëå ÷åãî äåðåôåðåíñ îíîãî
-    '   Call PutMem4(hGlobalOffset, t - hGlobalOffset - 4)
-    '   hGlobalOffset = hGlobalOffset + 4
-      
-    '   Call PutMem4(hGlobalOffset, &H10C2&)        'ret 0x0010
-    '   CallInterface = CallWindowProcA(hGlobal, 0, 0, 0, 0)
-    '   Call GlobalFree(hGlobal)
-    ' End Function
-    
-    '----------------------------------------------------------------------------------------
-    ' IOLEInPlaceActiveObject interface
-    '----------------------------------------------------------------------------------------
-    Private Sub pvInitIPAO()
-    ' If bIPInit = False Then
-    '     bIPInit = True
-    '     Dim uiid As UUID
-    '     ptrMe = ObjPtr(Me)
-    '     With m_uIPAO
-    '         .lpVTable = GetVTable
-    '         Call IIDFromString(StrPtr(sIID_IOleInPlaceActive), uiid)
-    '         Call CallInterface(ptrMe, IUnknown_Exports.QueryInterface, 2, VarPtr(uiid), VarPtr(.IPAOReal))
-    '         .ThisPointer = VarPtr(m_uIPAO)
-    '     End With
-    ' End If
-    End Sub
+ 
     
     Private Sub pvSetIPAO()
     DebugAppend "pvSetIPAO", 3
     ActivateIPAO Me
-    'Exit Sub
-    '     Const IOleObject_GetClientSite As Long = 4 ' 2 From IUnknown + 2º Ordinal
-    '     Const IOleObject_DoVerb As Long = 11
-    '     Const IOleInPlaceSite_GetWindowContext As Long = 8 ' 2 from IUnknown + 2 IOleWindow + 4º Ordinal
-    '     Const IOleInPlaceFrame_SetActiveObject As Long = 8 ' 2 from IUnknown + 2 IOleWindow + 4º Ordinal
-    '     Const IOleInPlaceUIWindow_SetActiveObject As Long = 8 ' IOleInPlaceFrame inherits from IOleInPlaceUIWindow
-        
-    '     Const OLEIVERB_UIACTIVATE As Long = -4
-    '     Dim uiid As UUID, lResult As Long
-    '     Dim pOleObject          As Long 'IOleObject
-    '     Dim pOleInPlaceSite     As Long 'IOleInPlaceSite
-    '     Dim pOleInPlaceFrame    As Long 'IOleInPlaceFrame
-    '     Dim pOleInPlaceUIWindow As Long 'IOleInPlaceUIWindow
-    '     Dim rcPos               As RECT
-    '     Dim rcClip              As RECT
-    '     Dim uFrameInfo          As OLEINPLACEFRAMEINFO
-        
-    '     On Error GoTo e0
-    '     Call IIDFromString(StrPtr(sIID_IOleObject), uiid)
-    '     Call CallInterface(ptrMe, IUnknown_Exports.QueryInterface, 2, VarPtr(uiid), VarPtr(pOleObject))
-    '     Call CallInterface(pOleObject, IOleObject_GetClientSite, 1, VarPtr(pOleInPlaceSite))
-        
-    '     If pOleInPlaceSite <> 0 Then
-    '         Call IIDFromString(StrPtr(sIID_IOleInPlaceSite), uiid)
-    '         Call CallInterface(pOleInPlaceSite, IUnknown_Exports.QueryInterface, 2, VarPtr(uiid), VarPtr(pOleInPlaceSite))
-    '         Call CallInterface(pOleInPlaceSite, IOleInPlaceSite_GetWindowContext, 5, VarPtr(pOleInPlaceFrame), VarPtr(pOleInPlaceUIWindow), VarPtr(rcPos), VarPtr(rcClip), VarPtr(uFrameInfo))
-            
-    '         DebugAppend "Window=" & pOleInPlaceUIWindow & ",Frame=" & pOleInPlaceFrame & ",rc={" & rcPos.Left & "," & rcPos.Right & "," & rcPos.Top & "," & rcPos.Bottom & "}", 2
-    '         If pOleInPlaceFrame <> 0 Then
-    '             ' The original was pOleInPlaceFrame.SetActiveObject but IOleInPlaceUIWindow has the definition :/
-    '             Call CallInterface(pOleInPlaceFrame, IOleInPlaceFrame_SetActiveObject, 2, m_uIPAO.ThisPointer, StrPtr(vbNullString))
-    '         End If
-    '         If pOleInPlaceUIWindow <> 0 Then  '-- And Not m_bMouseActivate
-    '             Call CallInterface(pOleInPlaceUIWindow, IOleInPlaceUIWindow_SetActiveObject, 2, VarPtr(m_uIPAO.ThisPointer), StrPtr(vbNullString))
-    '         Else
-    '             Call CallInterface(pOleObject, IOleObject_DoVerb, 6, OLEIVERB_UIACTIVATE, 0, pOleInPlaceSite, 0, UserControl.hWnd, VarPtr(rcPos))
-    '         End If
-    '     End If
-        
-    '     On Error GoTo 0
-        
-    '     Exit Sub
-    ' e0:
-    '     DebugAppend "pvSetIPAO.Error->" & Err.Description & "," & Err.Number, 4
-    '     Resume Next
+
     End Sub
     
     Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal hwnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal Shift As Long) Implements IOleInPlaceActiveObjectVB.TranslateAccelerator
-    'If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
-    '    Dim KeyCode As Integer, IsInputKey As Boolean
-    '    KeyCode = wParam And &HFF&
-    '    If wMsg = WM_KEYDOWN Then
-    '        RaiseEvent PreviewKeyDown(KeyCode, IsInputKey)
-    '    ElseIf wMsg = WM_KEYUP Then
-    '        RaiseEvent PreviewKeyUp(KeyCode, IsInputKey)
-    '    End If
-    '    Select Case KeyCode
-    '        Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd, vbKeyReturn, vbKeyEscape
-    '            If ListViewHandle <> 0 Then
-    '                If ListViewFilterEditHandle = 0 Then
-    '                    If ListViewLabelInEdit = True Then
-    '                        SendMessage Me.hWndLabelEdit, wMsg, wParam, ByVal lParam
-    '                    Else
-    '                        If (KeyCode = vbKeyReturn Or KeyCode = vbKeyEscape) And IsInputKey = False Then Exit Sub
-    '                        SendMessage ListViewHandle, wMsg, wParam, ByVal lParam
-    '                    End If
-    '                Else
-    '                    SendMessage ListViewFilterEditHandle, wMsg, wParam, ByVal lParam
-    '                End If
-    '                Handled = True
-    '            End If
-    '        Case vbKeyTab
-    '            If IsInputKey = True Then
-    '                If ListViewHandle <> 0 Then
-    '                    SendMessage ListViewHandle, wMsg, wParam, ByVal lParam
-    '                    Handled = True
-    '                End If
-    '            End If
-    '    End Select
-    'End If
+
     Dim pMsg As MSG
     pMsg.hWnd = hwnd
     pMsg.wParam = wParam
@@ -38434,29 +38295,6 @@ End Function
         On Error GoTo 0
     End Function
     
-    ' Private Function GetVTable() As Long
-    '     ' Set up the vTable for the interface and return a pointer to it
-    '     If (m_IPAOVTable(0) = 0) Then
-    '         m_IPAOVTable(1) = scb_SetCallbackAddr(1, 34, Me) ' Addref
-    '         m_IPAOVTable(2) = scb_SetCallbackAddr(1, 33, Me) ' Release
-    '         m_IPAOVTable(0) = scb_SetCallbackAddr(2, 32, Me) ' QueryInterface
-    '         m_IPAOVTable(3) = scb_SetCallbackAddr(2, 31, Me)  ' GetWindow
-    '         m_IPAOVTable(4) = scb_SetCallbackAddr(2, 30, Me)  ' ContextSensitiveHelp
-    '         m_IPAOVTable(5) = scb_SetCallbackAddr(2, 29, Me)  ' TranslateAccelerator
-    '         m_IPAOVTable(6) = scb_SetCallbackAddr(2, 28, Me)  ' OnFrameWindowActivate
-    '         m_IPAOVTable(7) = scb_SetCallbackAddr(2, 27, Me)  ' OnDocWindowActivate
-    '         m_IPAOVTable(8) = scb_SetCallbackAddr(4, 26, Me)  ' ResizeBorder
-    '         m_IPAOVTable(9) = scb_SetCallbackAddr(2, 25, Me)  ' EnableModeless
-    '         '--- init guid
-    ' '        With sIID_IOleInPlaceActiveObject
-    ' '            .Data1 = &H117&
-    ' '            .Data4(0) = &HC0
-    ' '            .Data4(7) = &H46
-    ' '        End With
-    '     End If
-    '     GetVTable = VarPtr(m_IPAOVTable(0))
-    ' End Function
-    
     
     #End Region
 
@@ -38492,66 +38330,14 @@ End Function
     '@22: CBDTWndProc - Details Combobox, for focus
     '@23: DTSWndProc - Detail Sizer proc, to restrict to y-axis movement only
     '@24: CtlBoxWndProc - Control box proc for Up/View/Bkm/StdBackFwd button notifications
-    '@25-34: IPAO
     
     'If you subclass something else or create a new callback, add it above @20 as ordinal 21, not
     'at the bottom after @1. The sequence in place must not be changed.
     '--------
     
+    'Note: This twinBASIC port is not sensitive to the order or location at this time, but best not
+    '      to change it or add code after it for future compatibility reasons.
     
-    
-    
-    '@34
-    ' Private Function pvIPAO_AddRef(This As IPAOHookStruct) As Long
-    '     pvIPAO_AddRef = CallInterface(This.IPAOReal, IUnknown_Exports.AddRef, 0)
-    ' End Function
-    
-    ' Private Function pvIPAO_Release(This As IPAOHookStruct) As Long
-    '     pvIPAO_Release = CallInterface(This.IPAOReal, IUnknown_Exports.Release, 0)
-    ' End Function
-    
-    ' Private Function pvIPAO_QueryInterface(This As IPAOHookStruct, riid As UUID, pvObj As Long) As Long
-    '     If (IsEqualGUID(riid, IID_IOleInPlaceActiveObject)) Then
-    '         pvObj = VarPtr(This)
-    '         Call pvIPAO_AddRef(This)
-    '         pvIPAO_QueryInterface = 0
-    '       Else
-    '         pvIPAO_QueryInterface = CallInterface(This.IPAOReal, IUnknown_Exports.QueryInterface, 2, VarPtr(riid), VarPtr(pvObj))
-    '     End If
-    ' End Function
-    
-    ' Private Function pvIPAO_GetWindow(This As IPAOHookStruct, phwnd As Long) As Long
-    '     pvIPAO_GetWindow = CallInterface(This.IPAOReal, IPAO_Exports.GetWindow, 1, VarPtr(phwnd))
-    ' End Function
-    
-    ' Private Function pvIPAO_ContextSensitiveHelp(This As IPAOHookStruct, ByVal fEnterMode As Long) As Long
-    '     pvIPAO_ContextSensitiveHelp = CallInterface(This.IPAOReal, IPAO_Exports.ContextSensitiveHelp, 1, VarPtr(fEnterMode))
-    ' End Function
-    
-    ' Private Function pvIPAO_TranslateAccelerator(This As IPAOHookStruct, lpMsg As MSG) As Long
-    '     ' Check if we want to override the handling of this key code:
-    '     If (pvTranslateAccel(lpMsg)) Then
-    '         pvIPAO_TranslateAccelerator = S_OK
-    '     Else
-    '         pvIPAO_TranslateAccelerator = CallInterface(This.IPAOReal, IPAO_Exports.TranslateAccelerator, 1, VarPtr(lpMsg))
-    '     End If
-    ' End Function
-    
-    ' Private Function pvIPAO_OnFrameWindowActivate(This As IPAOHookStruct, ByVal fActivate As Long) As Long
-    '     pvIPAO_OnFrameWindowActivate = CallInterface(This.IPAOReal, IPAO_Exports.OnFrameWindowActivate, 1, VarPtr(fActivate))
-    ' End Function
-    
-    ' Private Function pvIPAO_OnDocWindowActivate(This As IPAOHookStruct, ByVal fActivate As Long) As Long
-    '     pvIPAO_OnDocWindowActivate = CallInterface(This.IPAOReal, IPAO_Exports.OnDocWindowActivate, 1, VarPtr(fActivate))
-    ' End Function
-    
-    ' Private Function pvIPAO_ResizeBorder(This As IPAOHookStruct, prcBorder As RECT, ByVal puiWindow As Long, ByVal fFrameWindow As Long) As Long
-    '     pvIPAO_ResizeBorder = CallInterface(This.IPAOReal, IPAO_Exports.ResizeBorder, 3, VarPtr(prcBorder), puiWindow, VarPtr(fFrameWindow))
-    ' End Function
-    
-    ' Private Function pvIPAO_EnableModeless(This As IPAOHookStruct, ByVal fEnable As Long) As Long
-    '     pvIPAO_EnableModeless = CallInterface(This.IPAOReal, IPAO_Exports.EnableModeless, 1, VarPtr(fEnable))
-    ' End Function
     
     
     '@24
@@ -41632,9 +41418,6 @@ End Function
     Resume Next
     
     End Function
-    
-    '==================================================================================================
-    'WARNING: DO NOT ADD ANY CODE BELOW THIS LINE. ANY NEW CODE MUST GO BEFORE ORDINAL 34 (pvIPAO_AddRef).
             
     #End Region
     
