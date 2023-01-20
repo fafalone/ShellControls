@@ -3,23 +3,23 @@
 [ COMControl ]
 Public Class ucShellTree
 Option Explicit
-Private bUCInit As Boolean
 Private mItv As Long
-Private Const mVersionStr As String = "Shell Tree Control 2.8"
+Private m_ScaleX As Single, m_ScaleY As Single
+Private Const mVersionStr As String = "Shell Tree Control 2.8 R1"
 ''*********************************************************************************************
 '
 'ucShellTree.twin
-'Shell Tree Control v2.8 - twinBASIC Implementation
+'Shell Tree Control v2.8 R1 - twinBASIC Implementation
 '
 'Author: fafalone
-'(c) 2018-2022
+'(c) 2018-2023
 '
 'For questions, comments, and bug reports, stop by the project thread:
 'http://www.vbforums.com/showthread.php?862137-ucShellTree-Full-featured-Shell-Tree-UserControl
 '
 '
 'This twinBASIC version doesn't use tlb since upgrading oleexp to x64 compatibility wasn't 
-'happening... all oleexp imports are in the twin module (interfaces, enums, 
+'happening... all oleexp imports are in the ShellInterfaces.twin module (interfaces, enums, 
 'types, and apis). This project doesn't use it, but there's an x64 compatible successor to
 'oleexp: tbShellLib.
 '
@@ -64,6 +64,7 @@ Private Const mVersionStr As String = "Shell Tree Control 2.8"
 '
 'v2.8
 '
+'(R1) IPAO hooking code integrated so as to not conflict with ucShellBrowse.
 '
 '-Added Indentation property to get/set the indent width of TreeView items.
 '
@@ -698,7 +699,7 @@ Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Des
 Private Declare PtrSafe Sub CoTaskMemFree Lib "ole32" (ByVal pv As LongPtr)
 Private Declare PtrSafe Function CreateFontIndirect Lib "gdi32" Alias "CreateFontIndirectW" (ByRef lpLogFont As LOGFONT) As LongPtr
 Private Declare PtrSafe Function CreatePopupMenu Lib "user32" () As LongPtr
-Private Declare PtrSafe Function CreateWindowExW Lib "user32" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, lpParam As Any) As LongPtr
+Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, lpParam As Any) As LongPtr
 Private Declare PtrSafe Function DeleteObject Lib "gdi32" (ByVal hObject As LongPtr) As Long
 Private Declare PtrSafe Function DestroyIcon Lib "user32.dll" (ByVal hIcon As LongPtr) As Long
 Private Declare PtrSafe Function DestroyMenu Lib "user32" (ByVal hMenu As LongPtr) As Long
@@ -747,6 +748,7 @@ Private Declare PtrSafe Function PSFormatPropertyValue Lib "propsys.dll" (ByVal 
 Private Declare PtrSafe Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal lprcUpdate As LongPtr, ByVal hrgnUpdate As LongPtr, ByVal fuRedraw As Long) As Long
 Private Declare PtrSafe Function RegisterClipboardFormatW Lib "user32" (ByVal lpszFormat As LongPtr) As Long
 Private Declare PtrSafe Function RegisterDragDrop Lib "ole32" (ByVal hWnd As LongPtr, ByVal DropTarget As IDropTarget) As Long
+Private Declare PtrSafe Function ReleaseDC Lib "user32" (ByVal hWnd As LongPtr, ByVal hDC As LongPtr) As Long
 Private Declare PtrSafe Function RevokeDragDrop Lib "ole32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function ScreenToClient Lib "user32" (ByVal hWnd As LongPtr, lpPoint As Any) As Long  ' lpPoint As POINT) As Long
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, lParam As Any) As LongPtr
@@ -1587,6 +1589,255 @@ Private Type SHFILEOPSTRUCT
    hNameMaps   As LongPtr
    lpszProgressTitle   As LongPtr
  End Type
+
+#Region "IPAO"
+
+'IPAO hooking code courtesy of Krool's VBCCR project
+
+Private Enum VTableInterfaceConstants
+VTableInterfaceInPlaceActiveObject = 1
+VTableInterfaceControl = 2
+VTableInterfacePerPropertyBrowsing = 3
+End Enum
+Private Type VTableIPAODataStruct
+VTable As LongPtr
+RefCount As Long
+OriginalIOleIPAO As IOleInPlaceActiveObject
+IOleIPAO As IOleInPlaceActiveObjectVB
+End Type
+Private Type VTableEnumVARIANTDataStruct
+VTable As LongPtr
+RefCount As Long
+Enumerable As Object
+Index As Long
+Count As Long
+End Type
+Private Const CTRLINFO_EATS_RETURN As Long = 1
+Private Const CTRLINFO_EATS_ESCAPE As Long = 2
+Private Declare PtrSafe Sub SetLastError Lib "kernel32" (ByVal dwErrCode As Long)
+
+Private VTableIPAO(0 To 9) As LongPtr, VTableIPAOData As VTableIPAODataStruct
+
+Private Function SetVTableHandling(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants) As Boolean
+Select Case OLEInterface
+    Case VTableInterfaceInPlaceActiveObject
+        If VTableHandlingSupported(This, VTableInterfaceInPlaceActiveObject) = True Then
+            VTableIPAOData.RefCount = VTableIPAOData.RefCount + 1
+            SetVTableHandling = True
+        End If
+'    Case VTableInterfaceControl
+'        If VTableHandlingSupported(This, VTableInterfaceControl) = True Then
+'            Call ReplaceIOleControl(This)
+'            SetVTableHandling = True
+'        End If
+'    Case VTableInterfacePerPropertyBrowsing
+'        If VTableHandlingSupported(This, VTableInterfacePerPropertyBrowsing) = True Then
+'            Call ReplaceIPPB(This)
+'            SetVTableHandling = True
+'        End If
+End Select
+End Function
+
+Private Function RemoveVTableHandling(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants) As Boolean
+Select Case OLEInterface
+    Case VTableInterfaceInPlaceActiveObject
+        If VTableHandlingSupported(This, VTableInterfaceInPlaceActiveObject) = True Then
+            VTableIPAOData.RefCount = VTableIPAOData.RefCount - 1
+            RemoveVTableHandling = True
+        End If
+'    Case VTableInterfaceControl
+'        If VTableHandlingSupported(This, VTableInterfaceControl) = True Then
+'            Call RestoreIOleControl(This)
+'            RemoveVTableHandling = True
+'        End If
+'    Case VTableInterfacePerPropertyBrowsing
+'        If VTableHandlingSupported(This, VTableInterfacePerPropertyBrowsing) = True Then
+'            Call RestoreIPPB(This)
+'            RemoveVTableHandling = True
+'        End If
+End Select
+End Function
+Private Function VTableHandlingSupported(ByRef This As Object, ByVal OLEInterface As VTableInterfaceConstants) As Boolean
+On Error GoTo CATCH_EXCEPTION
+Select Case OLEInterface
+    Case VTableInterfaceInPlaceActiveObject
+        Dim ShadowIOleIPAO As IOleInPlaceActiveObject
+        Dim ShadowIOleInPlaceActiveObjectVB As IOleInPlaceActiveObjectVB
+        Set ShadowIOleIPAO = This
+        Set ShadowIOleInPlaceActiveObjectVB = This
+        VTableHandlingSupported = Not CBool(ShadowIOleIPAO Is Nothing Or ShadowIOleInPlaceActiveObjectVB Is Nothing)
+'    Case VTableInterfaceControl
+'        Dim ShadowIOleControl As OLEGuids.IOleControl
+'        Dim ShadowIOleControlVB As OLEGuids.IOleControlVB
+'        Set ShadowIOleControl = This
+'        Set ShadowIOleControlVB = This
+'        VTableHandlingSupported = Not CBool(ShadowIOleControl Is Nothing Or ShadowIOleControlVB Is Nothing)
+'    Case VTableInterfacePerPropertyBrowsing
+'        Dim ShadowIPPB As OLEGuids.IPerPropertyBrowsing
+'        Dim ShadowIPerPropertyBrowsingVB As OLEGuids.IPerPropertyBrowsingVB
+'        Set ShadowIPPB = This
+'        Set ShadowIPerPropertyBrowsingVB = This
+'        VTableHandlingSupported = Not CBool(ShadowIPPB Is Nothing Or ShadowIPerPropertyBrowsingVB Is Nothing)
+End Select
+CATCH_EXCEPTION:
+End Function
+
+Private Sub ActivateIPAO(ByVal This As Object)
+On Error GoTo CATCH_EXCEPTION
+Dim PropOleObject As IOleObject
+Dim PropOleInPlaceSite As IOleInPlaceSite
+Dim PropOleInPlaceFrame As IOleInPlaceFrame
+Dim PropOleInPlaceUIWindow As IOleInPlaceUIWindow
+Dim PropOleInPlaceActiveObject As IOleInPlaceActiveObject
+Dim PosRect As OLERECT
+Dim ClipRect As OLERECT
+Dim FrameInfo As OLEINPLACEFRAMEINFO
+Set PropOleObject = This
+If VTableIPAOData.RefCount > 0 Then
+    With VTableIPAOData
+    .VTable = GetVTableIPAO()
+    Set .OriginalIOleIPAO = This
+    Set .IOleIPAO = This
+    End With
+    CopyMemory ByVal VarPtr(PropOleInPlaceActiveObject), VarPtr(VTableIPAOData), LenB(VTableIPAOData.VTable)
+    PropOleInPlaceActiveObject.AddRef
+Else
+    Set PropOleInPlaceActiveObject = This
+End If
+Set PropOleInPlaceSite = PropOleObject.GetClientSite
+PropOleInPlaceSite.GetWindowContext PropOleInPlaceFrame, PropOleInPlaceUIWindow, VarPtr(PosRect), VarPtr(ClipRect), VarPtr(FrameInfo)
+PropOleInPlaceFrame.SetActiveObject PropOleInPlaceActiveObject, vbNullString
+If Not PropOleInPlaceUIWindow Is Nothing Then PropOleInPlaceUIWindow.SetActiveObject PropOleInPlaceActiveObject, vbNullString
+CATCH_EXCEPTION:
+End Sub
+
+Private Sub DeActivateIPAO()
+On Error GoTo CATCH_EXCEPTION
+If VTableIPAOData.OriginalIOleIPAO Is Nothing Then Exit Sub
+Dim PropOleObject As IOleObject
+Dim PropOleInPlaceSite As IOleInPlaceSite
+Dim PropOleInPlaceFrame As IOleInPlaceFrame
+Dim PropOleInPlaceUIWindow As IOleInPlaceUIWindow
+Dim PosRect As OLERECT
+Dim ClipRect As OLERECT
+Dim FrameInfo As OLEINPLACEFRAMEINFO
+Set PropOleObject = VTableIPAOData.OriginalIOleIPAO
+Set PropOleInPlaceSite = PropOleObject.GetClientSite
+PropOleInPlaceSite.GetWindowContext PropOleInPlaceFrame, PropOleInPlaceUIWindow, VarPtr(PosRect), VarPtr(ClipRect), VarPtr(FrameInfo)
+PropOleInPlaceFrame.SetActiveObject Nothing, vbNullString
+If Not PropOleInPlaceUIWindow Is Nothing Then PropOleInPlaceUIWindow.SetActiveObject Nothing, vbNullString
+CATCH_EXCEPTION:
+Set VTableIPAOData.OriginalIOleIPAO = Nothing
+Set VTableIPAOData.IOleIPAO = Nothing
+End Sub
+
+Private Function GetVTableIPAO() As LongPtr
+If VTableIPAO(0) = 0 Then
+    VTableIPAO(0) = ProcPtr(AddressOf IOleIPAO_QueryInterface)
+    VTableIPAO(1) = ProcPtr(AddressOf IOleIPAO_AddRef)
+    VTableIPAO(2) = ProcPtr(AddressOf IOleIPAO_Release)
+    VTableIPAO(3) = ProcPtr(AddressOf IOleIPAO_GetWindow)
+    VTableIPAO(4) = ProcPtr(AddressOf IOleIPAO_ContextSensitiveHelp)
+    VTableIPAO(5) = ProcPtr(AddressOf IOleIPAO_TranslateAccelerator)
+    VTableIPAO(6) = ProcPtr(AddressOf IOleIPAO_OnFrameWindowActivate)
+    VTableIPAO(7) = ProcPtr(AddressOf IOleIPAO_OnDocWindowActivate)
+    VTableIPAO(8) = ProcPtr(AddressOf IOleIPAO_ResizeBorder)
+    VTableIPAO(9) = ProcPtr(AddressOf IOleIPAO_EnableModeless)
+End If
+GetVTableIPAO = VarPtr(VTableIPAO(0))
+End Function
+
+Private Function IOleIPAO_QueryInterface(ByRef This As VTableIPAODataStruct, ByRef IID As OLECLSID, ByRef pvObj As LongPtr) As Long
+If VarPtr(pvObj) = 0 Then
+    IOleIPAO_QueryInterface = E_POINTER
+    Exit Function
+End If
+' IID_IOleInPlaceActiveObject = {00000117-0000-0000-C000-000000000046}
+If IID.Data1 = &H117 And IID.Data2 = &H0 And IID.Data3 = &H0 Then
+    If IID.Data4(0) = &HC0 And IID.Data4(1) = &H0 And IID.Data4(2) = &H0 And IID.Data4(3) = &H0 _
+    And IID.Data4(4) = &H0 And IID.Data4(5) = &H0 And IID.Data4(6) = &H0 And IID.Data4(7) = &H46 Then
+        pvObj = VarPtr(This)
+        IOleIPAO_AddRef This
+        IOleIPAO_QueryInterface = S_OK
+    Else
+        This.OriginalIOleIPAO.QueryInterface(IID, pvObj)
+        IOleIPAO_QueryInterface = Err.LastHResult
+    End If
+Else
+    This.OriginalIOleIPAO.QueryInterface(IID, pvObj)
+    IOleIPAO_QueryInterface = Err.LastHResult
+End If
+End Function
+
+Private Function IOleIPAO_AddRef(ByRef This As VTableIPAODataStruct) As Long
+This.OriginalIOleIPAO.AddRef
+IOleIPAO_AddRef = Err.LastHResult
+End Function
+
+Private Function IOleIPAO_Release(ByRef This As VTableIPAODataStruct) As Long
+This.OriginalIOleIPAO.Release
+IOleIPAO_Release = Err.LastHResult
+End Function
+
+Private Function IOleIPAO_GetWindow(ByRef This As VTableIPAODataStruct, ByRef hWnd As LongPtr) As Long
+This.OriginalIOleIPAO.GetWindow(hWnd)
+IOleIPAO_GetWindow = Err.LastHResult
+End Function
+
+Private Function IOleIPAO_ContextSensitiveHelp(ByRef This As VTableIPAODataStruct, ByVal EnterMode As Long) As Long
+This.OriginalIOleIPAO.ContextSensitiveHelp(EnterMode)
+IOleIPAO_ContextSensitiveHelp = Err.LastHResult
+End Function
+
+Private Function IOleIPAO_TranslateAccelerator(ByRef This As VTableIPAODataStruct, ByRef Msg As MSG) As Long
+If VarPtr(Msg) = 0 Then
+    IOleIPAO_TranslateAccelerator = E_INVALIDARG
+    Exit Function
+End If
+On Error GoTo CATCH_EXCEPTION
+Dim Handled As Boolean
+IOleIPAO_TranslateAccelerator = S_OK
+This.IOleIPAO.TranslateAccelerator Handled, IOleIPAO_TranslateAccelerator, Msg.hWnd, Msg.message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+If Handled = False Then
+    This.OriginalIOleIPAO.TranslateAccelerator(VarPtr(Msg))
+    IOleIPAO_TranslateAccelerator = Err.LastHResult
+End If
+Exit Function
+CATCH_EXCEPTION:
+    This.OriginalIOleIPAO.TranslateAccelerator(VarPtr(Msg))
+    IOleIPAO_TranslateAccelerator = Err.LastHResult
+End Function
+
+Private Function IOleIPAO_OnFrameWindowActivate(ByRef This As VTableIPAODataStruct, ByVal Activate As Long) As Long
+This.OriginalIOleIPAO.OnFrameWindowActivate(Activate)
+IOleIPAO_OnFrameWindowActivate = Err.LastHResult
+End Function
+
+Private Function IOleIPAO_OnDocWindowActivate(ByRef This As VTableIPAODataStruct, ByVal Activate As Long) As Long
+This.OriginalIOleIPAO.OnDocWindowActivate(Activate)
+IOleIPAO_OnDocWindowActivate = Err.LastHResult
+End Function
+
+Private Function IOleIPAO_ResizeBorder(ByRef This As VTableIPAODataStruct, ByRef RC As OLERECT, ByVal UIWindow As IOleInPlaceUIWindow, ByVal FrameWindow As Long) As Long
+This.OriginalIOleIPAO.ResizeBorder(VarPtr(RC), UIWindow, FrameWindow)
+IOleIPAO_ResizeBorder = Err.LastHResult
+End Function
+
+Private Function IOleIPAO_EnableModeless(ByRef This As VTableIPAODataStruct, ByVal Enable As Long) As Long
+This.OriginalIOleIPAO.EnableModeless(Enable)
+IOleIPAO_EnableModeless = Err.LastHResult
+End Function
+
+
+Private Function ProcPtr(ByVal Address As LongPtr) As LongPtr
+ProcPtr = Address
+End Function
+Private Function GetShiftStateFromMsg() As ShiftConstants
+If GetKeyState(vbKeyShift) < 0 Then GetShiftStateFromMsg = vbShiftMask
+If GetKeyState(vbKeyControl) < 0 Then GetShiftStateFromMsg = GetShiftStateFromMsg Or vbCtrlMask
+If GetKeyState(vbKeyMenu) < 0 Then GetShiftStateFromMsg = GetShiftStateFromMsg Or vbAltMask
+End Function
+#End Region
 
 Private Sub DebugAppend(ByVal sMsg As String, Optional ilvl As Long)
 If ilvl < 0 Then Exit Sub
@@ -2444,23 +2695,15 @@ End Sub
         ' Close #1                ' close for each entry to ensure file buffers flushed
     End Sub
     
-    Private Sub RedrawWindows()
-        RedrawWindow hTVD, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
-    End Sub
-    Private Sub Timer1_Timer() Handles Timer1.Timer
-        If mItv = 3 Then
-            RedrawWindows
-            mItv = 0
-            Timer1.Enabled = False
-        Else
-            mItv += 1
-        End If
-    End Sub
-    
+   
     Private Sub UserControl_Initialize() Handles UserControl.Initialize
-    DebugAppend "UserControl_Initialize " & bUCInit
-
-        
+    DebugAppend "UserControl_Initialize "
+    Dim hDC As LongPtr
+    hDC = GetDC(0&)
+    m_ScaleX = GetDeviceCaps(hDC, LOGPIXELSX) / 96
+    DebugAppend "dpix=" & GetDeviceCaps(hDC, LOGPIXELSX) / 96, 1111
+    m_ScaleY = GetDeviceCaps(hDC, LOGPIXELSY) / 96
+    ReleaseDC 0&, hDC
         ReadWindowsVersion
         IsComCtl6 = (ComCtlVersion >= 6)
         Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
@@ -2539,13 +2782,12 @@ End Sub
         Else
             Call GetClientRect(UserControl.hWnd, RC)
             Call GetClientRect(UserControl.ContainerHwnd, rcCH)
-            DebugAppend "hwnd=" & UserControl.hWnd & ",cthwnd=" & UserControl.ContainerHwnd & ",rc.Bottom=" & RC.Bottom & ",cy=" & UserControl.Height & ",scy=" & UserControl.ScaleHeight & ",ctcx=" & rcCH.Right & ",ctcy=" & rcCH.Bottom
+            DebugAppend "ResizeTreeView::hwnd=" & UserControl.hWnd & ",cthwnd=" & UserControl.ContainerHwnd & ",rc.Bottom=" & RC.Bottom & ",cy=" & UserControl.Height & ",scy=" & UserControl.ScaleHeight & ",ctcx=" & rcCH.Right & ",ctcy=" & rcCH.Bottom & ",m_ScaleX=" & m_ScaleX & ",m_ScaleY=" & m_ScaleY
             Call SetWindowPos(hTVD, 0, 0, 0, RC.Right - 4, RC.Bottom - 4, 0)
 
             'DebugAppend "rcuc.Bottom=" & rcUC.Bottom
         End If
-        ' mItv = 0
-        ' If Timer1.Enabled = False Then Timer1.Enabled = True
+
     End Sub
     
     Private Sub UserControl_GotFocus() Handles UserControl.GotFocus
@@ -3090,6 +3332,7 @@ End Function
 'Begin Control Properties
 
 Public Property Get BackColor() As stdole.OLE_COLOR: BackColor = clrBack: End Property
+Attribute BackColor.VB_Description = "Set the background color of the TreeView."
 Public Property Let BackColor(ByVal val As stdole.OLE_COLOR)
 If val = &HFFFFFFFF Then Exit Property
 clrBack = val
@@ -3102,6 +3345,7 @@ UserControl.PropertyChanged "BackColor"
 
 End Property
 Public Property Get ForeColor() As stdole.OLE_COLOR: ForeColor = clrFore: End Property
+Attribute ForeColor.VB_Description = "Set the color of the text in the TreeView."
 Public Property Let ForeColor(ByVal val As stdole.OLE_COLOR)
 clrFore = val
 Dim clrt As Long
@@ -3113,6 +3357,7 @@ UserControl.PropertyChanged "ForeColor"
 End Property
 
 Public Property Get Font() As StdFont
+Attribute Font.VB_Description = "Sets the font for the TreeView items. "
 Set Font = PropFont
 End Property
 
@@ -3135,12 +3380,14 @@ UserControl.PropertyChanged "Font"
 End Property
 
 Public Property Get Enabled() As Boolean: Enabled = UserControl.Enabled: End Property
+Attribute Enabled.VB_Description = "Set whether or not the control is enabled."
 Public Property Let Enabled(ByVal Value As Boolean)
 UserControl.Enabled = Value
 If hTVD Then EnableWindow hTVD, IIf(Value, 1, 0)
 UserControl.PropertyChanged "Enabled"
 End Property
 Public Property Get Checkboxes() As Boolean: Checkboxes = mCheckboxes: End Property
+Attribute Checkboxes.VB_Description = "Show checkboxes next to the item names."
 Public Property Let Checkboxes(bVal As Boolean)
 If bVal <> mCheckboxes Then
     mCheckboxes = bVal
@@ -3156,6 +3403,7 @@ If bVal <> mCheckboxes Then
 End If
 End Property
 Public Property Get ExclusionChecks() As Boolean: ExclusionChecks = mExCheckboxes: End Property
+Attribute ExclusionChecks.VB_Description = "Adds an additional checkbox state, a red x. Checkboxes must be enabled for this to have an effect."
 Public Property Let ExclusionChecks(bVal As Boolean)
 If bVal <> mExCheckboxes Then
     mExCheckboxes = bVal
@@ -3173,6 +3421,7 @@ If bVal <> mExCheckboxes Then
 End If
 End Property
 Public Property Get ShowSelAlways() As Boolean: ShowSelAlways = mShowSelAlw: End Property
+Attribute ShowSelAlways.VB_Description = "Show selected item(s) when the control is out of focus."
 Public Property Let ShowSelAlways(bVal As Boolean)
 If mShowSelAlw <> bVal Then
     mShowSelAlw = bVal
@@ -3187,6 +3436,7 @@ If mShowSelAlw <> bVal Then
 End If
 End Property
 Public Property Get TrackSelect() As Boolean: TrackSelect = m_TrackSel: End Property
+Attribute TrackSelect.VB_Description = "Set whether hot tracking is enabled."
 Public Property Let TrackSelect(ByVal bVal As Boolean)
 If m_TrackSel <> bVal Then
     m_TrackSel = bVal
@@ -3201,6 +3451,7 @@ If m_TrackSel <> bVal Then
 End If
 End Property
 Public Property Get MultiSelect() As Boolean: MultiSelect = mMultiSel: End Property
+Attribute MultiSelect.VB_Description = "Enables the Mutlselect extended style. WARNING: This style is listed as 'Not supported' by MSDN, so is subject to no longer working at any time."
 Public Property Let MultiSelect(bVal As Boolean)
 Dim dwStyleEx As ucst_TV_Ex_Styles
 If bVal <> mMultiSel Then
@@ -3214,6 +3465,7 @@ If bVal <> mMultiSel Then
 End If
 End Property
 Public Property Get DisableDragDrop() As Boolean: DisableDragDrop = mDisableDD: End Property
+Attribute DisableDragDrop.VB_Description = "Disables drag and drop operations."
 Public Property Let DisableDragDrop(bVal As Boolean)
 If bVal <> mDisableDD Then
     mDisableDD = bVal
@@ -3228,6 +3480,7 @@ If bVal <> mDisableDD Then
 End If
 End Property
 Public Property Get Autocheck() As Boolean: Autocheck = mAutocheck: End Property
+Attribute Autocheck.VB_Description = "Change parent and child states to reflect checkbox states."
 Public Property Let Autocheck(bVal As Boolean)
 If bVal <> mAutocheck Then
     mAutocheck = bVal
@@ -3262,6 +3515,7 @@ If bVal <> mAutocheck Then
 End If
 End Property
 Public Property Get ExplorerStyle() As Boolean: ExplorerStyle = mExplorerStyle: End Property
+Attribute ExplorerStyle.VB_Description = "Apply the Explorer visual style to the tree."
 Public Property Let ExplorerStyle(bVal As Boolean)
 If bVal <> mExplorerStyle Then
     mExplorerStyle = bVal
@@ -3273,10 +3527,13 @@ If bVal <> mExplorerStyle Then
 End If
 End Property
 Public Property Get ShowFiles() As Boolean: ShowFiles = mShowFiles: End Property
+Attribute ShowFiles.VB_Description = "Show files in the tree in addition to folders."
 Public Property Let ShowFiles(bVal As Boolean): mShowFiles = bVal: End Property
 Public Property Get ExtendedOverlays() As Boolean: ExtendedOverlays = mExtOverlay: End Property
+Attribute ExtendedOverlays.VB_Description = "Show the extended overlays sometimes found in programs like TortoiseSVN, Dropbox, or Github. WARNING: Extreme performance cost, reduces folder load times by 10-100x."
 Public Property Let ExtendedOverlays(bVal As Boolean): mExtOverlay = bVal: End Property
 Public Property Get FadingExpandos() As Boolean: FadingExpandos = mFadeExpandos: End Property
+Attribute FadingExpandos.VB_Description = "Toggle whether or not the expando buttons fade in/fade out as focus changes."
 Public Property Let FadingExpandos(bVal As Boolean)
 If bVal <> mFadeExpandos Then
     mFadeExpandos = bVal
@@ -3290,6 +3547,7 @@ If bVal <> mFadeExpandos Then
 End If
 End Property
 Public Property Get NoIndentState() As Boolean: NoIndentState = mNoIndState: End Property
+Attribute NoIndentState.VB_Description = "Do not indent the tree view for the expando buttons."
 Public Property Let NoIndentState(bVal As Boolean)
 If bVal <> mNoIndState Then
     mNoIndState = bVal
@@ -3303,6 +3561,7 @@ If bVal <> mNoIndState Then
 End If
 End Property
 Public Property Get AutoHScroll() As Boolean: AutoHScroll = mAutoHS: End Property
+Attribute AutoHScroll.VB_Description = "Remove the horizontal scrollbar for some positions."
 Public Property Let AutoHScroll(bVal As Boolean)
 If bVal <> mAutoHS Then
     mAutoHS = bVal
@@ -3316,6 +3575,7 @@ If bVal <> mAutoHS Then
 End If
 End Property
 Public Property Get FullRowSelect() As Boolean: FullRowSelect = mFullRowSelect: End Property
+Attribute FullRowSelect.VB_Description = "Hilite the entire row instead of just the item name."
 Public Property Let FullRowSelect(bVal As Boolean)
 If bVal <> mFullRowSelect Then
     mFullRowSelect = bVal
@@ -3331,6 +3591,7 @@ If bVal <> mFullRowSelect Then
 End If
 End Property
 Public Property Get ComputerAsRoot() As Boolean: ComputerAsRoot = mComputerAsRoot: End Property
+Attribute ComputerAsRoot.VB_Description = "Use the Computer folder (drive list) instead of the Desktop as the root of the tree."
 Public Property Let ComputerAsRoot(bVal As Boolean)
 If mComputerAsRoot <> bVal Then
     mComputerAsRoot = bVal
@@ -3338,6 +3599,7 @@ If mComputerAsRoot <> bVal Then
 End If
 End Property
 Public Property Get SingleExpand() As Boolean: SingleExpand = mSingleExpand: End Property
+Attribute SingleExpand.VB_Description = "Allow only one item to be expanded at a time. The previous item is collapsed when a new one expands."
 Public Property Let SingleExpand(bVal As Boolean)
 If bVal <> mSingleExpand Then
     mSingleExpand = bVal
@@ -3353,6 +3615,7 @@ If bVal <> mSingleExpand Then
 End If
 End Property
 Public Property Get HasButtons() As Boolean: HasButtons = mHasButtons: End Property
+Attribute HasButtons.VB_Description = "Sets whether expando buttons appear next to items with subfolders."
 Public Property Let HasButtons(bVal As Boolean)
 If bVal <> mHasButtons Then
     mHasButtons = bVal
@@ -3368,6 +3631,7 @@ If bVal <> mHasButtons Then
 End If
 End Property
 Public Property Get ShowLines() As Boolean: ShowLines = mShowLines: End Property
+Attribute ShowLines.VB_Description = "Show lines connecting the levels of the tree. Works best when ExplorerStyle is disabled."
 Public Property Let ShowLines(bVal As Boolean)
 If bVal <> mShowLines Then
     mShowLines = bVal
@@ -3383,28 +3647,38 @@ If bVal <> mShowLines Then
 End If
 End Property
 Public Property Get ExpandZip() As Boolean: ExpandZip = mExpandZip: End Property
+Attribute ExpandZip.VB_Description = "Display/expand zip/cab files like a folder."
 Public Property Let ExpandZip(bVal As Boolean): mExpandZip = bVal: End Property
 Public Property Get ItemFilter() As String: ItemFilter = mFilter: End Property
+Attribute ItemFilter.VB_Description = "Set a filter such that item names not matching are not shown in the tree."
 Public Property Let ItemFilter(sFilter As String): mFilter = sFilter: End Property
 Public Property Get ItemFilterFilesOnly() As Boolean: ItemFilterFilesOnly = mFilterFilesOnly: End Property
+Attribute ItemFilterFilesOnly.VB_Description = "Apply the ItemFilter restriction only to files (ShowFiles), not folders."
 Public Property Let ItemFilterFilesOnly(bVal As Boolean): mFilterFilesOnly = bVal: End Property
 Public Property Get InfoTipOnFolders() As Boolean: InfoTipOnFolders = mInfoTipOnFolders: End Property
+Attribute InfoTipOnFolders.VB_Description = "Show a tooltip with item information on mouseover."
 Public Property Let InfoTipOnFolders(bVal As Boolean): mInfoTipOnFolders = bVal: End Property
 Public Property Get InfoTipOnFiles() As Boolean: InfoTipOnFiles = mInfoTipOnFiles: End Property
+Attribute InfoTipOnFiles.VB_Description = "Show a tooltip with several properties based on the file type on mouseover."
 Public Property Let InfoTipOnFiles(bVal As Boolean): mInfoTipOnFiles = bVal: End Property
 Public Property Get ActiveDropHoverTime() As Long: ActiveDropHoverTime = lRaiseHover: End Property
+Attribute ActiveDropHoverTime.VB_Description = "During a drag/drop operation, how long (in ms) the mouse must not move to trigger a hover event."
 Public Property Let ActiveDropHoverTime(lMillisecs As Long): lRaiseHover = lMillisecs: End Property
 Public Property Get SingleClickExpand() As Boolean: SingleClickExpand = mExpandOnLabelClick: End Property
+Attribute SingleClickExpand.VB_Description = "Expand/collapse when the item name is clicked; otherwise, you must click the expando button or double-click the name to expand/collapse."
 Public Property Let SingleClickExpand(bVal As Boolean): mExpandOnLabelClick = bVal: End Property
 Public Property Get PlayNavigationSound() As Boolean: PlayNavigationSound = mNavSound: End Property
+Attribute PlayNavigationSound.VB_Description = "Play the click sound you hear in Explorer when selecting a new item."
 Public Property Let PlayNavigationSound(bVal As Boolean): mNavSound = bVal: End Property
 Public Property Get AlwaysShowExtendedVerbs() As Boolean: AlwaysShowExtendedVerbs = mAlwaysShowExtVerbs: End Property
+Attribute AlwaysShowExtendedVerbs.VB_Description = "Always show extended verbs in the shell context menu, otherwise Shift must be pressed when bringing up the menu."
 Public Property Let AlwaysShowExtendedVerbs(bVal As Boolean): mAlwaysShowExtVerbs = bVal: End Property
 Public Property Get ShowHiddenItems() As ST_HDN_PREF: ShowHiddenItems = m_HiddenPref: End Property
 Public Property Let ShowHiddenItems(lVal As ST_HDN_PREF): m_HiddenPref = lVal: End Property
 Public Property Get ShowSuperHidden() As ST_SPRHDN_PREF: ShowSuperHidden = m_SuperHiddenPref: End Property
 Public Property Let ShowSuperHidden(lVal As ST_SPRHDN_PREF): m_SuperHiddenPref = lVal: End Property
 Public Property Get ShowFavorites() As Boolean: ShowFavorites = mFavorites: End Property
+Attribute ShowFavorites.VB_Description = "Show the 'Favorites' link group at the top like Explorer."
 Public Property Let ShowFavorites(bVal As Boolean)
 If mFavorites <> bVal Then
     mFavorites = bVal
@@ -3425,6 +3699,7 @@ Public Property Get hWndUserControl() As LongPtr: hWndUserControl = UserControl.
 'Public Property Get Border() As Boolean: Border = mBorder: End Property
 'Public Property Let Border(bVal As Boolean): mBorder = bVal: End Property
 Public Property Get BorderStyle() As ST_BORDERSTYLE: BorderStyle = mBorder: End Property
+Attribute BorderStyle.VB_Description = "Provides options for the type of border around the tree."
 Public Property Let BorderStyle(lVal As ST_BORDERSTYLE)
 If lVal <> mBorder Then
     mBorder = lVal
@@ -3455,6 +3730,7 @@ If lVal <> mBorder Then
 End If
 End Property
 Public Property Get MonitorDirChanges() As Boolean: MonitorDirChanges = mSHCN: End Property
+Attribute MonitorDirChanges.VB_Description = "Monitor shell notifications for files/folders created, deleted, renamed, etc, and update the tree accordingly if needed."
 Public Property Let MonitorDirChanges(bVal As Boolean)
 If bVal <> mSHCN Then
     If bVal Then
@@ -3467,6 +3743,7 @@ If bVal <> mSHCN Then
 End If
 End Property
 Public Property Get LabelEditRename() As Boolean: LabelEditRename = mLabelEdit: End Property
+Attribute LabelEditRename.VB_Description = "Enables label edit, which renames the folders/files in Windows as well."
 Public Property Let LabelEditRename(bVal As Boolean)
 If bVal <> mLabelEdit Then
     mLabelEdit = bVal
@@ -3482,6 +3759,7 @@ If bVal <> mLabelEdit Then
 End If
 End Property
 Public Property Get HorizontalScroll() As Boolean: HorizontalScroll = mHScroll: End Property
+Attribute HorizontalScroll.VB_Description = "Sets whether the tree expands such that horizontal scrolling isn't needed."
 Public Property Let HorizontalScroll(bVal As Boolean)
 If bVal <> mHScroll Then
     mHScroll = bVal
@@ -3498,8 +3776,11 @@ End If
 End Property
 
 Public Property Get NameColors() As Boolean: NameColors = mNameColors: End Property
+Attribute NameColors.VB_Description = "Show Windows encrypted files in green, and Windows compressed files in blue. These are the attributes set in file properties."
 Public Property Let NameColors(bVal As Boolean): mNameColors = bVal: End Property
 Public Property Get InitialPath() As String: InitialPath = mInitialPath: End Property
+Attribute InitialPath.VB_Description = "Deprecated. Use OpenToPath."
+Attribute InitialPath.VB_MemberFlags = "400"
 Public Property Let InitialPath(sPath As String)
 mInitialPath = sPath
 If sPath <> "" Then
@@ -3507,11 +3788,13 @@ If sPath <> "" Then
 End If
 End Property
 Public Property Get CustomRoot() As String: CustomRoot = mCustomRoot: End Property
+Attribute CustomRoot.VB_Description = "Specify a custom location to use as the root folder."
 Public Property Let CustomRoot(sRoot As String)
 mCustomRoot = sRoot
 ResetTreeView
 End Property
 Public Property Get RootHasCheckbox() As Boolean: RootHasCheckbox = mRootHasCheckbox: End Property
+Attribute RootHasCheckbox.VB_Description = "Sets whether or not a checkbox appears next to the root item when checkboxes are enabled."
 Public Property Let RootHasCheckbox(bVal As Boolean)
 If bVal <> mRootHasCheckbox Then
     mRootHasCheckbox = bVal
@@ -3537,26 +3820,32 @@ If bVal <> mRootHasCheckbox Then
 End If
 End Property
 Public Property Get CheckedPaths() As Variant
+    SyncChecks
     SetCheckedList
     CheckedPaths = gPaths
 End Property
 Public Property Get ExcludedPaths() As Variant
+    SyncChecks
     SetExCheckedList
     ExcludedPaths = gExPaths
 End Property
 Public Property Get ShowQuickAccessOnWin10() As Boolean: ShowQuickAccessOnWin10 = m_Win10QA: End Property
+Attribute ShowQuickAccessOnWin10.VB_Description = "Replace ""Favorites"" with ""Quick Access"" on Windows 10+ like Explorer. Requires ShowFavorites to be True."
 Public Property Let ShowQuickAccessOnWin10(bShow As Boolean)
 m_Win10QA = bShow
 End Property
 Public Property Get AutoExpandComputer() As Boolean: AutoExpandComputer = mExpComp: End Property
+Attribute AutoExpandComputer.VB_Description = "When the root is Desktop, automatically expand Computer/ThisPC in the tree."
 Public Property Let AutoExpandComputer(bVal As Boolean)
 mExpComp = bVal
 End Property
 Public Property Get AutoExpandLibraries() As Boolean: AutoExpandLibraries = mExpLib: End Property
+Attribute AutoExpandLibraries.VB_Description = "When the root is Desktop, automatically expand Libraries in the tree."
 Public Property Let AutoExpandLibraries(bVal As Boolean)
 mExpLib = bVal
 End Property
 Public Property Get DisableWow64Redirect() As Boolean: DisableWow64Redirect = m_NoWow64: End Property
+Attribute DisableWow64Redirect.VB_Description = "Disables file system redirection for 32bit build on 64-bit systems. Ignored in 64bit builds."
 Public Property Let DisableWow64Redirect(bVal As Boolean)
 If bVal = m_NoWow64 Then Exit Property
 m_NoWow64 = bVal
@@ -3565,12 +3854,6 @@ If m_NoWow64 Then
 Else
     RevertWow64Redir
 End If
-End Property
-Public Property Get Indentation() As Long: Indentation = mIndent: End Property
-Public Property Let Indentation(lVal As Long)
-mIndent = lVal
-If mIndent < 0& Then mIndent = mDefIndent
-Call SendMessage(hTVD, TVM_SETINDENT, mIndent, ByVal 0&)
 End Property
 
 'End Control Properties
@@ -5360,7 +5643,7 @@ Dim siItem As IShellItem
 
 SHCreateItemFromParsingName StrPtr(sOld), Nothing, IID_IShellItem, siItem
 If (siItem Is Nothing) = False Then
-    cFO2.RenameItem siItem, StrPtr(sNewName), Nothing ' ByVal 0&
+    cFO2.RenameItem siItem, StrPtr(sNewName), Nothing 'ByVal 0&
     DebugAppend "Rename::SetOps"
     cFO2.SetOperationFlags IFO_ALLOWUNDO
     cFO2.SetOwnerWindow hTVD
@@ -6119,7 +6402,8 @@ Private Function CreateTreeView(hwndParent As LongPtr, _
   Dim RC As RECT ' parent client rect
   Call GetClientRect(hwndParent, RC)
   ' Create the TreeView control.
-  CreateTreeView = CreateWindowExW(dwExStyle, StrPtr(WC_TREEVIEW), StrPtr(""), _
+  DebugAppend "CreateTreeView->cx=" & RC.Right & ",cy=" & RC.Bottom
+  CreateTreeView = CreateWindowEx(dwExStyle, StrPtr(WC_TREEVIEW), StrPtr(""), _
                                                 dwStyle, 0, 0, RC.Right, RC.Bottom, _
                                             hwndParent, IID, App.hInstance, 0)
     If CreateTreeView = 0 Then
@@ -8465,288 +8749,17 @@ e0:
     Resume Next
 '</EhFooter>
 End Function 'ucWndProc
-Private Function PtrSTWndProc() As LongPtr
-    PtrSTWndProc = FARPROC(AddressOf ShellTreeSubclassProc)
-End Function
+
 Private Function FARPROC(lpAdr As LongPtr) As LongPtr
 FARPROC = lpAdr
 End Function
-    Public Function Subclass(hWnd As LongPtr, lpFN As LongPtr, Optional uId As LongPtr = 0&, Optional dwRefData As LongPtr = 0&) As Boolean
-    If uId = 0 Then uId = hWnd
-        Subclass = SetWindowSubclass(hWnd, lpFN, uId, dwRefData):      Debug.Assert Subclass
-    End Function
+Private Function Subclass(hWnd As LongPtr, lpFN As LongPtr, Optional uId As LongPtr = 0&, Optional dwRefData As LongPtr = 0&) As Boolean
+If uId = 0 Then uId = hWnd
+    Subclass = SetWindowSubclass(hWnd, lpFN, uId, dwRefData):      Debug.Assert Subclass
+End Function
 
-    Public Function UnSubclass(hWnd As LongPtr, ByVal lpFN As LongPtr, pid As LongPtr) As Boolean
-        UnSubclass = RemoveWindowSubclass(hWnd, lpFN, pid)
-    End Function
+Private Function UnSubclass(hWnd As LongPtr, ByVal lpFN As LongPtr, pid As LongPtr) As Boolean
+    UnSubclass = RemoveWindowSubclass(hWnd, lpFN, pid)
+End Function
 
 End Class
-
-Module modIPAO
-Option Explicit
-'From Krool's comctls:
-
-#If False Then
-Private VTableInterfaceInPlaceActiveObject, VTableInterfaceControl, VTableInterfacePerPropertyBrowsing
-#End If
-Public Enum VTableInterfaceConstants
-VTableInterfaceInPlaceActiveObject = 1
-VTableInterfaceControl = 2
-VTableInterfacePerPropertyBrowsing = 3
-End Enum
-Private Type VTableIPAODataStruct
-VTable As LongPtr
-RefCount As Long
-OriginalIOleIPAO As IOleInPlaceActiveObject
-IOleIPAO As IOleInPlaceActiveObjectVB
-End Type
-Private Type VTableEnumVARIANTDataStruct
-VTable As LongPtr
-RefCount As Long
-Enumerable As Object
-Index As Long
-Count As Long
-End Type
-Public Const CTRLINFO_EATS_RETURN As Long = 1
-Public Const CTRLINFO_EATS_ESCAPE As Long = 2
-Private Declare PtrSafe Function GetKeyState Lib "user32" (ByVal nVirtKey As Long) As Integer
-Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As LongPtr)
-Private Declare PtrSafe Sub SetLastError Lib "kernel32" (ByVal dwErrCode As Long)
-' Private Declare PtrSafe Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As LongPtr) As LongPtr
-' Private Declare PtrSafe Function SysAllocString Lib "oleaut32" (ByVal lpString As LongPtr) As LongPtr
-' Private Declare PtrSafe Function DispCallFunc Lib "oleaut32" (ByVal lpvInstance As Long, ByVal oVft As Long, ByVal CallConv As Long, ByVal vtReturn As Integer, ByVal cActuals As Long, ByVal prgvt As Long, ByVal prgpvarg As Long, ByRef pvargResult As Variant) As Long
-' Private Declare PtrSafe Function VariantCopyToPtr Lib "oleaut32" Alias "VariantCopy" (ByVal pvargDest As Long, ByRef pvargSrc As Variant) As Long
-' Private Declare PtrSafe Function CLSIDFromString Lib "ole32" (ByVal lpszProgID As Long, ByRef pCLSID As Any) As Long
-Private Const CC_STDCALL As Long = 4
-Private Const E_OUTOFMEMORY As Long = &H8007000E
-Private Const E_INVALIDARG As Long = &H80070057
-Private Const E_NOTIMPL As Long = &H80004001
-Private Const E_NOINTERFACE As Long = &H80004002
-Private Const E_POINTER As Long = &H80004003
-Private Const S_FALSE As Long = &H1
-Private Const S_OK As Long = &H0
-Private VTableIPAO(0 To 9) As LongPtr, VTableIPAOData As VTableIPAODataStruct
-'Private VTableControl(0 To 6) As Long, OriginalVTableControl As Long
-'Private VTablePPB(0 To 6) As Long, OriginalVTablePPB As Long, StringsOutArray() As String, CookiesOutArray() As Long
-'Private VTableEnumVARIANT(0 To 6) As Long
-
-Public Function SetVTableHandling(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants) As Boolean
-Select Case OLEInterface
-    Case VTableInterfaceInPlaceActiveObject
-        If VTableHandlingSupported(This, VTableInterfaceInPlaceActiveObject) = True Then
-            VTableIPAOData.RefCount = VTableIPAOData.RefCount + 1
-            SetVTableHandling = True
-        End If
-'    Case VTableInterfaceControl
-'        If VTableHandlingSupported(This, VTableInterfaceControl) = True Then
-'            Call ReplaceIOleControl(This)
-'            SetVTableHandling = True
-'        End If
-'    Case VTableInterfacePerPropertyBrowsing
-'        If VTableHandlingSupported(This, VTableInterfacePerPropertyBrowsing) = True Then
-'            Call ReplaceIPPB(This)
-'            SetVTableHandling = True
-'        End If
-End Select
-End Function
-
-Public Function RemoveVTableHandling(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants) As Boolean
-Select Case OLEInterface
-    Case VTableInterfaceInPlaceActiveObject
-        If VTableHandlingSupported(This, VTableInterfaceInPlaceActiveObject) = True Then
-            VTableIPAOData.RefCount = VTableIPAOData.RefCount - 1
-            RemoveVTableHandling = True
-        End If
-'    Case VTableInterfaceControl
-'        If VTableHandlingSupported(This, VTableInterfaceControl) = True Then
-'            Call RestoreIOleControl(This)
-'            RemoveVTableHandling = True
-'        End If
-'    Case VTableInterfacePerPropertyBrowsing
-'        If VTableHandlingSupported(This, VTableInterfacePerPropertyBrowsing) = True Then
-'            Call RestoreIPPB(This)
-'            RemoveVTableHandling = True
-'        End If
-End Select
-End Function
-Private Function VTableHandlingSupported(ByRef This As Object, ByVal OLEInterface As VTableInterfaceConstants) As Boolean
-On Error GoTo CATCH_EXCEPTION
-Select Case OLEInterface
-    Case VTableInterfaceInPlaceActiveObject
-        Dim ShadowIOleIPAO As IOleInPlaceActiveObject
-        Dim ShadowIOleInPlaceActiveObjectVB As IOleInPlaceActiveObjectVB
-        Set ShadowIOleIPAO = This
-        Set ShadowIOleInPlaceActiveObjectVB = This
-        VTableHandlingSupported = Not CBool(ShadowIOleIPAO Is Nothing Or ShadowIOleInPlaceActiveObjectVB Is Nothing)
-'    Case VTableInterfaceControl
-'        Dim ShadowIOleControl As OLEGuids.IOleControl
-'        Dim ShadowIOleControlVB As OLEGuids.IOleControlVB
-'        Set ShadowIOleControl = This
-'        Set ShadowIOleControlVB = This
-'        VTableHandlingSupported = Not CBool(ShadowIOleControl Is Nothing Or ShadowIOleControlVB Is Nothing)
-'    Case VTableInterfacePerPropertyBrowsing
-'        Dim ShadowIPPB As OLEGuids.IPerPropertyBrowsing
-'        Dim ShadowIPerPropertyBrowsingVB As OLEGuids.IPerPropertyBrowsingVB
-'        Set ShadowIPPB = This
-'        Set ShadowIPerPropertyBrowsingVB = This
-'        VTableHandlingSupported = Not CBool(ShadowIPPB Is Nothing Or ShadowIPerPropertyBrowsingVB Is Nothing)
-End Select
-CATCH_EXCEPTION:
-End Function
-
-Public Sub ActivateIPAO(ByVal This As Object)
-On Error GoTo CATCH_EXCEPTION
-Dim PropOleObject As IOleObject
-Dim PropOleInPlaceSite As IOleInPlaceSite
-Dim PropOleInPlaceFrame As IOleInPlaceFrame
-Dim PropOleInPlaceUIWindow As IOleInPlaceUIWindow
-Dim PropOleInPlaceActiveObject As IOleInPlaceActiveObject
-Dim PosRect As OLERECT
-Dim ClipRect As OLERECT
-Dim FrameInfo As OLEINPLACEFRAMEINFO
-Set PropOleObject = This
-If VTableIPAOData.RefCount > 0 Then
-    With VTableIPAOData
-    .VTable = GetVTableIPAO()
-    Set .OriginalIOleIPAO = This
-    Set .IOleIPAO = This
-    End With
-    CopyMemory ByVal VarPtr(PropOleInPlaceActiveObject), VarPtr(VTableIPAOData), LenB(VTableIPAOData.VTable) 'Just grab the nearest LongPtr for pointer size
-    PropOleInPlaceActiveObject.AddRef
-Else
-    Set PropOleInPlaceActiveObject = This
-End If
-Set PropOleInPlaceSite = PropOleObject.GetClientSite
-PropOleInPlaceSite.GetWindowContext PropOleInPlaceFrame, PropOleInPlaceUIWindow, VarPtr(PosRect), VarPtr(ClipRect), VarPtr(FrameInfo)
-PropOleInPlaceFrame.SetActiveObject PropOleInPlaceActiveObject, vbNullString
-If Not PropOleInPlaceUIWindow Is Nothing Then PropOleInPlaceUIWindow.SetActiveObject PropOleInPlaceActiveObject, vbNullString
-CATCH_EXCEPTION:
-End Sub
-
-Public Sub DeActivateIPAO()
-On Error GoTo CATCH_EXCEPTION
-If VTableIPAOData.OriginalIOleIPAO Is Nothing Then Exit Sub
-Dim PropOleObject As IOleObject
-Dim PropOleInPlaceSite As IOleInPlaceSite
-Dim PropOleInPlaceFrame As IOleInPlaceFrame
-Dim PropOleInPlaceUIWindow As IOleInPlaceUIWindow
-Dim PosRect As OLERECT
-Dim ClipRect As OLERECT
-Dim FrameInfo As OLEINPLACEFRAMEINFO
-Set PropOleObject = VTableIPAOData.OriginalIOleIPAO
-Set PropOleInPlaceSite = PropOleObject.GetClientSite
-PropOleInPlaceSite.GetWindowContext PropOleInPlaceFrame, PropOleInPlaceUIWindow, VarPtr(PosRect), VarPtr(ClipRect), VarPtr(FrameInfo)
-PropOleInPlaceFrame.SetActiveObject Nothing, vbNullString
-If Not PropOleInPlaceUIWindow Is Nothing Then PropOleInPlaceUIWindow.SetActiveObject Nothing, vbNullString
-CATCH_EXCEPTION:
-Set VTableIPAOData.OriginalIOleIPAO = Nothing
-Set VTableIPAOData.IOleIPAO = Nothing
-End Sub
-
-Private Function GetVTableIPAO() As LongPtr
-If VTableIPAO(0) = 0 Then
-    VTableIPAO(0) = ProcPtr(AddressOf IOleIPAO_QueryInterface)
-    VTableIPAO(1) = ProcPtr(AddressOf IOleIPAO_AddRef)
-    VTableIPAO(2) = ProcPtr(AddressOf IOleIPAO_Release)
-    VTableIPAO(3) = ProcPtr(AddressOf IOleIPAO_GetWindow)
-    VTableIPAO(4) = ProcPtr(AddressOf IOleIPAO_ContextSensitiveHelp)
-    VTableIPAO(5) = ProcPtr(AddressOf IOleIPAO_TranslateAccelerator)
-    VTableIPAO(6) = ProcPtr(AddressOf IOleIPAO_OnFrameWindowActivate)
-    VTableIPAO(7) = ProcPtr(AddressOf IOleIPAO_OnDocWindowActivate)
-    VTableIPAO(8) = ProcPtr(AddressOf IOleIPAO_ResizeBorder)
-    VTableIPAO(9) = ProcPtr(AddressOf IOleIPAO_EnableModeless)
-End If
-GetVTableIPAO = VarPtr(VTableIPAO(0))
-End Function
-
-Private Function IOleIPAO_QueryInterface(ByRef This As VTableIPAODataStruct, ByRef IID As OLECLSID, ByRef pvObj As LongPtr) As Long
-If VarPtr(pvObj) = 0 Then
-    IOleIPAO_QueryInterface = E_POINTER
-    Exit Function
-End If
-' IID_IOleInPlaceActiveObject = {00000117-0000-0000-C000-000000000046}
-If IID.Data1 = &H117 And IID.Data2 = &H0 And IID.Data3 = &H0 Then
-    If IID.Data4(0) = &HC0 And IID.Data4(1) = &H0 And IID.Data4(2) = &H0 And IID.Data4(3) = &H0 _
-    And IID.Data4(4) = &H0 And IID.Data4(5) = &H0 And IID.Data4(6) = &H0 And IID.Data4(7) = &H46 Then
-        pvObj = VarPtr(This)
-        IOleIPAO_AddRef This
-        IOleIPAO_QueryInterface = S_OK
-    Else
-        This.OriginalIOleIPAO.QueryInterface(IID, pvObj)
-        IOleIPAO_QueryInterface = Err.LastHResult
-    End If
-Else
-    This.OriginalIOleIPAO.QueryInterface(IID, pvObj)
-    IOleIPAO_QueryInterface = Err.LastHResult
-End If
-End Function
-
-Private Function IOleIPAO_AddRef(ByRef This As VTableIPAODataStruct) As Long
-This.OriginalIOleIPAO.AddRef
-IOleIPAO_AddRef = Err.LastHResult
-End Function
-
-Private Function IOleIPAO_Release(ByRef This As VTableIPAODataStruct) As Long
-This.OriginalIOleIPAO.Release
-IOleIPAO_Release = Err.LastHResult
-End Function
-
-Private Function IOleIPAO_GetWindow(ByRef This As VTableIPAODataStruct, ByRef hWnd As LongPtr) As Long
-This.OriginalIOleIPAO.GetWindow(hWnd)
-IOleIPAO_GetWindow = Err.LastHResult
-End Function
-
-Private Function IOleIPAO_ContextSensitiveHelp(ByRef This As VTableIPAODataStruct, ByVal EnterMode As Long) As Long
-This.OriginalIOleIPAO.ContextSensitiveHelp(EnterMode)
-IOleIPAO_ContextSensitiveHelp = Err.LastHResult
-End Function
-
-Private Function IOleIPAO_TranslateAccelerator(ByRef This As VTableIPAODataStruct, ByRef Msg As MSG) As Long
-If VarPtr(Msg) = 0 Then
-    IOleIPAO_TranslateAccelerator = E_INVALIDARG
-    Exit Function
-End If
-On Error GoTo CATCH_EXCEPTION
-Dim Handled As Boolean
-IOleIPAO_TranslateAccelerator = S_OK
-This.IOleIPAO.TranslateAccelerator Handled, IOleIPAO_TranslateAccelerator, Msg.hWnd, Msg.message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
-If Handled = False Then
-    This.OriginalIOleIPAO.TranslateAccelerator(VarPtr(Msg))
-    IOleIPAO_TranslateAccelerator = Err.LastHResult
-End If
-Exit Function
-CATCH_EXCEPTION:
-    This.OriginalIOleIPAO.TranslateAccelerator(VarPtr(Msg))
-    IOleIPAO_TranslateAccelerator = Err.LastHResult
-End Function
-
-Private Function IOleIPAO_OnFrameWindowActivate(ByRef This As VTableIPAODataStruct, ByVal Activate As Long) As Long
-This.OriginalIOleIPAO.OnFrameWindowActivate(Activate)
-IOleIPAO_OnFrameWindowActivate = Err.LastHResult
-End Function
-
-Private Function IOleIPAO_OnDocWindowActivate(ByRef This As VTableIPAODataStruct, ByVal Activate As Long) As Long
-This.OriginalIOleIPAO.OnDocWindowActivate(Activate)
-IOleIPAO_OnDocWindowActivate = Err.LastHResult
-End Function
-
-Private Function IOleIPAO_ResizeBorder(ByRef This As VTableIPAODataStruct, ByRef RC As OLERECT, ByVal UIWindow As IOleInPlaceUIWindow, ByVal FrameWindow As Long) As Long
-This.OriginalIOleIPAO.ResizeBorder(VarPtr(RC), UIWindow, FrameWindow)
-IOleIPAO_ResizeBorder = Err.LastHResult
-End Function
-
-Private Function IOleIPAO_EnableModeless(ByRef This As VTableIPAODataStruct, ByVal Enable As Long) As Long
-This.OriginalIOleIPAO.EnableModeless(Enable)
-IOleIPAO_EnableModeless = Err.LastHResult
-End Function
-
-
-Public Function ProcPtr(ByVal Address As LongPtr) As LongPtr
-ProcPtr = Address
-End Function
-Public Function GetShiftStateFromMsg() As ShiftConstants
-If GetKeyState(vbKeyShift) < 0 Then GetShiftStateFromMsg = vbShiftMask
-If GetKeyState(vbKeyControl) < 0 Then GetShiftStateFromMsg = GetShiftStateFromMsg Or vbCtrlMask
-If GetKeyState(vbKeyMenu) < 0 Then GetShiftStateFromMsg = GetShiftStateFromMsg Or vbAltMask
-End Function
-End Module

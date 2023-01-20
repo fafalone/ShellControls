@@ -69,22 +69,7 @@
 			"showGrid": true,
 			"showOutlines": false
 		},
-		"__lastUpdateMarker": 35144478,
-		"_children": [
-			{
-				"Enabled": false,
-				"Height": 27,
-				"Index": -1,
-				"Interval": 1000,
-				"Left": 10,
-				"Name": "Timer1",
-				"Tag": null,
-				"Top": 13,
-				"Width": 27,
-				"_className": "Timer",
-				"_clsid": "{33AD4F28-6699-11CF-B70C-00AA0060D393}"
-			}
-		],
+		"__lastUpdateMarker": 3157801722,
 		"_className": "UserControl",
 		"_clsid": "{33AD5010-6699-11CF-B70C-00AA0060D393}"
 	}
