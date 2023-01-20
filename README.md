@@ -36,7 +36,7 @@ Here's the included demos in this repo:
 
 #### Main Shell Browser Demo - DemoMain.twinproj
 
-![image](https://user-images.githubusercontent.com/7834493/213373325-959b1f74-6280-41d6-9dcb-7a06b464b479.png)
+![image](https://user-images.githubusercontent.com/7834493/213609557-64e74258-66f1-41c3-806a-8e1126d21546.png)
 
 #### ucShellBrowse as an upgrade to native VB/TB controls - UCSBDemoVB.twinproj
 
