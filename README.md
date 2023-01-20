@@ -50,7 +50,7 @@ Shows combining ucShellBrowse and ucShellTree:
 
 ## Updates
 
-(Jan 20 2023) All code updated to R1: IPAO hooking code has been integrated into ucShellBrowse and ucShellTree, rather than as a separate module. As a separate module it couldn't be in both, there would be a conflict or it would be missing. But twinBASIC's support for AddressOf on class members makes having it as a standard module unneccessary.
+(Jan 20 2023) All code updated to R1: IPAO hooking code has been integrated into ucShellBrowse and ucShellTree, rather than as a separate module. As a separate module it couldn't be in both, there would be a conflict or it would be missing. But twinBASIC's support for AddressOf on class members makes having it as a standard module unneccessary. Additionally, the property descriptions from the VB version have been added to ucShellTree.
 
 ----
 
