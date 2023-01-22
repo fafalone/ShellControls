@@ -1,6 +1,6 @@
 # ShellControls
 ## Shell Browser and Shell Tree Controls
-## ucShellBrowse v11.3 R1 and ucShellTree v2.18 R1
+## ucShellBrowse v11.3 R2 and ucShellTree v2.18 R1
 
 This repository contains a twinBASIC x86/x64 compatible port of my shell controls, ucShellBrowse and ucShellTree.
 
@@ -49,6 +49,8 @@ Shows combining ucShellBrowse and ucShellTree:
 ![image](https://user-images.githubusercontent.com/7834493/213373633-e539fc13-0287-496e-9d69-a3518a3d6327.png)
 
 ## Updates
+
+(Jan 22 2023) ucShellBrowse R2: Previously described error handling for categorizer errors had mistkanely been removed.
 
 (Jan 20 2023) All code updated to R1: IPAO hooking code has been integrated into ucShellBrowse and ucShellTree, rather than as a separate module. As a separate module it couldn't be in both, there would be a conflict or it would be missing. But twinBASIC's support for AddressOf on class members makes having it as a standard module unneccessary. ucShellBrowse now loads the navigation sound even when not set by Explorer, the default in Win10, with a user option to disable this behavior if not desired. Additionally, the property descriptions from the VB version have been added to ucShellTree.
 
