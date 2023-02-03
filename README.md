@@ -1,6 +1,7 @@
 # ShellControls
 ## Shell Browser and Shell Tree Controls
-## ucShellBrowse v12.0 and ucShellTree v2.8 R1
+## ucShellBrowse v12.0 R1 and ucShellTree v2.8 R2
+### Updated 03 Feb 2023
 
 This repository contains a twinBASIC x86/x64 compatible port of my shell controls, ucShellBrowse and ucShellTree.
 
@@ -29,6 +30,8 @@ As an alternative, to have them in an editable form, for ucShellTree, you need t
 ### Update
 
 **IMPORTANT:** These controls now require [twinBASIC Beta 239](https://github.com/twinbasic/twinbasic/releases) or newer. The changes in/for this release allow building them as Active-X DLLs that can be used in VB6; however they're not working in VBA yet. They also require tbShellLib 2.6.60 or newer, if you're adding them to your own project.
+
+R1 of ucShellBrowse and R2 of ucShellTree update tbShellLib to 2.6.62 to correct improperly defined hex literals, and correct a few local ones as well.
 
 **ucShellBrowse v12.0 Changelog**
 
