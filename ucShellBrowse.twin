@@ -4,23 +4,22 @@
 Public Class ucShellBrowse
 Option Explicit
 
-
-Private Const mVersionStr = "ucShellBrowse 11.3 R2"
+Private Const mVersionStr = "ucShellBrowse 12.0"
 Private Const mVersionApp = "ucShellBrowse"
-Private Const mVersionMjr = 11
-Private Const mVersionMnr = 3
+Private Const mVersionMjr = 12
+Private Const mVersionMnr = 0
 #Region "README"
-' ********************************************************************************
-' *                                                                              *
-' * ucShellBrowse v11.3 - twinBASIC Version - x84/x64 compatible ***BETA***      *
-' * Shell Browser Control                                                        *
-' *                                                                              *
-' * Released: January 22nd, 2023                                                 *
-' *                                                                              *
-' * Author: Jon Johnson (aka fafalone).                                          *
-' * (c) 2017-2023                                                                *
-' *                                                                              *
-' ********************************************************************************
+' ***********************************************************************
+' *                                                                     *
+' * ucShellBrowse v12.0 - twinBASIC Version - x84/x64 compatible *BETA* *
+' * Shell Browser Control                                               *
+' *                                                                     *
+' * Released: 03 Feb 2023                                               *
+' *                                                                     *
+' * Author: Jon Johnson (aka fafalone).                                 *
+' * (c) 2017-2023                                                       *
+' *                                                                     *
+' ***********************************************************************
 '
 'Special thanks to the others whose code forms part of this control,
 'either directly or via me porting it:
@@ -45,7 +44,7 @@ Private Const mVersionMnr = 3
 'http://www.vbforums.com/showthread.php?854147
 'You can also e-mail fafalone at gmail
 '
-'--------------------------------------ABOUT--------------------------------------
+'---------------------------------ABOUT---------------------------------
 'This UserControl covers the full spectrum of needs for browsing the
 'Windows Shell. At the very simplest, it provides a visually updated
 'replacement for the built-in VB controls File, Dir, and Drive ListBox.
@@ -64,13 +63,12 @@ Private Const mVersionMnr = 3
 'this project is fully compatible with my ucShellTree project:
 'http://www.vbforums.com/showthread.php?862137
 '
-'----------------------------------REQUIREMENTS-----------------------------------
+'-----------------------------REQUIREMENTS------------------------------
 '-Windows Vista or newer*
-'-tlb v4.62 or higher.
-'      -Not needed for compiled .exe whether ocx or ctl is used.
+'-tbShellLib v2.5.52 or higher.
+'      -Not needed for compiled .exe whether ocx or tbcontrol is used.
 '      -Still needed for OCX version if you need to respond to events with
-'       IShellItem/IShellItemArray (for the IDE, the tlb doesn't need to be
-'       redistributed with the compiled exe under any circumstance).
+'       IShellItem/IShellItemArray.
 '
 'STRONGLY RECOMMENDED: Common Controls 6.0 - The control does work without
 '    this, but some features are missing/degraded. Group mode, tile view,
@@ -93,7 +91,7 @@ Private Const mVersionMnr = 3
 '    you like the idea of a manually built shell browser, but absolutely
 '    have to support Windows 95-Windows XP. Just shoot me an e-mail or PM.
 '
-'--------------------------------Note on High DPI---------------------------------
+'-----------------------------Note on High DPI----------------------------
 ' You may ignore this section if you don't have Zoom set on your monitor.
 '    This control supports high DPI scaling, but uses an API, one
 '    that can't be avoided (TrackPopupMenu) that has serious issues. If
@@ -107,7 +105,7 @@ Private Const mVersionMnr = 3
 '    select 'Disable display scaling on high DPI settings, which for some
 '    reason enables the controls scaling the same as dpiAware=true.
 '
-'----------------------------------KEY FEATURES-----------------------------------
+'------------------------------KEY FEATURES-------------------------------
 '-Functions as any of the VB file controls: Files Only, Folders Only,
 ' (the dropdown), and restricting that to Drives Only.
 '-Full Unicode support
@@ -216,19 +214,67 @@ Private Const mVersionMnr = 3
 '
 '------------------------------------CHANGELOG------------------------------------
 '
+'New in v12.0 (Released 02 Feb 2023)
+'
+'-There's now a RegisterWindow option that, if True, will register this control as
+' a shell window. It will be seen by the system as if it were an Explorer window,
+' and can be interacted with via IShellView, IShellBrowser, IFolderView, etc, which
+' includes responding to APIs such as SHOpenFolderAndSelectItems. 
+' For instance, if you use your web browser to download to C:\download, and this
+' control is open to C:\download, and you click the 'show in folder' button, it
+' will select the file in this control rather than open an actual Explorer window.
+'
+' Programs like my 'List open windows and properties' demo will also be able to
+' obtain all that information from this control. See the following:
+' https://www.vbforums.com/showthread.php?818959
+' All members that are applicable to this control have been implemented, with the
+' exception I don't intend to implement the FolderItem, Folder, etc interfaces
+' for use with IShellFolderViewDual/shell.application.
+'
+' Some features must be implemented by the host form/application. For instance,
+' in order to respond to requests to close the window, see e.g.
+' https://www.vbforums.com/showthread.php?t=898235 the control will raise the
+' new RequestExit event, letting your app know the window should close.
+'
+' This option is False by default. Not available in DrivesOnly mode, DirOnly
+' mode, or DirOnlyWithCtls mode.
+' NOTE: If you have multiple ShellBrowse controls showing the same path, it's
+'       strongly advised only one registers as a shell window.
+'
+'-Added LinkshellTree sub to store hwnd for associated ucShellTree; for 
+' IShellBrowser.GetControlWindow only for now, but may do more in the future.
+'
+'-Added DropdownShowFullPath option to show the full path in the path dropdown.
+'
+'-Added ListViewAlphaShadow option, an undocumented feature that applies an alpha
+' shadow to ListView labels when in Icon modes (Medium Icon, Large Icon, XL Icon,
+' Thumbnail, and Custom, in this control).
+'
+'-Added NoScroll (LVS_NOSCROLL) style option.
+'
+'-(Bug fix) Column header text could sometimes become corrupted due to early
+'           release of temporary strings.
+'
+'-(Bug fix) This control is labeled as supporting Windows Vista, but some
+'           ListView features that were available on Vista didn't work as the
+'           control only used the Windows 7+ version of IListView. This has been
+'           corrected and all features supported on Vista are available.
+'
+'
+'
 'New in 11.3 R2 
 '
-'-(Bug fix) Error handling for ICategorizer issue had disappeared.
+'-(Bug fix, twinBASIC) Error handling for ICategorizer issue had disappeared.
 '
 '
-'New in 11.3 R1
+'New in 11.3 R1 
 '
-'-IPAO hooking code integrated so as to not conflict with ucShellTree.
+'-(twinBASIC) IPAO hooking code integrated so as to not conflict with ucShellTree.
 '
 '-Navigation sound is disabled by default on Windows 10; it's now manually loaded
 ' with a user option to disable this behavior.
 '
-'New in v11.3
+'New in v11.3 (Released 20 Jan 2023, twinBASIC, VB6 - Unreleased)
 '
 '-Added option to apply filter to ComboBox; a FilterDropdown event has been
 ' added, defaulting to show all.
@@ -629,8 +675,7 @@ Private Const bExtendedThumbsLimitToMedia As Boolean = False 'Default: False. Ex
 Private Const bUseThumbProvAndCacheWhenNotExtended As Boolean = False 'Default: False. Use the new interfaces when not in Extended Thumbnails mode, only for non-media files.
 Private Const bGroupViewUseIconsForType As Boolean = True 'Default: True. Use the generic icon for that file type to add an icon in the Group Header when grouped by Type.
 Private Const bDisableAllKeyboardShortcuts As Boolean = False 'Default: False. Obviously you can disable on a case-by-case or even total basis by editing the LVN_KEYDOWN
-                                                            ' in ucWndProc, but why not make it easy by providing a total toggle here. Keypress events
-                                                            ' will still be raised.
+                                                            ' in ucWndProc, but why not make it easy by providing a total toggle here. Keypress events will still be raised.
 Private Const bLimitHideIconViewToLogical As Boolean = True 'Default: True. Set to False to allow switching into Large Icon, Tile, etc, views when HideIcons is True (makes little sense).
 Private Const lFolderLoadFileUpdateCount As Long = 277& 'Default: 73. When loading a folder, the first 30 files are loaded, and then to speed things up, the display isn't updated until
                                                        'finished, but a status update is sent in a given interval, which you can specify here. Must be a prime number since
@@ -650,7 +695,7 @@ Private Const bShowLoadTimeAsStatus As Boolean = False 'Default: False. After lo
 Private Const bSoundNavigate As Boolean = True 'Provide more granular control for the PlaySounds option
 Private Const bSoundDefBeep As Boolean = True
 Private Const bSoundCritical As Boolean = True
-Private Const bNavSoundOverrideExplorer As Boolean = True 'Load the navigation sound even when disabled by default (i.e. Windows 10)
+Private Const bNavSoundOverrideExplorer As Boolean = True 'Default: True. Load the navigation sound even when disabled by default (i.e. Windows 10)
 Private Const nMaxFoldersInCustomSearchLabel As Long = 3& 'Default: 3. After a search, you can click to search again in Custom. It will display Search Results in Folder1, Folder2, nMaxFolders, ...
                                                           'Must be >0
 Private Const bInsertNewFilterMatches As Boolean = True 'Default: True. If an item in the current folder is renamed, and now matches the filter where it didn't before, add it as a new item.
@@ -677,7 +722,7 @@ Private Const dbg_LogAppend As Boolean = False 'Append the existing log file, if
 Private Const dbg_LogOverwrite As Boolean = False 'If dbg_LogAppend is False, this sets whether to overwrite the existing file
                                                   'or create a new file.
 Private Const dbg_LogExeOnly As Boolean = True 'Only turn on writing to external debug log for the compiled exe (if dbg_PrintToFile is enabled).
-Private Const dbg_MinLevel As Long = 0&   'Only log to immediate/file messages >= this level
+Private Const dbg_MinLevel As Long = 2222&   'Only log to immediate/file messages >= this level
 '**************************************************************************************
 
 '*************************************VB6 EXE NAME*************************************
@@ -817,7 +862,8 @@ Private Const mRenameFailStr = "Could not rename file."
 Private Const mNoCheckStr = "No files checked."
 Private Const mFileCheckStr = "1 file checked."
 Private Const mFilesCheckStr = " files checked."
-Private Const mEmptyFolderStr = "No items found."
+Private mEmptyFolderStr As String
+Private Const mDefEmptyFolderStr = "No items found."
 Private Const mRatingTipStr = "Hold shift while clicking the rating to reset to 0."
 'New in v6.0
 Private Const mSearchBoxInvite = "Search %d"
@@ -968,6 +1014,14 @@ Implements IDropTarget
 Implements IListViewFooterCallback
 Implements IObjectSafety
 Implements IOleInPlaceActiveObjectVB
+Implements IServiceProvider
+Implements IOleWindow
+Implements IFolderViewSettings
+Implements IShellFolderViewDual
+Implements IWebBrowserApp
+Implements IShellBrowser
+Implements IShellView2
+Implements IFolderView2 'We implement all IFolderView methods as part of IFolderView2 and tB supplies IFolderView to QI with those implementations
 
 Public Event DebugMessage(sMsg As String, nLevel As Integer)
 
@@ -1014,7 +1068,9 @@ Public Event FileSearchPopup(ByVal sCurPattern As String, fCancel As Long)
 Public Event QueryCustomInfoTip(ByVal dwFlags As Long, ByVal sName As String, ByVal sFullPath As String, pidlFQItem As LongPtr, out_strTip As String)
 Public Event QueryCustomIcon(ByVal sName As String, ByVal sPath As String, ByVal sFullPath As String, ByVal bIsFolder As Boolean, pidlFQItem As LongPtr, ByVal cxy As Long, out_HBMItem As LongPtr, out_HICOItem As LongPtr, out_Destroy As Boolean)
 Public Event QueryCustomIconOverlay(ByVal nOverlayIndex As Long, ByVal cxy As Long, out_HBMOverlay As LongPtr, out_HICOOverlay As LongPtr, out_Destroy As Boolean)
-
+Public Event RequestExit()
+Public Event RequestWidth(ByVal cx As Long)
+Public Event RequestHeight(ByVal cy As Long)
 '---------------
 'Default UserControl events
 Public Event EnterFocus()
@@ -1067,6 +1123,9 @@ Private imlSys32 As IImageList2
 Private imlSysJM As iImageList
 Private imlMisc As IImageList2
 Private mIShIcon As IShellIcon
+Private pWindow As ShellWindows
+
+Private hShellTree As LongPtr, hShellTreeContainer As LongPtr
 
 Private Type SearchStruct
     siSearch As IShellItem
@@ -1100,6 +1159,9 @@ Private clrSbBack As stdole.OLE_COLOR
 
 Private clrColSel As stdole.OLE_COLOR
 
+Private mRegisterWindow As Boolean
+Private Const mDefRegisterWindow As Boolean = False
+
 Public Enum ShellBrowseView
     SB_VIEW_ICON = &H0
     SB_VIEW_DETAILS = &H1
@@ -1113,6 +1175,7 @@ Public Enum ShellBrowseView
     SB_VIEW_CUSTOM = &H100
 End Enum
 Private m_ViewMode As ShellBrowseView
+Private m_ViewModeDef As ShellBrowseView
 Private Const m_def_ViewMode = SB_VIEW_DETAILS
 
 Private m_ViewModeEx As ShellBrowseView
@@ -1136,6 +1199,19 @@ Public Enum ShellBrowseGroupBy
 End Enum
 Private m_GroupMode As ShellBrowseGroupBy
 Private Const m_def_GroupMode As Long = SBGB_None
+
+Public Enum ComboPathOptions
+    SBCPO_UseExplorer
+    SBCPO_NameOnly
+    SBCPO_ShowFullPath
+End Enum
+Private mShowFP As ComboPathOptions
+Private mFullPath As Boolean, mExpFullPath As Boolean
+Private Const mDefShowFP As Long = SBCPO_NameOnly
+
+Private mAlphaShadow As Boolean
+Private Const mDefAlphaShadow As Boolean = False
+
 
 Private mLVOffX As Long
 Private Const mDefLVOffX As Long = 2&
@@ -1253,6 +1329,9 @@ Private Const m_def_OneClickAct As Boolean = False
 
 Private m_TwoClickAct As Boolean
 Private Const m_def_TwoClickAct As Boolean = False
+
+Private mNoScroll As boolean
+Private Const mDefNoScroll As Boolean = False
 
 Private m_ULHot As Boolean
 Private Const m_def_ULHot As Boolean = False
@@ -1689,7 +1768,8 @@ Private hFocused As LongPtr
 Private hFocusFwd As LongPtr
 Private bIPInit As Boolean
 Private bFirstIPAOEvt As Boolean
-Private IsWOW64 As boolean
+Private IsWOW64 As Boolean
+Private bPathRegd As Boolean, sPathRegd As String, lPathRegCookie As Long
 
 'Med/L/XL Icons
 Private himlLarge As LongPtr
@@ -1842,6 +1922,7 @@ Private bFlagNoPL As Boolean
 Private bUsedHPFforCD As Boolean
 Private mDTSLeft As Long, mDTSRight As Long
 Private mLastSelStr As String
+Private bSuppressCBC As Boolean
 
 Private bFolderHasCat As Boolean
 Private Type siCategory
@@ -2330,6 +2411,7 @@ Private Type UCSBFile
     bLink As Boolean
     bLinkToFolder As Boolean
     bLinkExe As Boolean
+    bSelMark As Boolean
     bIsADS As Boolean
     dwAttrib As SFGAO_Flags
     nIcon As Long
@@ -2606,6 +2688,7 @@ Private Declare PtrSafe Function PropVariantToVariant Lib "propsys" (ByRef propv
 Private Declare PtrSafe Function PSFormatPropertyValue Lib "propsys.dll" (ByVal pps As LongPtr, ByVal ppd As LongPtr, ByVal pdff As PROPDESC_FORMAT_FLAGS, ppszDisplay As LongPtr) As Long
 Private Declare PtrSafe Function PSGetNameFromPropertyKey Lib "propsys.dll" (PropKey As PROPERTYKEY, ppszCanonicalName As LongPtr) As Long
 Private Declare PtrSafe Function PSGetPropertyDescription Lib "propsys.dll" (PropKey As PROPERTYKEY, riid As UUID, ppv As Any) As Long
+Private Declare PtrSafe Function PSGetPropertyDescriptionListFromString Lib "propsys.dll" (ByVal pszPropList As LongPtr, riid As UUID, ppv As Any) As Long
 Private Declare PtrSafe Function PSGetPropertyKeyFromName Lib "propsys.dll" (ByVal pszName As LongPtr, ppropkey As PROPERTYKEY) As Long
 Private Declare PtrSafe Function PSGetPropertySystem Lib "propsys.dll" (riid As UUID, ppv As Any) As Long
 Private Declare PtrSafe Function PtInRect Lib "user32" (lpRect As RECT, ByVal Xy As LongLong) As Long
@@ -2615,7 +2698,7 @@ Private Declare PtrSafe Function RegCloseKey Lib "advapi32.dll" (ByVal hKey As L
 Private Declare PtrSafe Function RegisterClipboardFormatW Lib "user32" (ByVal lpszFormat As LongPtr) As Long
 Private Declare PtrSafe Function RegisterDragDrop Lib "ole32" (ByVal hWnd As LongPtr, ByVal DropTarget As IDropTarget) As Long
 Private Declare PtrSafe Function RegOpenKeyExW Lib "advapi32" (ByVal hKey As LongPtr, ByVal lpSubKey As LongPtr, ByVal ulOptions As Long, ByVal samDesired As Long, phkResult As LongPtr) As Long
-Private Declare PtrSafe Function RegQueryValueExW Lib "advapi32" (ByVal hKey As LongPtr, ByVal lpValueName As LongPtr, lpReserved As Long, ByRef lpType As Long, ByVal szData As LongPtr, ByRef lpcbData As Long) As Long
+Private Declare PtrSafe Function RegQueryValueExW Lib "advapi32" (ByVal hKey As LongPtr, ByVal lpValueName As LongPtr, lpReserved As Long, ByRef lpType As Long, ByVal lpData As LongPtr, ByRef lpcbData As Long) As Long
 Private Declare PtrSafe Function ReleaseCapture Lib "user32" () As Long
 Private Declare PtrSafe Function ReleaseDC Lib "user32" (ByVal hWnd As LongPtr, ByVal hDC As LongPtr) As Long
 Private Declare PtrSafe Function RevokeDragDrop Lib "ole32" (ByVal hWnd As LongPtr) As Long
@@ -2751,6 +2834,16 @@ Private Type MSG
     lParam      As LongPtr
     Time        As Long
     PT          As POINT
+End Type
+
+Private Type SAFEARRAY1D    'Represents a safe array. (One Dimensional)
+    cDims      As Integer   'The count of dimensions.
+    fFeatures  As Integer   'Flags used by the SafeArray.
+    cbElements As Long      'The size of an array element.
+    cLocks     As Long      'The number of times the array has been locked without a corresponding unlock.
+    pvData     As LongPtr   'Pointer to the data.
+    cElements  As Long      'The number of elements in the dimension.
+    lLbound    As Long      'The lower bound of the dimension.
 End Type
 
 Private Type VS_FIXEDFILEINFO
@@ -2918,6 +3011,7 @@ Private Const INPLACE_S_TRUNCATED = &H401A0
 Private Const HTCAPTION = 2
 
 Private Const REG_SZ = 1&
+Private Const REG_DWORD = 4&
 
 Private Const LOCALE_USER_DEFAULT = &H400
 
@@ -6093,8 +6187,1504 @@ Private Sub IObjectSafety_SetInterfaceSafetyOptions(riid As UUID, ByVal dwOption
     
 End Sub
 
+#Region "ShellIntegration"
+Private Sub IServiceProvider_QueryService(guidService As UUID, riid As UUID, ppvObject As LongPtr) Implements IServiceProvider.QueryService
+Dim pUnk As IUnknownUnrestricted
+DebugAppend "Entry: IServiceProvider_QueryService ", 1111
+
+If mRegisterWindow = False Then
+    Err.ReturnHResult = E_NOINTERFACE
+    Exit Sub
+End If
+
+If IsEqualGUID(riid, IID_IShellBrowser) Then
+    DebugAppend "ISP QueryService IShellBrowser", 1111
+    Set pUnk = Me
+    pUnk.QueryInterface IID_IShellBrowser, ppvObject
+ElseIf IsEqualGUID(riid, IID_IShellView) Then
+    DebugAppend "ISP QueryService IShellView", 1111
+    Set pUnk = Me
+    pUnk.QueryInterface IID_IShellView, ppvObject
+ElseIf IsEqualGUID(riid, IID_IFolderView) Then
+    DebugAppend "ISP QueryService IFolderView", 1111
+    Set pUnk = Me
+    pUnk.QueryInterface IID_IFolderView, ppvObject
+ElseIf IsEqualGUID(riid, IID_IFolderView2) Then
+   DebugAppend "ISP QueryService IFolderView2", 1111
+   Set pUnk = Me
+   pUnk.QueryInterface IID_IFolderView2, ppvObject
+ElseIf IsEqualGUID(riid, IID_IFolderViewSettings) Then
+   DebugAppend "ISP QueryService IFolderViewSettings", 1111
+   Set pUnk = Me
+   pUnk.QueryInterface IID_IFolderViewSettings, ppvObject
+ElseIf IsEqualGUID(riid, IID_IOleWindow) Then
+    DebugAppend "ISP QueryService IOleWindow", 1111
+   Set pUnk = Me
+   pUnk.QueryInterface IID_IOleWindow, ppvObject
+ElseIf IsEqualGUID(riid, IID_IShellFolderViewDual) Then
+    DebugAppend "ISP QueryService IShellFolderViewDual", 1111
+   Set pUnk = Me
+   pUnk.QueryInterface IID_IShellFolderViewDual, ppvObject
+ElseIf IsEqualGUID(riid, IID_IWebBrowser) Then
+    DebugAppend "ISP QueryService IWebBrowser", 1111
+   Set pUnk = Me
+   pUnk.QueryInterface IID_IWebBrowser, ppvObject
+ElseIf IsEqualGUID(riid, IID_IWebBrowserApp) Then
+    DebugAppend "ISP QueryService IWebBrowserApp", 1111
+   Set pUnk = Me
+   pUnk.QueryInterface IID_IWebBrowserApp, ppvObject
+Else
+    DebugAppend "ISP QS Serv=" & dbg_GUIDToString(guidService)
+    DebugAppend "ISP QS riid=" & dbg_GUIDToString(riid)
+End If
+Set pUnk = Nothing
+End Sub
+
+Private Function IOleWindow_GetWindow() As LongPtr Implements IOleWindow.GetWindow, IShellBrowser.GetWindow, IShellView2.GetWindow
+DebugAppend "Entry: IOleWindow_GetWindow", 1111
+IOleWindow_GetWindow = hLVS
+End Function
+Private Sub IOleWindow_ContextSensitiveHelp(ByVal fEnterMode As Long) Implements IOleWindow.ContextSensitiveHelp, IShellBrowser.ContextSensitiveHelp, IShellView2.ContextSensitiveHelp
+DebugAppend "Entry: IOleWindow_ContextSensitiveHelp", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+
+'IShellView methods
+Private Sub IShellView_TranslateAccelerator(lpmsg As MSG) Implements IShellView2.TranslateAccelerator
+DebugAppend "Entry: IShellView_TranslateAccelerator", 1111
+Dim pIPAO As IOleInPlaceActiveObject
+Set pIPAO = Me
+pIPAO.TranslateAccelerator VarPtr(lpmsg)
+End Sub
+Private Sub IShellView_EnableModelessSV(ByVal fEnable As Long) Implements IShellView2.EnableModelessSV
+DebugAppend "Entry: IShellView_EnableModelessSV", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+Private Sub IShellView_UIActivate(ByVal uState As SVUIA_STATUS) Implements IShellView2.UIActivate
+DebugAppend "Entry: IShellView_UIActivate", 1111
+If uState <> SVUIA_DEACTIVATE Then SetFocusOnFiles
+End Sub
+Private Sub IShellView_Refresh() Implements IShellView2.Refresh
+DebugAppend "Entry: IShellView_Refresh", 1111
+RefreshView
+End Sub
+Private Sub IShellView_CreateViewWindow(ByVal lpPrevView As IShellView, lpfs As FOLDERSETTINGS, ByVal psb As IShellBrowser, prcView As RECT, phwnd As LongPtr) Implements IShellView2.CreateViewWindow
+DebugAppend "Entry: IShellView_CreateViewWindow", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+Private Sub IShellView_DestroyViewWindow() Implements IShellView2.DestroyViewWindow
+DebugAppend "Entry: IShellView_DestroyViewWindow", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+Private Sub IShellView_GetCurrentInfo(lpfs As FOLDERSETTINGS) Implements IShellView2.GetCurrentInfo
+DebugAppend "Entry: IShellView_GetCurrentInfo", 1111
+Select Case m_ViewMode
+    Case SB_VIEW_ICON, SB_VIEW_MDICON, SB_VIEW_XLICON, SB_VIEW_CUSTOM: lpfs.ViewMode = FVM_ICON
+    Case SB_VIEW_DETAILS: lpfs.ViewMode = FVM_DETAILS
+    Case SB_VIEW_SMALLICON: lpfs.ViewMode = FVM_SMALLICON
+    Case SB_VIEW_LIST: lpfs.ViewMode = FVM_LIST
+    Case SB_VIEW_TILE: lpfs.ViewMode = FVM_TILE
+    Case SB_VIEW_CONTENTS: lpfs.ViewMode = FVM_CONTENT
+    Case SB_VIEW_THUMBNAIL: lpfs.ViewMode = FVM_THUMBNAIL
+End Select
+If Me.AutoArrange Then lpfs.fFlags = lpfs.fFlags Or FWF_AUTOARRANGE
+If Me.AutoCheckSelect Then lpfs.fFlags = lpfs.fFlags Or FWF_AUTOCHECKSELECT
+If Me.SnapToGrid Then lpfs.fFlags = lpfs.fFlags Or FWF_SNAPTOGRID
+If Me.MultiSelect = False Then lpfs.fFlags = lpfs.fFlags Or FWF_SINGLESEL
+If m_Mode = SBCTL_FilesOnly Then lpfs.fFlags = lpfs.fFlags Or FWF_NOSUBFOLDERS
+If Me.NoScroll Then lpfs.fFlags = lpfs.fFlags Or FWF_NOSCROLL
+If Me.AlignTop = False Then lpfs.fFlags = lpfs.fFlags Or FWF_ALIGNLEFT
+If Me.HideIcons Then lpfs.fFlags = lpfs.fFlags Or FWF_NOICONS
+If Me.ShowSelAlways Then lpfs.fFlags = lpfs.fFlags Or FWF_SHOWSELALWAYS
+If Me.OneClickActivate Then lpfs.fFlags = lpfs.fFlags Or FWF_SINGLECLICKACTIVATE
+If Me.HideLabels Then lpfs.fFlags = lpfs.fFlags Or FWF_HIDEFILENAMES
+If Me.Checkboxes Then lpfs.fFlags = lpfs.fFlags Or FWF_CHECKSELECT
+If Me.FullRowSelect Then lpfs.fFlags = lpfs.fFlags Or FWF_FULLROWSELECT
+If Me.HideColumnHeader Then lpfs.fFlags = lpfs.fFlags Or FWF_NOCOLUMNHEADER
+If Me.HeaderInAllViews = False Then lpfs.fFlags = lpfs.fFlags Or FWF_NOHEADERINALLVIEWS
+If m_ViewMode = SB_VIEW_CONTENTS Then lpfs.fFlags = lpfs.fFlags Or FWF_EXTENDEDTILES
+If m_GroupSubset Then lpfs.fFlags = lpfs.fFlags Or FWF_SUBSETGROUPS
+End Sub
+Private Sub IShellView_AddPropertySheetPages(ByVal dwReserved As Long, ByVal lpfn As LongPtr, ByVal lParam As LongPtr) Implements IShellView2.AddPropertySheetPages
+DebugAppend "Entry: IShellView_AddPropertySheetPages", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+Private Sub IShellView_SaveViewState() Implements IShellView2.SaveViewState
+DebugAppend "Entry: IShellView_SaveViewState", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+Private Sub IShellView_SelectItem(ByVal pidlItem As LongPtr, ByVal uFlags As SVSI_Flags) Implements IShellView2.SelectItem
+DebugAppend "Entry: IShellView_SelectItem", 1111
+If pidlItem Then
+    Dim lp As LongPtr
+    Dim pItem As IShellItem
+    Dim mFile As String
+    Dim bDeselOthers As Boolean
+    Dim bSel As Boolean
+    Dim bEV As Boolean
+    Dim bFoc As Boolean
+    SHCreateItemFromIDList pidlItem, IID_IShellItem, pItem
+    If (pItem Is Nothing) = False Then
+        pItem.GetDisplayName SIGDN_NORMALDISPLAY, lp
+        mFile = LPWSTRtoStr(lp)
+        DebugAppend "ISV_SelectItem->" & mFile & ",Flags=" & dbg_svsiflagstr(uFlags), 1111
+        If (uFlags And SVSI_DESELECTOTHERS) = SVSI_DESELECTOTHERS Then bDeselOthers = True
+        If (uFlags And SVSI_SELECT) = SVSI_SELECT Then bSel = True
+        If (uFlags And SVSI_ENSUREVISIBLE) = SVSI_ENSUREVISIBLE Then bEV = True
+        If (uFlags And SVSI_FOCUSED) = SVSI_FOCUSED Then bFoc = True
+        SelectedFileSet mFile, bSel, bDeselOthers, bFoc, bEV
+        DebugAppend "ISV_SelectItem->Returned from SelectedFileSet"
+        If (uFlags And SVSI_CHECK) = SVSI_CHECK Then
+            FileSetCheck mFile, 1
+        End If
+        If (uFlags And SVSI_SELECTIONMARK) = SVSI_SELECTIONMARK Then
+           Dim i As Long
+           Dim idx As Long
+           Dim pidl As LongPtr
+           pidl = ILFindLastID(pidlItem)
+           If pidl Then
+                For i = 0 To UBound(LVEntries)
+                    LVEntries(i).bSelMark = False
+                Next
+                idx = LVFindItemByPidl(pidl)
+                LVEntries(idx).bSelMark = True
+                SendMessage hLVS, LVM_SETSELECTIONMARK, 0, ByVal idx
+            End If
+        End If
+    Else
+        DebugAppend "ISV_SelectItem Got pidl, couldn't create IShellItem", 1111
+    End If
+Else
+    DebugAppend "ISV_SelectItem entered by no pidl", 1111
+End If
+End Sub
+Private Function IShellView_GetItemObject(ByVal uItem As SVGIO_Flags, riid As UUID) As LongPtr Implements IShellView2.GetItemObject
+DebugAppend "Entry: IShellView_GetItemObject", 1111
+Select Case uItem
+    Case SVGIO_BACKGROUND
+        If IsEqualGUID(riid, IID_IShellItem) Then
+            DebugAppend "IFV GetFolder requested IShellItem", 1111
+            SHCreateItemFromParsingName StrPtr(m_sCurPath), Nothing, IID_IShellItem, IShellView_GetItemObject
+        ElseIf IsEqualIID(riid, IID_IShellFolder) Then
+            IShellView_GetItemObject = ObjPtr(psfCur)
+        ElseIf IsEqualIID(riid, IID_IDataObject) Then
+            siCurPath.BindToHandler 0, BHID_DataObject, IID_IDataObject, IShellView_GetItemObject
+        Else
+            DebugAppend "IShellView_GetItemObject Unsupported request", 1111
+        End If
+        
+    Case SVGIO_ALLVIEW, SVGIO_CHECKED
+        Dim sia As IShellItemArray
+        Dim apidl() As LongPtr
+        Dim cidl As Long
+        Dim i As Long
+        Dim lCt As Long
+        lCt = CLng(SendMessage(hLVS, LVM_GETITEMCOUNT, 0, ByVal 0))
+        If lCt = 0 Then Exit Function
+        
+        For i = 0 To UBound(LVEntries)
+            If LVEntries(i).bDeleted = False Then
+                If ((uItem And SVGIO_CHECKED) = SVGIO_CHECKED) And (LVEntries(i).fChecked = 0) Then GoTo nxt
+                ReDim apidl(cidl)
+                apidl(cidl) = ILCombine(pidlFQCur, LVEntries(i).pidlRel)
+                cidl = cidl + 1
+            End If
+nxt:
+        Next
+        SHCreateShellItemArrayFromIDLists cidl, apidl(0), sia
+        For i = 0 To cidl - 1
+            CoTaskMemFree apidl(i)
+        Next
+        If IsEqualIID(IID_IShellItemArray, riid) Then
+            IShellView_GetItemObject = ObjPtr(sia)
+        ElseIf IsEqualIID(IID_IDataObject, riid) Then
+            Dim pdo3 As IDataObject
+            sia.BindToHandler 0, BHID_DataObject, IID_IDataObject, pdo3
+            IShellView_GetItemObject = ObjPtr(pdo3)
+        End If
+        
+    Case SVGIO_SELECTION
+        If IsEqualIID(IID_IShellItemArray, riid) Then
+            IShellView_GetItemObject = ObjPtr(siaSelected)
+        ElseIf IsEqualIID(IID_IDataObject, riid) Then
+            Dim pdo As IDataObject
+            siaSelected.BindToHandler 0, BHID_DataObject, IID_IDataObject, IShellView_GetItemObject
+        End If
+
+End Select
+End Function
+Private Sub IShellView2_CreateViewWindow2(lpParams As SV2CVW2_PARAMS) Implements IShellView2.CreateViewWindow2
+    Err.ReturnHResult = E_NOTIMPL
+End Sub
+
+Private Sub IShellView2_GetView(pvid As UUID, ByVal uView As SV2GV_Flags) Implements IShellView2.GetView
+    Dim nView As ShellBrowseView
+    If uView = SV2GV_DEFAULTVIEW Then
+        nView = m_ViewModeDef
+    ElseIf uView = SV2GV_CURRENTVIEW Then
+        nView = m_ViewMode
+    End If
+    Select Case nView
+    	Case SB_VIEW_ICON, SB_VIEW_MDICON, SB_VIEW_XLICON, SB_VIEW_THUMBNAIL, SB_VIEW_CUSTOM: pvid = VID_LargeIcons
+        Case SB_VIEW_SMALLICON: pvid = VID_SmallIcons
+        Case SB_VIEW_LIST: pvid = VID_List
+        Case SB_VIEW_DETAILS: pvid = VID_Details
+        Case SB_VIEW_TILE, SB_VIEW_CONTENTS: pvid = VID_Tile
+    End Select
+End Sub
+
+Private Sub IShellView2_HandleRename(ByVal pidlNew As LongPtr) Implements IShellView2.HandleRename
+    Err.ReturnHResult = E_NOTIMPL
+End Sub
+
+Private Sub IShellView2_SelectItemAndPosition(ByVal pidlItem As LongPtr, ByVal uFlags As SVSI_Flags, pt As POINT) Implements IShellView2.SelectItemAndPosition
+    Dim idx As Long
+    idx = LVFindItemByPidl(pidlItem)
+    IFolderView2_SelectItem idx, uFlags
+    If (m_ViewMode = SB_VIEW_SMALLICON) Or (m_ViewMode = SB_VIEW_ICON) Or (m_ViewMode = SB_VIEW_MDICON) Or (m_ViewMode = SB_VIEW_XLICON) Then
+        SendMessage hLVS, LVM_SETITEMPOSITION32, idx, pt
+    End If
+End Sub
+    
+
+
+'IShellBrowser Methods
+Private Sub IShellBrowser_InsertMenuSB(ByVal hMenuShared As LongPtr, lpMenuWidth As OLEMENUGROUPWIDTHS) Implements IShellBrowser.InsertMenuSB
+DebugAppend "Entry: IShellBrowser_InsertMenusSB", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+Private Sub IShellBrowser_SetMenuSB(ByVal hmenuShared As LongPtr, ByVal holemenuReserved As LongPtr, ByVal LONGActiveObject As LongPtr) Implements IShellBrowser.SetMenuSB
+DebugAppend "Entry: IShellBrowser_SetMenuSB", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+Private Sub IShellBrowser_RemoveWindowSB(ByVal hMenuShared As LongPtr) Implements IShellBrowser.RemoveWindowSB
+DebugAppend "Entry: IShellBrowser_RemoveMenusSB", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+Private Sub IShellBrowser_SetStatusTextSB(ByVal lpszStatusText As String) Implements IShellBrowser.SetStatusTextSB
+DebugAppend "Entry: IShellBrowser_SetStatusTextSB", 1111
+Me.StatusText = lpszStatusText
+End Sub
+Private Sub IShellBrowser_EnableModelessSB(ByVal fEnable As Long) Implements IShellBrowser.EnableModelessSB
+DebugAppend "Entry: IShellBrowser_EnableModelessSB", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+Private Sub IShellBrowser_TranslateAcceleratorSB(lpmsg As MSG, ByVal wID As Integer) Implements IShellBrowser.TranslateAcceleratorSB
+DebugAppend "Entry: IShellBrowser_TranslateAcceleratorSB", 1111
+Dim ipao As IOleInPlaceActiveObject
+Set ipao = Me
+ipao.TranslateAccelerator VarPtr(lpmsg)
+End Sub
+Private Sub IShellBrowser_BrowseObject(ByVal pidl As LongPtr, ByVal wFlags As BO_Flags) Implements IShellBrowser.BrowseObject
+DebugAppend "Entry: IShellBrowser_BrowseObject", 1111
+Dim bRestoreSound As Boolean
+If (wFlags And SBSP_PLAYNOSOUND) = SBSP_PLAYNOSOUND Then
+    'If sounds are otherwise enabled, we'll want them disabled only for this nav operation
+    If Me.PlaySounds Then
+        bRestoreSound = True
+        Me.PlaySounds = False
+    End If
+End If
+
+If (wFlags And SBSP_NAVIGATEBACK) = SBSP_NAVIGATEBACK Then
+    DoBack
+    GoTo out
+End If
+If (wFlags And SBSP_NAVIGATEFORWARD) = SBSP_NAVIGATEFORWARD Then
+    DoForward
+    GoTo out
+End If
+If (wFlags And SBSP_PARENT) = SBSP_PARENT Then
+   NavOpenParent
+   GoTo out
+End If
+
+If (wFlags And SBSP_ABSOLUTE) = SBSP_ABSOLUTE Then
+    Me.BrowserPathPidl = pidl
+    GoTo out
+End If
+If (wFlags And SBSP_RELATIVE) = SBSP_RELATIVE Then
+    Dim pidlFQ As LongPtr
+    pidlFQ = ILCombine(pidlFQCur, pidl)
+    Me.BrowserPathPidl = pidlFQ
+    CoTaskMemFree pidlFQ
+    GoTo out
+End If
+out:
+If bRestoreSound Then
+    Me.PlaySounds = True
+End If
+End Sub
+Private Sub IShellBrowser_GetViewStateStream(ByVal grfMode As Long, ppStrm As IStream) Implements IShellBrowser.GetViewStateStream
+DebugAppend "Entry: IShellBrowser_GetViewStateStream", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+Private Sub IShellBrowser_GetControlWindow(ByVal id As GCW_IDs, lpHwnd As LongPtr) Implements IShellBrowser.GetControlWindow
+DebugAppend "Entry: IShellBrowser_GetControlWindow", 1111
+Select Case id
+    Case FCW_BROWSER: lpHwnd = UserControl.hWnd
+    Case FCW_STATUS: lpHwnd = m_hStatusBar
+    Case FCW_ADDRESSBAR: lpHwnd = hCombo
+    Case FCW_VIEW: lpHwnd = hLVS
+    Case FCW_TOOLBAR, FCW_TOOLBAND, FCW_MENUBAR: lpHwnd = pbControlBox.hWnd
+    Case FCW_TREE: lpHwnd = hShellTree
+End Select
+End Sub
+
+Private Sub IShellBrowser_SendControlMsg(ByVal id As GCW_IDs, ByVal uMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, pret As LongPtr) Implements IShellBrowser.SendControlMsg
+DebugAppend "Entry: IShellBrowser_SendControlMsg", 1111
+Select Case id
+    Case FCW_BROWSER, FCW_VIEW: pret = ucWndProc(hLVS, uMsg, wParam, lParam, hLVS, 0)
+    Case FCW_STATUS: pret = SendMessage(m_hStatusBar, uMsg, wParam, lParam)
+    Case FCW_ADDRESSBAR: pret = SendMessage(hCombo, uMsg, wParam, lParam)
+    Case FCW_TOOLBAR, FCW_TOOLBAND, FCW_MENUBAR: pret = SendMessage(pbControlBox.hWnd, uMsg, wParam, lParam)
+    Case FCW_TREE: pret = SendMessage(hShellTree, uMsg, wParam, lParam)
+End Select
+End Sub
+
+Private Sub IShellBrowser_OnViewWindowActive(ByVal ppshv As IShellView) Implements IShellBrowser.OnViewWindowActive
+DebugAppend "Entry: IShellBrowser_OnViewWindowActive", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+
+Private Sub IShellBrowser_QueryActiveShellView(ppshv As IShellView) Implements IShellBrowser.QueryActiveShellView
+DebugAppend "Entry: IShellBrowser_QueryActiveShellView", 1111
+Set ppshv = Me
+End Sub
+
+Private Sub IShellBrowser_SetToolbarItems(ByVal lpButtons As LongPtr, ByVal nButtons As Long, ByVal uFlags As STI_Flags) Implements IShellBrowser.SetToolbarItems
+DebugAppend "Entry: IShellBrowser_SetToolbarItems", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+
+'IFolderView2
+'IFolderView
+Private Sub IFolderView2_GetCurrentViewMode(pViewMode As Long) Implements IFolderView2.GetCurrentViewMode
+DebugAppend "Entry: IFolderView2_GetCurrentViewMode", 1111
+Select Case m_ViewMode
+    Case SB_VIEW_ICON, SB_VIEW_MDICON, SB_VIEW_XLICON, SB_VIEW_CUSTOM: pViewMode = FVM_ICON
+    Case SB_VIEW_DETAILS: pViewMode = FVM_DETAILS
+    Case SB_VIEW_SMALLICON: pViewMode = FVM_SMALLICON
+    Case SB_VIEW_LIST: pViewMode = FVM_LIST
+    Case SB_VIEW_TILE: pViewMode = FVM_TILE
+    Case SB_VIEW_CONTENTS: pViewMode = FVM_CONTENT
+    Case SB_VIEW_THUMBNAIL: pViewMode = FVM_THUMBNAIL
+End Select
+End Sub
+Private Sub IFolderView2_SetCurrentViewMode(ByVal ViewMode As Long) Implements IFolderView2.SetCurrentViewMode
+DebugAppend "Entry: IFolderView2_SetCurrentViewMode", 1111
+Select Case ViewMode
+    Case FVM_ICON: Me.ViewMode = SB_VIEW_ICON
+    Case FVM_DETAILS: Me.ViewMode = SB_VIEW_DETAILS
+    Case FVM_SMALLICON: Me.ViewMode = SB_VIEW_SMALLICON
+    Case FVM_LIST: Me.ViewMode = SB_VIEW_LIST
+    Case FVM_TILE: Me.ViewMode = SB_VIEW_TILE
+    Case FVM_CONTENT: Me.ViewMode = SB_VIEW_CONTENTS
+    Case FVM_THUMBNAIL, FVM_THUMBSTRIP: Me.ViewMode = SB_VIEW_THUMBNAIL
+End Select
+End Sub
+Private Sub IFolderView2_GetFolder(riid As UUID, ppv As LongPtr) Implements IFolderView2.GetFolder
+DebugAppend "Entry: IFolderView2_GetFolder", 1111
+If IsEqualGUID(riid, IID_IShellItem) Then
+    DebugAppend "IFV GetFolder requested IShellItem", 1111
+    SHCreateItemFromParsingName StrPtr(m_sCurPath), Nothing, IID_IShellItem, ppv
+ElseIf IsEqualIID(riid, IID_IShellFolder) Then
+    ppv = ObjPtr(psfCur)
+ElseIf IsEqualIID(riid, IID_IDataObject) Then
+    siCurPath.BindToHandler 0, BHID_DataObject, IID_IDataObject, ppv
+Else
+    DebugAppend "IFV GetFolder Unsupported request", 1111
+End If
+End Sub
+Private Sub IFolderView2_Item(ByVal iItemIndex As Long, ppidl As LongPtr) Implements IFolderView2.Item
+DebugAppend "Entry: IFolderView2_Item", 1111
+Dim lp As Long
+lp = CLng(GetLVItemlParam(hLVS, iItemIndex))
+If lp = -1 Then Exit Sub
+ppidl = LVEntries(lp).pidlRel
+End Sub
+Private Sub IFolderView2_ItemCount(ByVal uFlags As SVGIO_Flags, pcItems As Long) Implements IFolderView2.ItemCount
+DebugAppend "Entry: IFolderView2_ItemCount, Flags=" & uFlags, 1111
+If uFlags = SVGIO_SELECTION Then
+    pcItems = CLng(SendMessage(hLVS, LVM_GETSELECTEDCOUNT, 0, ByVal 0))
+ElseIf uFlags = SVGIO_CHECKED Then
+    pcItems = ItemsCheckedCount()
+Else
+    pcItems = CLng(SendMessage(hLVS, LVM_GETITEMCOUNT, 0, ByVal 0))
+End If
+End Sub
+Private Sub IFolderView2_Items(ByVal uFlags As SVGIO_Flags, riid As UUID, ppv As LongPtr) Implements IFolderView2.Items
+DebugAppend "Entry: IFolderView2_Items", 1111
+On Error GoTo e0
+If (uFlags And SVGIO_SELECTION) = SVGIO_SELECTION Then
+    If IsEqualIID(IID_IShellItemArray, riid) Then
+        ppv = ObjPtr(siaSelected)
+    ElseIf IsEqualIID(IID_IDataObject, riid) Then
+        Dim pdo As IDataObject
+        siaSelected.BindToHandler 0, BHID_DataObject, IID_IDataObject, pdo
+        ppv = ObjPtr(pdo)
+    End If
+    Exit Sub
+End If
+If (uFlags And SVGIO_BACKGROUND) = SVGIO_BACKGROUND Then
+    If IsEqualIID(IID_IShellItem, riid) Then
+        ppv = ObjPtr(siCurPath)
+    ElseIf IsEqualIID(IID_IDataObject, riid) Then
+        Dim pdo2 As IDataObject
+        siCurPath.BindToHandler 0, BHID_DataObject, IID_IDataObject, pdo2
+        ppv = ObjPtr(pdo2)
+    ElseIf IsEqualIID(IID_IShellFolder, riid) Then
+        ppv = ObjPtr(psfCur)
+    End If
+    Exit Sub
+End If
+If ((uFlags And SVGIO_ALLVIEW) = SVGIO_ALLVIEW) Or (((uFlags And SVGIO_CHECKED) = SVGIO_CHECKED)) Then
+    Dim sia As IShellItemArray
+    Dim apidl() As LongPtr
+    Dim cidl As Long
+    Dim i As Long
+    Dim lCt As Long
+    lCt = CLng(SendMessage(hLVS, LVM_GETITEMCOUNT, 0, ByVal 0))
+    If lCt = 0 Then Exit Sub
+    
+    For i = 0 To UBound(LVEntries)
+        If LVEntries(i).bDeleted = False Then
+            If ((uFlags And SVGIO_CHECKED) = SVGIO_CHECKED) And (LVEntries(i).fChecked = 0) Then GoTo nxt
+            ReDim apidl(cidl)
+            apidl(cidl) = ILCombine(pidlFQCur, LVEntries(i).pidlRel)
+            cidl = cidl + 1
+        End If
+nxt:
+    Next
+    SHCreateShellItemArrayFromIDLists cidl, apidl(0), sia
+    For i = 0 To cidl - 1
+        CoTaskMemFree apidl(i)
+    Next
+    If IsEqualIID(IID_IShellItemArray, riid) Then
+        ppv = ObjPtr(sia)
+    ElseIf IsEqualIID(IID_IDataObject, riid) Then
+        Dim pdo3 As IDataObject
+        sia.BindToHandler 0, BHID_DataObject, IID_IDataObject, pdo3
+        ppv = ObjPtr(pdo3)
+    End If
+    Exit Sub
+End If
+Exit Sub
+e0:
+    DebugAppend "IFolderView2_Items.Error->" & Err.Description & ",0x" & Hex$(Err.Number)
+End Sub
+Private Sub IFolderView2_GetSelectionMarkedItem(piItem As Long) Implements IFolderView2.GetSelectionMarkedItem
+DebugAppend "Entry: IFolderView2_GetSelectionMarkedItem", 1111
+Dim i As Long
+For i = 0 To UBound(LVEntries)
+    If LVEntries(i).bDeleted = False Then
+        If LVEntries(i).bSelMark = True Then
+            piItem = CLng(SendMessage(hLVS, LVM_MAPIDTOINDEX, LVEntries(i).dwID, ByVal 0))
+            Exit Sub
+        End If
+    End If
+Next
+End Sub
+Private Sub IFolderView2_GetFocusedItem(piItem As Long) Implements IFolderView2.GetFocusedItem
+DebugAppend "Entry: IFolderView2_GetFocusedItem", 1111
+piItem = SelectedFileIndex
+End Sub
+Private Sub IFolderView2_GetItemPosition(ByVal pidl As LongPtr, ppt As POINT) Implements IFolderView2.GetItemPosition
+DebugAppend "Entry: IFolderView2_GetItemPosition", 1111
+Dim idx As Long
+idx = LVFindItemByPidl(pidl)
+If idx = -1 Then Exit Sub
+SendMessage hLVS, LVM_GETITEMPOSITION, idx, ppt
+End Sub
+Private Sub IFolderView2_GetSpacing(ppt As POINT) Implements IFolderView2.GetSpacing
+DebugAppend "Entry: IFolderView2_GetSpacing", 1111
+Dim lp As LongPtr
+Dim lpl As Long
+SendMessage hLVS, LVM_GETITEMSPACING, IIf(m_ViewMode = SB_VIEW_SMALLICON, 1, 0), lp
+lpl = CLng(lp)
+ppt.x = LoWord(lpl)
+ppt.y = HiWord(lpl)
+End Sub
+Private Sub IFolderView2_GetDefaultSpacing(ppt As POINT) Implements IFolderView2.GetDefaultSpacing
+DebugAppend "Entry: IFolderView2_GetDefaultSpacing", 1111
+Dim lp As LongPtr
+Dim lpl As Long
+SendMessage hLVS, LVM_GETITEMSPACING, IIf(m_ViewMode = SB_VIEW_SMALLICON, 1, 0), lp
+lpl = CLng(lp)
+ppt.x = LoWord(lpl)
+ppt.y = HiWord(lpl)
+End Sub
+Private Sub IFolderView2_GetAutoArrange() Implements IFolderView2.GetAutoArrange
+DebugAppend "Entry: IFolderView2_GetAutoArrange", 1111
+If Me.AutoArrange = False Then Err.ReturnHResult = S_FALSE
+End Sub
+Private Sub IFolderView2_SelectItem(ByVal iItem As Long, ByVal dwFlags As SVSI_Flags) Implements IFolderView2.SelectItem
+DebugAppend "Entry: IFolderView2_SelectItem", 1111
+Dim bDeselOthers As Boolean
+Dim bSel As Boolean
+Dim bEV As Boolean
+Dim bFoc As Boolean
+If (dwFlags And SVSI_DESELECTOTHERS) = SVSI_DESELECTOTHERS Then bDeselOthers = True
+If (dwFlags And SVSI_SELECT) = SVSI_SELECT Then bSel = True
+If (dwFlags And SVSI_ENSUREVISIBLE) = SVSI_ENSUREVISIBLE Then bEV = True
+If (dwFlags And SVSI_FOCUSED) = SVSI_FOCUSED Then bFoc = True
+LVSelectIndex iItem, bSel, bDeselOthers, bFoc, bEV
+If (dwFlags And SVSI_CHECK) = SVSI_CHECK Then
+    ListView_SetCheckState hLVS, iItem, 1
+End If
+If (dwFlags And SVSI_SELECTIONMARK) = SVSI_SELECTIONMARK Then
+    Dim i As Long
+    Dim lp As Long
+    For i = 0 To UBound(LVEntries)
+        LVEntries(i).bSelMark = False
+    Next
+    lp = CLng(GetLVItemlParam(hLVS, iItem))
+    LVEntries(lp).bSelMark = True
+    SendMessage hLVS, LVM_SETSELECTIONMARK, 0, ByVal iItem
+End If
+End Sub
+Private Sub IFolderView2_SelectAndPositionItems(ByVal cidl As Long, apidl As LongPtr, apt As POINT, ByVal dwFlags As SVSI_Flags) Implements IFolderView2.SelectAndPositionItems
+DebugAppend "Entry: IFolderView2_SelectAndPositionItems", 1111
+On Error GoTo e0
+Dim pidlCur As LongPtr
+Dim ptCur As POINT
+Dim i As Long
+Dim idx As Long
+For i = 0 To cidl - 1
+    CopyMemory pidlCur, ByVal VarPtr(apidl) + ((i - 1) * LenB(pidlCur)), LenB(pidlCur)
+    CopyMemory ptCur, ByVal VarPtr(apt) + ((i - 1) * 8), 8
+    idx = LVFindItemByPidl(pidlCur)
+    IFolderView2_SelectItem idx, dwFlags
+    If (m_ViewMode = SB_VIEW_SMALLICON) Or (m_ViewMode = SB_VIEW_ICON) Or (m_ViewMode = SB_VIEW_MDICON) Or (m_ViewMode = SB_VIEW_XLICON) Then
+        SendMessage hLVS, LVM_SETITEMPOSITION32, idx, ptCur
+    End If
+Next
+Exit Sub
+e0:
+    DebugAppend "IFolderView2_SelectAndPositionItems.Error->" & Err.Description & ", 0x" & Hex$(Err.Number)
+    Err.ReturnHResult = E_INVALIDARG
+End Sub
+'IFolderView2 methods
+Private Sub IFolderView2_SetGroupBy(key As PROPERTYKEY, ByVal fAscending As Long) Implements IFolderView2.SetGroupBy
+DebugAppend "Entry: IFolderView2_SetGroupBy", 1111
+Dim i As Long
+Dim lp As Long
+Dim lCt As Long = CLng(SendMessage(hLVSHdr, HDM_GETITEMCOUNT, 0, ByVal 0))
+For i = 0 To lCt - 1
+    lp = CLng(GetHDItemlParam(hLVSHdr, i))
+    If IsEqualPKEY(uColData(lp).pKey, key) Then
+        lGrpCol = lp
+        SetGroupModeByCol lp
+        Exit Sub
+    End If
+Next
+End Sub
+Private Sub IFolderView2_GetGroupBy(pkey As PROPERTYKEY, pfAscending As Long) Implements IFolderView2.GetGroupBy
+DebugAppend "Entry: IFolderView2_GetGroupBy", 1111
+If lGrpCol >= 0 Then
+    pkey = uColData(lGrpCol).pKey
+    If lSortD Then pfAscending = 1
+End If
+End Sub
+Private Sub IFolderView2_SetViewProperty(ByVal pidl As LongPtr, propkey As PROPERTYKEY, propvar As Variant) Implements IFolderView2.SetViewProperty
+DebugAppend "Entry: IFolderView2_SetViewProperty", 1111
+On Error GoTo e0
+Dim siItem As IShellItem
+Dim si2Item As IShellItem2
+Dim pStore As IPropertyStore
+Dim ppcp As IPropertyStoreCapabilities
+Dim pidlFQ As LongPtr
+pidlFQ = ILCombine(pidlFQCur, pidl)
+SHCreateItemFromIDList pidlFQ, IID_IShellItem, siItem
+If (siItem Is Nothing) = False Then
+    Set si2Item = siItem
+    si2Item.GetPropertyStore GPS_OPENSLOWITEM Or GPS_BESTEFFORT, IID_IPropertyStore, pStore
+    If (pStore Is Nothing) = False Then
+        Set ppcp = pStore
+        If ppcp.IsPropertyWritable(VarPtr(propkey)) Then GoTo out 'Is S_OK if writable
+        Dim uAtr As SFGAO_Flags
+        siItem.GetAttributes SFGAO_READONLY Or SFGAO_SYSTEM, uAtr
+        If ((uAtr And SFGAO_READONLY) = SFGAO_READONLY) Or ((uAtr And SFGAO_SYSTEM) = SFGAO_SYSTEM) Then GoTo Out
+        'We should be able to write now
+        pStore.SetValue propkey, propvar
+        pStore.Commit
+    End If
+End If
+out:
+CoTaskMemFree pidlFQ
+Exit Sub
+e0:
+    DebugAppend "IFolderView2_SetViewProperty.Error->" & Err.Description & ", 0x" & Hex$(Err.Number)
+    If pidlFQ Then CoTaskMemFree pidlFQ
+End Sub
+
+Private Sub IFolderView2_GetViewProperty(ByVal pidl As LongPtr, propkey As PROPERTYKEY, ppropvar As Variant)
+DebugAppend "Entry: IFolderView2_GetViewProperty", 1111
+Dim siItem As IShellItem
+Dim si2Item As IShellItem2
+Dim pidlFQ As LongPtr
+pidlFQ = ILCombine(pidlFQCur, pidl)
+SHCreateItemFromIDList pidlFQ, IID_IShellItem, siItem
+If siItem IsNot Nothing Then
+    Set si2Item = siItem
+    si2Item.GetProperty propkey, ppropvar
+End If
+End Sub
+Private Sub IFolderView2_SetTileViewProperties(ByVal pidl As LongPtr, ByVal pszPropList As LongPtr)
+DebugAppend "Entry: IFolderView2_SetTileViewProperties", 1111
+On Error GoTo e0
+Dim idx As Long
+idx = LVFindItemByPidl(pidl)
+If idx >= 0 Then
+    Dim sPropList As String
+    Dim sProps() As String
+    Dim sProp As String
+    Dim i As Long, j As Long
+    Dim lCol() As Long
+    Dim nCol As Long
+    Dim tLVT As LVTILEINFO
+    Dim lCt As Long
+    Dim lp As Long
+    sPropList = LPWSTRtoStr(pszPropList, False)
+    If sPropList = "" Then Exit Sub
+    If InStr(sPropList, ";") Then
+        sProps = Split(sPropList, ";")
+    Else
+        ReDim sProps(0)
+        sProps(0) = sPropList
+    End If
+    lCt = Header_GetItemCount(hLVSHdr)
+    For i = 0 To UBound(sProps)
+    	sProp = Mid$(sProps(i), 6) 'String is prop:canonicalname
+        For j = 0 To lCt - 1
+            lp = CLng(GetHDItemlParam(hLVSHdr, j))
+            If uColData(lp).szSystemName = sProp Then
+                ReDim Preserve lCol(nCol)
+                lCol(nCol) = j
+                nCol = nCol + 1
+            End If
+        Next j
+    Next i
+    If nCol Then
+        tLVT.cbSize = LenB(tLVT)
+        tLVT.iItem = idx
+        tLVT.cColumns = nCol
+        tLVT.puColumns = VarPtr(lCol(0))
+        Call SendMessage(hLVS, LVM_SETTILEINFO, 0, tLVT)
+    End If
+End If
+Exit Sub
+e0:
+    DebugAppend "IFolderView2_SetTileViewProperties.Error->" & Err.Description & ", 0x" & Hex$(Err.Number)
+End Sub
+Private Sub IFolderView2_SetExtendedTileViewProperties(ByVal pidl As LongPtr, ByVal pszPropList As LongPtr)
+DebugAppend "Entry: IFolderView2_SetExtendedTileViewProperties", 1111
+On Error GoTo e0
+Dim idx As Long
+idx = LVFindItemByPidl(pidl)
+If idx >= 0 Then
+    Dim sPropList As String
+    Dim sProps() As String
+    Dim sProp As String
+    Dim i As Long, j As Long
+    Dim lCol() As Long
+    Dim lFmt() As LVCOLUMN_fmt
+    Dim nCol As Long
+    Dim tLVT As LVTILEINFO
+    Dim lCt As Long
+    Dim lp As Long
+    sPropList = LPWSTRtoStr(pszPropList, False)
+    If sPropList = "" Then Exit Sub
+    If InStr(sPropList, ";") Then
+        sProps = Split(sPropList, ";")
+    Else
+        ReDim sProps(0)
+        sProps(0) = sPropList
+    End If
+    lCt = Header_GetItemCount(hLVSHdr)
+    For i = 0 To UBound(sProps)
+    	sProp = Mid$(sProps(i), 6) 'String is prop:canonicalname
+        For j = 0 To lCt - 1
+            lp = CLng(GetHDItemlParam(hLVSHdr, j))
+            If uColData(lp).szSystemName = sProp Then
+                ReDim Preserve lCol(nCol)
+                lCol(nCol) = j
+                nCol = nCol + 1
+            End If
+        Next j
+    Next i
+    If nCol Then
+        ReDim lFmt(nCol - 1)
+        For i = 0 To UBound(lCol)
+            If (i Mod 2) Then
+                lFmt(i) = LVCFMT_TILE_PLACEMENTMASK
+            End If
+        Next i
+        lFmt(UBound(lFmt)) = LVCFMT_FILL
+        
+        tLVT.cbSize = LenB(tLVT)
+        tLVT.iItem = idx
+        tLVT.cColumns = nCol
+        tLVT.puColumns = VarPtr(lCol(0))
+        tLVT.piColFmt = VarPtr(lFmt(0))
+        Call SendMessage(hLVS, LVM_SETTILEINFO, 0, tLVT)
+    End If
+End If
+Exit Sub
+e0:
+    DebugAppend "IFolderView2_SetExtendedTileViewProperties.Error->" & Err.Description & ", 0x" & Hex$(Err.Number)
+End Sub
+Private Sub IFolderView2_SetText(ByVal iType As FVTEXTTYPE, ByVal pwszText As LongPtr)
+DebugAppend "Entry: IFolderView2_SetText", 1111
+If iType = FVST_EMPTYTEXT Then
+    mEmptyFolderStr = LPWSTRtoStr(pwszText, False)
+    SendMessage hLVS, LVM_RESETEMPTYTEXT, 0, ByVal 0
+End If
+End Sub
+Private Sub IFolderView2_SetCurrentFolderFlags(ByVal dwMask As FOLDERFLAGS, ByVal dwFlags As FOLDERFLAGS)
+DebugAppend "Entry: IFolderView2_SetCurrentFolderFlags", 1111
+If (dwMask And FWF_AUTOARRANGE) = FWF_AUTOARRANGE Then
+    If (dwFlags And FWF_AUTOARRANGE) = FWF_AUTOARRANGE Then
+        Me.AutoArrange = True
+    Else
+        Me.AutoArrange = False
+    End If
+End If
+If (dwMask And FWF_AUTOCHECKSELECT) = FWF_AUTOCHECKSELECT Then
+    If (dwFlags And FWF_AUTOCHECKSELECT) = FWF_AUTOCHECKSELECT Then
+        Me.AutoCheckSelect = True
+    Else
+        Me.AutoCheckSelect = False
+    End If
+End If
+If (dwMask And FWF_SNAPTOGRID) = FWF_SNAPTOGRID Then
+    If (dwFlags And FWF_SNAPTOGRID) = FWF_SNAPTOGRID Then
+        Me.SnapToGrid = True
+    Else
+        Me.SnapToGrid = False
+    End If
+End If
+If (dwMask And FWF_SINGLESEL) = FWF_SINGLESEL Then
+    If (dwFlags And FWF_SINGLESEL) = FWF_SINGLESEL Then
+        Me.MultiSelect = False
+    Else
+        Me.MultiSelect = True
+    End If
+End If
+If (dwMask And FWF_NOSUBFOLDERS) = FWF_NOSUBFOLDERS Then
+    If (dwFlags And FWF_NOSUBFOLDERS) = FWF_NOSUBFOLDERS Then
+        Me.ControlType = SBCTL_FilesOnly
+    Else
+        Me.ControlType = SBCTL_DirAndFiles
+    End If
+End If
+If (dwMask And FWF_NOSCROLL) = FWF_NOSCROLL Then
+    If (dwFlags And FWF_NOSCROLL) = FWF_NOSCROLL Then
+        Me.NoScroll = True
+    Else
+        Me.NoScroll = False
+    End If
+End If
+If (dwMask And FWF_ALIGNLEFT) = FWF_ALIGNLEFT Then
+    If (dwFlags And FWF_ALIGNLEFT) = FWF_ALIGNLEFT Then
+        Me.AlignTop = False
+    Else
+        Me.AlignTop = True
+    End If
+End If
+If (dwMask And FWF_NOICONS) = FWF_NOICONS Then
+    If (dwFlags And FWF_NOICONS) = FWF_NOICONS Then
+        Me.HideIcons = True
+    Else
+        Me.HideIcons = False
+    End If
+End If
+If (dwMask And FWF_SHOWSELALWAYS) = FWF_SHOWSELALWAYS Then
+    If (dwFlags And FWF_SHOWSELALWAYS) = FWF_SHOWSELALWAYS Then
+        Me.ShowSelAlways = True
+    Else
+        Me.ShowSelAlways = False
+    End If
+End If
+If (dwMask And FWF_SINGLECLICKACTIVATE) = FWF_SINGLECLICKACTIVATE Then
+    If (dwFlags And FWF_SINGLECLICKACTIVATE) = FWF_SINGLECLICKACTIVATE Then
+        Me.OneClickActivate = True
+    Else
+        Me.OneClickActivate = False
+    End If
+End If
+If (dwMask And FWF_HIDEFILENAMES) = FWF_HIDEFILENAMES Then
+    If (dwFlags And FWF_HIDEFILENAMES) = FWF_HIDEFILENAMES Then
+        Me.HideLabels = True
+    Else
+        Me.HideLabels = False
+    End If
+End If
+If (dwMask And FWF_CHECKSELECT) = FWF_CHECKSELECT Then
+    If (dwFlags And FWF_CHECKSELECT) = FWF_CHECKSELECT Then
+        Me.Checkboxes = True
+    Else
+        Me.Checkboxes = False
+    End If
+End If
+If (dwMask And FWF_FULLROWSELECT) = FWF_FULLROWSELECT Then
+    If (dwFlags And FWF_FULLROWSELECT) = FWF_FULLROWSELECT Then
+        Me.FullRowSelect = True
+    Else
+        Me.FullRowSelect = False
+    End If
+End If
+If (dwMask And FWF_NOCOLUMNHEADER) = FWF_NOCOLUMNHEADER Then
+    If (dwFlags And FWF_NOCOLUMNHEADER) = FWF_NOCOLUMNHEADER Then
+        Me.HideColumnHeader = True
+    Else
+        Me.HideColumnHeader = False
+    End If
+End If
+If (dwMask And FWF_NOHEADERINALLVIEWS) = FWF_NOHEADERINALLVIEWS Then
+    If (dwFlags And FWF_NOHEADERINALLVIEWS) = FWF_NOHEADERINALLVIEWS Then
+        Me.HeaderInAllViews = False
+    Else
+        Me.HeaderInAllViews = True
+    End If
+End If
+If (dwMask And FWF_EXTENDEDTILES) = FWF_EXTENDEDTILES Then
+    If (dwFlags And FWF_EXTENDEDTILES) = FWF_EXTENDEDTILES Then
+        Me.ViewMode = SB_VIEW_CONTENTS
+    End If
+End If
+End Sub
+Private Sub IFolderView2_GetCurrentFolderFlags(pdwFlags As FOLDERFLAGS)
+DebugAppend "Entry: IFolderView2_GetCurrentFolderFlags", 1111
+pdwFlags = 0
+If Me.AutoArrange Then pdwFlags = pdwFlags Or FWF_AUTOARRANGE
+If Me.AutoCheckSelect Then pdwFlags = pdwFlags Or FWF_AUTOCHECKSELECT
+If Me.SnapToGrid Then pdwFlags = pdwFlags Or FWF_SNAPTOGRID
+If Me.MultiSelect = False Then pdwFlags = pdwFlags Or FWF_SINGLESEL
+If m_Mode = SBCTL_FilesOnly Then pdwFlags = pdwFlags Or FWF_NOSUBFOLDERS
+If Me.NoScroll Then pdwFlags = pdwFlags Or FWF_NOSCROLL
+If Me.AlignTop = False Then pdwFlags = pdwFlags Or FWF_ALIGNLEFT
+If Me.HideIcons Then pdwFlags = pdwFlags Or FWF_NOICONS
+If Me.ShowSelAlways Then pdwFlags = pdwFlags Or FWF_SHOWSELALWAYS
+If Me.OneClickActivate Then pdwFlags = pdwFlags Or FWF_SINGLECLICKACTIVATE
+If Me.HideLabels Then pdwFlags = pdwFlags Or FWF_HIDEFILENAMES
+If Me.Checkboxes Then pdwFlags = pdwFlags Or FWF_CHECKSELECT
+If Me.FullRowSelect Then pdwFlags = pdwFlags Or FWF_FULLROWSELECT
+If Me.HideColumnHeader Then pdwFlags = pdwFlags Or FWF_NOCOLUMNHEADER
+If Me.HeaderInAllViews = False Then pdwFlags = pdwFlags Or FWF_NOHEADERINALLVIEWS
+If m_ViewMode = SB_VIEW_CONTENTS Then pdwFlags = pdwFlags Or FWF_EXTENDEDTILES
+If m_GroupSubset Then pdwFlags = pdwFlags Or FWF_SUBSETGROUPS
+End Sub
+Private Sub IFolderView2_GetSortColumnCount(pcColumns As Long)
+DebugAppend "Entry: IFolderView2_GetSortColumnCount", 1111
+Dim lidx As Long = GetCurPathCBIdx()
+pcColumns = UBound(cbItems(lidx).lColSet) + 1
+End Sub
+Private Sub IFolderView2_SetSortColumns(rgSortColumns As SORTCOLUMN, ByVal cColumns As Long)
+DebugAppend "Entry: IFolderView2_SetSortColumns", 1111
+On Error GoTo e0
+If cColumns < 1 Then
+    Err.ReturnHResult = E_INVALIDARG
+    Exit Sub
+End If
+Dim i As Long, j As LongPtr, k As Long
+Dim lIdx As Long
+Dim pIdx As Long
+Dim arFull() As SORTCOLUMN
+ReDim arFull(cColumns - 1)
+CopyMemory arFull(0), ByVal VarPtr(rgSortColumns), LenB(rgSortColumns) * cColumns
+For i = 0 To UBound(cbItems)
+    If (cbItems(i).sFullPath = m_sCurPath) And (cbItems(i).bDeleted = False) Then
+        lIdx = i
+        Exit For
+    End If
+Next i
+ReDim cbItems(lIdx).lColSet(cColumns - 1)
+For j = 0 To UBound(arFull)
+    pIdx = LookupColFromPK2(arFull(j).propkey)
+    cbItems(lIdx).lColSet(j) = pIdx
+Next
+DebugAppend "ColSet=" & dbg_sfromlarray(cbItems(lIdx).lColSet)
+UpdateColumns lIdx
+Exit Sub
+e0:
+    DebugAppend "IFolderView2_SetSortColumns.Error->" & Err.Description & ", 0x" & Hex$(Err.Number)
+End Sub
+Private Sub IFolderView2_GetSortColumns(rgSortColumns As SORTCOLUMN, ByVal cColumns As Long)
+DebugAppend "Entry: IFolderView2_GetSortColumns " & cColumns, 1111
+Dim aCol() As SORTCOLUMN
+Dim nCol As Long
+Dim lidx As Long = GetCurPathCBIdx()
+nCol = UBound(cbItems(lidx).lColSet)
+If cColumns < nCol Then nCol = cColumns
+ReDim aCol(nCol - 1)
+Dim i As Long
+
+For i = 0 To nCol - 1
+    aCol(i).propkey = uColData(cbItems(lidx).lColSet(i)).pKey
+    aCol(i).direction = SORT_ASCENDING
+Next
+CopyMemory ByVal VarPtr(rgSortColumns), ByVal VarPtr(aCol(0)), LenB(aCol(0)) * nCol
+DebugAppend "IFolderView2_GetSortColumns sent " & nCol & " columns.", 1111
+End Sub
+Private Sub IFolderView2_GetItem(ByVal iItem As Long, riid As UUID, ppv As LongPtr)
+DebugAppend "Entry: IFolderView2_GetItem", 1111
+Dim lCt As Long
+lCt = CLng(SendMessage(hLVS, LVM_GETITEMCOUNT, 0, ByVal 0))
+If lCt = 0 Then Exit Sub
+Dim idx As Long
+idx = CLng(GetLVItemlParam(hLVS, iItem))
+Dim pidl As LongPtr
+pidl = ILCombine(pidlFQCur, LVEntries(idx).pidlRel)
+If IsEqualIID(riid, IID_IShellItem) Then
+    SHCreateItemFromIDList pidl, IID_IShellItem, ppv
+ElseIf IsEqualIID(riid, IID_IDataObject) Then
+    Dim psi As IShellItem
+    SHCreateItemFromIDList pidl, IID_IShellItem, psi
+    psi.BindToHandler 0, BHID_DataObject, IID_IDataObject, ppv
+End If
+End Sub
+Private Sub IFolderView2_GetVisibleItem(ByVal iStart As Long, ByVal fPrevious As Long, piItem As Long)
+DebugAppend "Entry: IFolderView2_GetVisibleItem", 1111
+piItem = ListView_GetNextItem(hLVS, iStart, LVNI_VISIBLEONLY)
+End Sub
+Private Sub IFolderView2_GetSelectedItem(ByVal iStart As Long, piItem As Long)
+DebugAppend "Entry: IFolderView2_GetSelectedItem", 1111
+piItem = ListView_GetNextItem(hLVS, iStart, LVNI_SELECTED)
+End Sub
+Private Sub IFolderView2_GetSelection(ByVal fNoneImpliesFolder As Long, ppsia As IShellItemArray)
+DebugAppend "Entry: IFolderView2_GetSelection", 1111
+Dim nSelCt As Long = CLng(SendMessage(hLVS, LVM_GETSELECTEDCOUNT, 0, ByVal 0))
+If nSelCt = 0 Then
+    If fNoneImpliesFolder Then
+        SHCreateShellItemArrayFromShellItem siCurPath, IID_IShellItemArray, ppsia
+    End If
+Else
+    Set ppsia = siaSelected
+End If
+End Sub
+Private Sub IFolderView2_GetSelectionState(ByVal pidl As LongPtr, pdlFlags As SVSI_Flags)
+DebugAppend "Entry: IFolderView2_GetSelectionState", 1111
+Dim idx As Long
+idx = LVFindItemByPidl(pidl)
+If idx >= 0 Then
+    Dim dwState As LVITEM_state
+    dwState = CLng(ListView_GetItemState(hLVS, idx, LVIS_FOCUSED Or LVIS_SELECTED))
+    If (dwState And LVIS_FOCUSED) = LVIS_FOCUSED Then
+        pdlFlags = pdlFlags Or SVSI_FOCUSED
+    End If
+    If (dwState And LVIS_SELECTED) = LVIS_SELECTED Then
+        pdlFlags = pdlFlags Or SVSI_SELECT
+    End If
+    If ListView_GetCheckState(hLVS, idx) Then
+        pdlFlags = pdlFlags Or SVSI_CHECK
+    End If
+End If
+End Sub
+Private Sub IFolderView2_InvokeVerbOnSelection(ByVal pszVerb As LongPtr)
+DebugAppend "Entry: IFolderView2_InvokeVerbOnSelection", 1111
+On Error GoTo e0
+Dim cnt As Long
+cnt = CLng(SendMessage(hLVS, LVM_GETSELECTEDCOUNT, 0&, ByVal 0&))
+If cnt = 0 Then Exit Sub
+Dim i As Long
+Dim nFocused As Long, lpFocused As Long
+Dim lp As Long
+Dim pidlFq As LongPtr
+Dim pidlPar As LongPtr
+Dim pidlc As LongPtr
+Dim cpidl As Long
+Dim apidl() As LongPtr
+ReDim apidl(0)
+Dim sip As IShellItem
+Dim upi As IParentAndItem
+Dim psfCust As IShellFolder
+Dim pCtx As IContextMenu
+Dim sVerb As String
+
+nFocused = ListView_GetSelectedItem(hLVS)
+lpFocused = CLng(GetLVItemlParam(hLVS, nFocused))
+
+If m_sCurPath = "*CUSTOM" Then
+    i = nFocused: lp = lpFocused
+    pidlFq = ILCreateFromPathW(StrPtr(LVEntries(lp).sFullPath))
+    SHCreateItemFromIDList pidlFq, IID_IShellItem, sip
+    Set upi = sip
+    upi.GetParentAndItem pidlPar, psfCust, pidlc
+    apidl(0) = pidlc
+    cpidl = 1
+    psfCust.GetUIObjectOf 0&, cpidl, apidl(0), IID_IContextMenu, 0&, pCtx
+    Call CoTaskMemFree(pidlFq)
+    Call CoTaskMemFree(pidlPar)
+Else
+
+    i = LVI_NOITEM
+    Do
+        i = CLng(SendMessage(hLVS, LVM_GETNEXTITEM, i, ByVal LVNI_SELECTED))
+        If (i <> LVI_NOITEM) Then
+            lp = CLng(GetLVItemlParam(hLVS, i))
+            ReDim Preserve apidl(cpidl)
+            apidl(cpidl) = LVEntries(lp).pidlRel
+            cpidl = cpidl + 1
+            DebugAppend "ContextMenuAddItem " & LVEntries(lp).sName
+        End If
+    Loop Until (i = LVI_NOITEM)
+End If
+    DebugAppend "CPM cpidl=" & cpidl & ",ub=" & UBound(apidl)
+
+psfCur.GetUIObjectOf 0&, cpidl, apidl(0), IID_IContextMenu, 0&, pCtx
+
+For i = 0 To UBound(apidl)
+    CoTaskMemFree apidl(i)
+Next
+
+sVerb = LPWSTRtoStr(pszVerb, False)
+
+InvokeVerb pCtx, sVerb
+
+Exit Sub
+e0:
+    DebugAppend "IFolderView2_InvokeVerbOnSelection.Error->" & Err.Description & ",0x" & Hex$(Err.Number)
+End Sub
+Private Sub IFolderView2_SetViewModeAndIconSize(ByVal uViewMode As FOLDERVIEWMODE, ByVal iImageSize As Long)
+DebugAppend "Entry: IFolderView2_SetViewModeAndIconSize", 1111
+Select Case uViewMode
+    Case FVM_ICON: Me.ViewMode = SB_VIEW_ICON
+    Case FVM_DETAILS: Me.ViewMode = SB_VIEW_DETAILS
+    Case FVM_SMALLICON: Me.ViewMode = SB_VIEW_SMALLICON
+    Case FVM_LIST: Me.ViewMode = SB_VIEW_LIST
+    Case FVM_TILE: Me.ViewMode = SB_VIEW_TILE
+    Case FVM_CONTENT: Me.ViewMode = SB_VIEW_CONTENTS
+    Case FVM_THUMBNAIL, FVM_THUMBSTRIP: Me.ViewMode = SB_VIEW_THUMBNAIL
+End Select
+m_ThumbCXY = iImageSize
+End Sub
+Private Sub IFolderView2_GetViewModeAndIconSize(puViewMode As FOLDERVIEWMODE, piImageSize As Long)
+DebugAppend "Entry: IFolderView2_GetViewModeAndIconSize", 1111
+Select Case m_ViewMode
+    Case SB_VIEW_ICON, SB_VIEW_MDICON, SB_VIEW_XLICON, SB_VIEW_CUSTOM: puViewMode = FVM_ICON
+    Case SB_VIEW_DETAILS: puViewMode = FVM_DETAILS
+    Case SB_VIEW_SMALLICON: puViewMode = FVM_SMALLICON
+    Case SB_VIEW_LIST: puViewMode = FVM_LIST
+    Case SB_VIEW_TILE: puViewMode = FVM_TILE
+    Case SB_VIEW_CONTENTS: puViewMode = FVM_CONTENT
+    Case SB_VIEW_THUMBNAIL: puViewMode = FVM_THUMBNAIL
+End Select
+Dim himl As LongPtr
+Dim cy As Long
+Select Case m_ViewMode
+        Case SB_VIEW_SMALLICON, SB_VIEW_LIST, SB_VIEW_DETAILS
+            himl = SendMessage(hLVS, LVM_GETIMAGELIST, LVSIL_SMALL, ByVal 0)
+            ImageList_GetIconSize himl, piImageSize, cy
+        Case Else
+            himl = SendMessage(hLVS, LVM_GETIMAGELIST, LVSIL_NORMAL, ByVal 0)
+            ImageList_GetIconSize himl, piImageSize, cy
+End Select
+End Sub
+Private Sub IFolderView2_SetGroupSubsetCount(ByVal cVisibleRows As Long)
+DebugAppend "Entry: IFolderView2_SetGroupSubsetCount", 1111
+If m_ViewMode = SB_VIEW_DETAILS Then
+    Me.GroupSubsetCount = cVisibleRows
+Else
+    Dim lCt As Long
+    lCt = CLng(SendMessage(hLVS, LVM_GETITEMCOUNT, 0, ByVal 0))
+    If lCt = 0 Then Exit Sub
+    Dim rcItem As RECT, rcLV As RECT
+    Dim idx As Long
+    Dim i As Long
+    Dim lPerRow As Long
+    idx = -1
+    For i = 0 To lCt - 1
+        If SendMessage(hLVS, LVM_ISITEMVISIBLE, i, ByVal 0) Then
+            idx = i
+            Exit For
+        End If
+    Next
+    If idx = -1 Then Exit Sub
+    ListView_GetItemRect hLVS, idx, rcItem, LVIR_BOUNDS
+    GetClientRect hLVS, rcLV
+    lPerRow = (rcLV.Right \ rcItem.Right)
+    If lPerRow = 0 Then lPerRow = 1
+    Me.GroupSubsetCount = cVisibleRows * lPerRow
+End If
+End Sub
+Private Sub IFolderView2_GetGroupSubsetCount(pcVisibleRows As Long)
+DebugAppend "Entry: IFolderView2_GetGroupSubsetCount", 1111
+If m_GroupSubset = 0 Then Exit Sub
+If m_ViewMode = SB_VIEW_DETAILS Then
+    pcVisibleRows = m_GroupSubset
+Else
+    Dim lCt As Long
+    lCt = CLng(SendMessage(hLVS, LVM_GETITEMCOUNT, 0, ByVal 0))
+    If lCt = 0 Then Exit Sub
+    Dim rcItem As RECT, rcLV As RECT
+    Dim idx As Long
+    Dim i As Long
+    Dim lPerRow As Long
+    idx = -1
+    For i = 0 To lCt - 1
+        If SendMessage(hLVS, LVM_ISITEMVISIBLE, i, ByVal 0) Then
+            idx = i
+            Exit For
+        End If
+    Next
+    If idx = -1 Then Exit Sub
+    ListView_GetItemRect hLVS, idx, rcItem, LVIR_BOUNDS
+    GetClientRect hLVS, rcLV
+    lPerRow = (rcLV.Right \ rcItem.Right)
+    If lPerRow = 0 Then lPerRow = 1
+    pcVisibleRows = m_GroupSubset \ lPerRow
+    If pcVisibleRows = 0 Then pcVisibleRows = 1
+End If
+    
+End Sub
+Private Sub IFolderView2_SetRedraw(ByVal fRedrawOn As Long)
+DebugAppend "Entry: IFolderView2_SetRedraw", 1111
+Call SendMessage(hLVS, WM_SETREDRAW, fRedrawOn, ByVal 0&)
+End Sub
+Private Sub IFolderView2_IsMoveInSameFolder()
+DebugAppend "Entry: IFolderView2_IsMoveInSameFolder", 1111
+Err.ReturnHResult = E_NOTIMPL
+End Sub
+Private Sub IFolderView2_DoRename()
+DebugAppend "Entry: IFolderView2_DoRename", 1111
+Dim lIdx As Long
+lIdx = ListView_GetSelectedItem(hLVS)
+Call SendMessage(hLVS, LVM_EDITLABELW, lIdx, ByVal 0&)
+End Sub
+
+Private Sub IFolderViewSettings_GetColumnPropertyList(riid As UUID, ppv As LongPtr) Implements IFolderViewSettings.GetColumnPropertyList
+    If IsEqualIID(riid, IID_IPropertyDescriptionList) Then
+        Dim i As Long
+        Dim lCt As Long
+        Dim lp As Long
+        Dim sPropList As String
+        
+        lCt = CLng(SendMessage(hLVSHdr, HDM_GETITEMCOUNT, 0, ByVal 0))
+        If lCt < 1 Then Exit Sub
+        For i = 0 To lCt - 1
+            lp = CLng(GetHDItemlParam(hLVSHdr, i))
+            sPropList = sPropList & "prop:" & uColData(lp).szSystemName & ";"
+        Next i
+        PSGetPropertyDescriptionListFromString StrPtr(sPropList), IID_IPropertyDescriptionList, ppv
+    End If
+End Sub
+Private Sub IFolderViewSettings_GetFolderFlags(pdwMask As FOLDERFLAGS, pdwFlags As FOLDERFLAGS) Implements IFolderViewSettings.GetFolderFlags
+    IFolderView2_GetCurrentFolderFlags pdwFlags
+End Sub
+Private Sub IFolderViewSettings_GetGroupByProperty(pkey As PROPERTYKEY, pfGroupAscending As Long) Implements IFolderViewSettings.GetGroupByProperty
+    IFolderView2_GetGroupBy pkey, pfGroupAscending
+End Sub
+Private Sub IFolderViewSettings_GetGroupSubsetCount(pcVisibleRows As Long) Implements IFolderViewSettings.GetGroupSubsetCount
+    IFolderView2_GetGroupSubsetCount pcVisibleRows
+End Sub
+Private Sub IFolderViewSettings_GetIconSize(puIconSize As Long) Implements IFolderViewSettings.GetIconSize
+    Dim himl As LongPtr
+    Dim cy As Long
+    Select Case m_ViewMode
+        	Case SB_VIEW_SMALLICON, SB_VIEW_LIST, SB_VIEW_DETAILS
+                himl = SendMessage(hLVS, LVM_GETIMAGELIST, LVSIL_SMALL, ByVal 0)
+                ImageList_GetIconSize himl, puIconSize, cy
+            Case Else
+                himl = SendMessage(hLVS, LVM_GETIMAGELIST, LVSIL_NORMAL, ByVal 0)
+                ImageList_GetIconSize himl, puIconSize, cy
+    End Select
+End Sub
+Private Sub IFolderViewSettings_GetSortColumns(rgSortColumns As SORTCOLUMN, ByVal cColumnsIn As Long, pcColumnsOut As Long) Implements IFolderViewSettings.GetSortColumns
+Dim aCol() As SORTCOLUMN
+Dim nCol As Long
+Dim lidx As Long = GetCurPathCBIdx()
+nCol = UBound(cbItems(lidx).lColSet)
+If cColumnsIn < nCol Then nCol = cColumnsIn
+ReDim aCol(nCol - 1)
+Dim i As Long
+
+For i = 0 To nCol - 1
+    aCol(i).propkey = uColData(cbItems(lidx).lColSet(i)).pKey
+    aCol(i).direction = SORT_ASCENDING
+Next
+CopyMemory ByVal VarPtr(rgSortColumns), ByVal VarPtr(aCol(0)), LenB(aCol(0)) * nCol
+pcColumnsOut = nCol
+DebugAppend "IFolderViewSettings_GetSortColumns sent " & nCol & " columns.", 1111
+End Sub
+Private Sub IFolderViewSettings_GetViewMode(plvm As FOLDERLOGICALVIEWMODE) Implements IFolderViewSettings.GetViewMode
+    Select Case m_ViewMode
+        Case SB_VIEW_ICON, SB_VIEW_MDICON, SB_VIEW_XLICON, SB_VIEW_CUSTOM: plvm = FLVM_ICONS
+        Case SB_VIEW_DETAILS: plvm = FLVM_DETAILS
+        Case SB_VIEW_SMALLICON: plvm = FLVM_ICONS
+        Case SB_VIEW_LIST: plvm = FLVM_LIST
+        Case SB_VIEW_TILE: plvm = FLVM_TILES
+        Case SB_VIEW_CONTENTS: plvm = FLVM_CONTENT
+        Case SB_VIEW_THUMBNAIL: plvm = FLVM_ICONS
+    End Select
+End Sub
+
+Private Property Get IShellFolderViewDual_Application() As Object
+DebugAppend "Entry: IShellFolderViewDual_Application", 1111
+End Property
+
+Private Property Get IShellFolderViewDual_FocusedItem() As FolderItem
+DebugAppend "Entry: IShellFolderViewDual_FocusedItem", 1111
+End Property
+
+Private Property Get IShellFolderViewDual_Folder() As Folder
+DebugAppend "Entry: IShellFolderViewDual_Folder", 1111
+End Property
+
+Private Property Get IShellFolderViewDual_Parent() As Object
+DebugAppend "Entry: IShellFolderViewDual_Parent", 1111
+End Property
+
+Private Function IShellFolderViewDual_PopupItemMenu(ByVal pfi As FolderItem, Optional ByVal vx As Variant, Optional ByVal vy As Variant) As String
+DebugAppend "Entry: IShellFolderViewDual_PopupItemMenu", 1111
+End Function
+
+Private Property Get IShellFolderViewDual_Script() As Object
+DebugAppend "Entry: IShellFolderViewDual_Script", 1111
+End Property
+
+Private Function IShellFolderViewDual_SelectedItems() As FolderItems
+DebugAppend "Entry: IShellFolderViewDual_SelectedItems", 1111
+End Function
+
+Private Sub IShellFolderViewDual_SelectItem(ByRef pvfi As Variant, ByVal dwFlags As Long)
+DebugAppend "Entry: IShellFolderViewDual_SelectItem", 1111
+On Error GoTo fail
+Dim vt As Integer
+CopyMemory ByVal VarPtr(vt), ByVal VarPtr(pvfi), 2&
+DebugAppend "IShellFolderViewDual_SelectItem->vt=" & vt, 1111
+
+Dim pidlItem As LongPtr
+Dim sa1 As SAFEARRAY1D
+Dim pSA As Long
+
+CopyMemory ByVal VarPtr(pSA), ByVal (VarPtr(pvfi) + 8&), LenB(pidlItem) 'Offset 8 is where the data begins. Here, a pointer to the SAFEARRAY
+CopyMemory ByVal VarPtr(sa1), ByVal pSA, LenB(sa1) 'We now have the full SAFEARRAY struct...
+pidlItem = sa1.pvData '...and pvData is our pidl.
+
+If pidlItem Then
+    IShellView_SelectItem pidlItem, dwFlags
+Else
+    DebugAppend "ISFVD_SelectItem->Failed to get pidl", 1111
+End If
+
+Exit Sub
+fail:
+DebugAppend "ISFVD_SelectItem->" & Err.Description
+End Sub
+
+Private Property Get IShellFolderViewDual_ViewOptions() As Long
+DebugAppend "Entry: IShellFolderViewDual_ViewOptions", 1111
+End Property
+'IWebBrowser methods
+Private Sub IWebBrowserApp_GoBack()
+DebugAppend "Entry: IWebBrowserApp_GoBack", 1111
+DoBack
+End Sub
+
+Private Sub IWebBrowserApp_GoForward()
+DebugAppend "Entry: IWebBrowserApp_GoForward", 1111
+DoForward
+End Sub
+
+Private Sub IWebBrowserApp_GoHome()
+DebugAppend "Entry: IWebBrowserApp_GoHome", 1111
+End Sub
+
+Private Sub IWebBrowserApp_GoSearch()
+DebugAppend "Entry: IWebBrowserApp_GoSearch", 1111
+End Sub
+
+Private Sub IWebBrowserApp_Navigate(ByVal url As String, Optional Flags As Variant, Optional TargetFrameName As Variant, Optional PostData As Variant, Optional Headers As Variant)
+DebugAppend "Entry: IWebBrowserApp_Navigate", 1111
+Dim siItem As IShellItem
+SHCreateItemFromParsingName StrPtr(url), Nothing, IID_IShellItem, siItem
+If (siItem Is Nothing) = False Then
+    Me.BrowserOpenItem siItem
+End If
+End Sub
+
+Private Sub IWebBrowserApp_Refresh()
+DebugAppend "Entry: IWebBrowserApp_Refresh", 1111
+Me.RefreshView
+End Sub
+
+Private Sub IWebBrowserApp_Refresh2(Optional Level As Variant)
+DebugAppend "Entry: IWebBrowserApp_Refresh2", 1111
+End Sub
+
+Private Sub IWebBrowserApp_Stop()
+DebugAppend "Entry: IWebBrowserApp_Stop", 1111
+End Sub
+
+Private Property Get IWebBrowserApp_Application() As Object
+DebugAppend "Entry: IWebBrowserApp_Application", 1111
+End Property
+
+Private Property Get IWebBrowserApp_Parent() As Object
+DebugAppend "Entry: IWebBrowserApp_Parent", 1111
+End Property
+
+Private Property Get IWebBrowserApp_Container() As Object
+DebugAppend "Entry: IWebBrowserApp_Container", 1111
+End Property
+
+Private Property Get IWebBrowserApp_Document() As Object
+DebugAppend "Entry: IWebBrowserApp_Document", 1111
+Set IWebBrowserApp_Document = Me
+End Property
+
+Private Property Get IWebBrowserApp_TopLevelContainer() As Integer
+DebugAppend "Entry: IWebBrowserApp_TopLevelContainer", 1111
+End Property
+
+Private Property Get IWebBrowserApp_Type() As String
+DebugAppend "Entry: IWebBrowserApp_Type", 1111
+End Property
+
+Private Property Get IWebBrowserApp_Left() As Long
+DebugAppend "Entry: Get IWebBrowserApp_Left", 1111
+IWebBrowserApp_Left = Extender.Left
+End Property
+Private Property Let IWebBrowserApp_Left(ByVal left As Long)
+DebugAppend "Entry: Let IWebBrowserApp_Left", 1111
+End Property
+
+Private Property Get IWebBrowserApp_Top() As Long
+DebugAppend "Entry: Get IWebBrowserApp_Top", 1111
+IWebBrowserApp_Top = Extender.Top
+End Property
+Private Property Let IWebBrowserApp_Top(ByVal Top As Long)
+DebugAppend "Entry: Let IWebBrowserApp_Top", 1111
+End Property
+
+Private Property Get IWebBrowserApp_Width() As Long
+DebugAppend "Entry: Get IWebBrowserApp_Width", 1111
+Dim rc As RECT
+GetClientRect UserControl.hWnd, rc
+IWebBrowserApp_Width = rc.Right
+End Property
+Private Property Let IWebBrowserApp_Width(ByVal Width As Long)
+DebugAppend "Entry: Let IWebBrowserApp_Width", 1111
+RaiseEvent RequestWidth(Width)
+End Property
+
+Private Property Get IWebBrowserApp_Height() As Long
+DebugAppend "Entry: Get IWebBrowserApp_Height", 1111
+Dim rc As RECT
+GetClientRect UserControl.hWnd, rc
+IWebBrowserApp_Height = rc.Bottom
+End Property
+Private Property Let IWebBrowserApp_Height(ByVal Height As Long)
+DebugAppend "Entry: Let IWebBrowserApp_Height", 1111
+RaiseEvent RequestHeight(Height)
+End Property
+
+Private Property Get IWebBrowserApp_LocationName() As String
+DebugAppend "Entry: IWebBrowserApp_LocationName", 1111
+IWebBrowserApp_LocationName = m_sCurPathDisp
+End Property
+
+Private Property Get IWebBrowserApp_LocationURL() As String
+DebugAppend "Entry: IWebBrowserApp_LocationURL"
+IWebBrowserApp_LocationURL = m_sCurPath
+End Property
+
+Private Property Get IWebBrowserApp_Busy() As Integer
+DebugAppend "Entry: IWebBrowserApp_Busy", 1111
+End Property
+
+'BEGIN IWebBrowserApp METHODS
+Private Sub IWebBrowserApp_Quit()
+DebugAppend "Entry: IWebBrowserApp_Quit", 1111
+RaiseEvent RequestExit
+End Sub
+
+Private Sub IWebBrowserApp_ClientToWindow(pcx As Long, pcy As Long)
+DebugAppend "Entry: IWebBrowserApp_ClientToWindow", 1111
+End Sub
+
+Private Sub IWebBrowserApp_PutProperty(ByVal Property As String, ByVal vtValue As Variant)
+DebugAppend "Entry: IWebBrowserApp_PutProperty", 1111
+End Sub
+Private Function IWebBrowserApp_GetProperty(ByVal Property As String) As Variant
+DebugAppend "Entry: IWebBrowserApp_GetProperty", 1111
+End Function
+
+Private Property Get IWebBrowserApp_Name() As String
+DebugAppend "Entry: IWebBrowserApp_Name", 1111
+IWebBrowserApp_Name = App.Title
+End Property
+
+Private Property Get IWebBrowserApp_HWND() As LongPtr
+DebugAppend "Entry: IWebBrowserApp_HWND", 1111
+IWebBrowserApp_HWND = hLVS
+End Property
+
+Private Property Get IWebBrowserApp_FullName() As String
+DebugAppend "Entry: IWebBrowserApp_FullName", 1111
+IWebBrowserApp_FullName = App.Title
+End Property
+
+Private Property Get IWebBrowserApp_Path() As String
+DebugAppend "Entry: IWebBrowserApp_Path", 1111
+IWebBrowserApp_Path = m_sCurPath
+End Property
+
+Private Property Get IWebBrowserApp_Visible() As Integer
+DebugAppend "Entry: Get IWebBrowserApp_Visible", 1111
+If Extender.visible Then IWebBrowserApp_Visible = 1
+End Property
+Private Property Let IWebBrowserApp_Visible(ByVal Value As Integer)
+DebugAppend "Entry: Let IWebBrowserApp_Visible", 1111
+Extender.visible = (Value <> 0)
+End Property
+
+Private Property Get IWebBrowserApp_StatusBar() As Integer
+DebugAppend "Entry: Get IWebBrowserApp_StatusBar", 1111
+If Me.ShowStatusBar Then IWebBrowserApp_StatusBar = 1
+End Property
+Private Property Let IWebBrowserApp_StatusBar(ByVal Value As Integer)
+DebugAppend "Entry: Let IWebBrowserApp_StatusBar", 1111
+Me.ShowStatusBar = (Value <> 0)
+End Property
+
+Private Property Get IWebBrowserApp_StatusText() As String
+DebugAppend "Entry: Get IWebBrowserApp_StatusText", 1111
+IWebBrowserApp_StatusText = Me.StatusText
+End Property
+Private Property Let IWebBrowserApp_StatusText(ByVal Value As String)
+DebugAppend "Entry: Let IWebBrowserApp_StatusText", 1111
+Me.StatusText = Value
+End Property
+
+Private Property Get IWebBrowserApp_Toolbar() As Long
+DebugAppend "Entry: GET IWebBrowserApp_Toolbar", 1111
+If Me.ListControlBox Then IWebBrowserApp_Toolbar = 1
+End Property
+Private Property Let IWebBrowserApp_Toolbar(ByVal Value As Long)
+DebugAppend "Entry: LET IWebBrowserApp_Toolbar", 1111
+If Value Then Me.ListControlBox = True
+End Property
+
+Private Property Get IWebBrowserApp_MenuBar() As Integer
+DebugAppend "Entry: IWebBrowserApp_MenuBar", 1111
+End Property
+Private Property Let IWebBrowserApp_MenuBar(ByVal Value As Integer)
+DebugAppend "Entry: IWebBrowserApp_MenuBar", 1111
+End Property
+
+Private Property Get IWebBrowserApp_Fullscreen() As Integer
+DebugAppend "Entry: IWebBrowserApp_Fullscreen", 1111
+End Property
+Private Property Let IWebBrowserApp_Fullscreen(ByVal bFullScreen As Integer)
+DebugAppend "Entry: IWebBrowserApp_Fullscreen", 1111
+End Property
+#End Region
+
+
 Private Sub UserControl_Initialize() Handles UserControl.Initialize
-    DebugAppend "UserControl_Initialize"
+    DebugAppend "UserControl_Initialize", 1111
     On Error GoTo e0
     mExpIcoCB = True
     If dbg_PrintToFile Then
@@ -6114,6 +7704,8 @@ Private Sub UserControl_Initialize() Handles UserControl.Initialize
     bStartup = True
     'm_def_sCurPath = App.Path
     ReadWindowsVersion
+    
+    mEmptyFolderStr = mDefEmptyFolderStr
     
     mFontFolder = SpecialFolderPath(FOLDERID_Fonts)
     mDeskFolder = SpecialFolderPath(FOLDERID_Desktop)
@@ -6138,6 +7730,10 @@ Private Sub UserControl_Initialize() Handles UserControl.Initialize
             SND_NAVIGATESTART = Environ("WINDIR") & "\media\Windows Navigation Start.wav"
         End If
     End If
+    
+    Dim fFP As Long
+    fFP = GetRegistryDWORD(HKEY_CURRENT_USER, "\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder", "ShowFullPath")
+    If fFP Then mExpFullPath = True
     
     dwAutoCompFlags = ACO_AUTOAPPEND Or ACO_AUTOSUGGEST
     dwAutoCompListFlags = ACLO_FILESYSDIRS
@@ -6327,32 +7923,15 @@ mStartLast = PropBag.ReadProperty("BrowserStartLastPath", mDefStartLast)
 m_StartEmpty = PropBag.ReadProperty("BrowserStartBlank", m_def_StartEmpty)
 mCustomRoot = PropBag.ReadProperty("CustomRoot", m_defCustomRoot)
 mCustomRootEnforce = PropBag.ReadProperty("CustomRootLocked", m_defCustomRootEnforce)
+mRegisterWindow = PropBag.ReadProperty("RegisterWindow", mDefRegisterWindow)
 mHighPerfMode = PropBag.ReadProperty("HighPerformanceMode", mDefHighPerfMode)
 m_CtlBorder = PropBag.ReadProperty("BorderStyleControl", m_def_CtlBorder)
 m_Border = PropBag.ReadProperty("BorderStyle", m_def_Border)
 m_FontScaleCXY = PropBag.ReadProperty("FontScaleForDPI", m_def_FontScaleCXY)
 Set PropFont = PropBag.ReadProperty("Font", Ambient.Font)
-' If PropFont Is Nothing Then
-'     DebugAppend "UC_ReadProperties::PropFont is nothing"
-'     Set PropFont = Ambient.Font
-'     If PropFont Is Nothing Then
-'         DebugAppend "UC_ReadProperties::PropFont is STILL nothing"
-'     End If
-' End If
 Set PropFontDt = PropBag.ReadProperty("FontDetails", PropFont)
-' If PropFontDt Is Nothing Then
-'     DebugAppend "UC_ReadProperties::PropFontDt is nothing"
-'     Set PropFontDt = Ambient.Font
-'     If PropFontDt Is Nothing Then
-'         DebugAppend "UC_ReadProperties::PropFontDt is STILL nothing"
-'     End If
-' End If
 Set FontDetails = PropFontDt
 Set PropFontLV = PropBag.ReadProperty("FontFileControls", PropFont)
-' If PropFontLV Is Nothing Then
-'     Set PropFontLV = PropFont
-' End If
-' DebugAppend "ReadLVFont " & PropFontLV.Name, 444
 Set FontFileControls = PropFontLV
 Set PropPicture = PropBag.ReadProperty("Picture", Nothing)
 mUserModeToggle = PropBag.ReadProperty("EnableUserModeSwitch", m_def_UserModeToggle)
@@ -6386,6 +7965,7 @@ m_CompAsRoot = PropBag.ReadProperty("ComputerAsRoot", m_def_CompAsRoot)
 m_sCurPath = PropBag.ReadProperty("BrowserPath", m_def_sCurPath)
 m_MultiSelect = PropBag.ReadProperty("MultiSelect", m_def_MultiSelect)
 m_ViewMode = PropBag.ReadProperty("ViewMode", m_def_ViewMode)
+m_ViewModeDef = m_ViewMode
 m_GroupMode = PropBag.ReadProperty("GroupMode", m_def_GroupMode)
 m_GroupSubset = PropBag.ReadProperty("GroupSubsetCount", m_def_GroupSubset)
 m_GroupSubsetLinkText = PropBag.ReadProperty("GroupSubsetLinkText", m_def_GroupSubsetLinkText)
@@ -6502,6 +8082,9 @@ mcxyCustom = PropBag.ReadProperty("CustomIconsSize", mDefcxyCustom)
 mEnableGrp = PropBag.ReadProperty("AllowGroups", mDefEnableGrp)
 mEnablePaste = PropBag.ReadProperty("AllowPasting", mDefEnablePaste)
 mDispSecZn = PropBag.ReadProperty("ShowSecurityZone", mDefDispSecZn)
+mNoScroll = PropBag.ReadProperty("NoScroll", mDefNoScroll)
+mShowFP = PropBag.ReadProperty("DropdownShowFullPath", mDefShowFP)
+mAlphaShadow = PropBag.ReadProperty("ListViewAlphaShadow", mDefAlphaShadow)
 DebugAppend "ReadProp ViewMode=" & m_ViewMode
 pvCreate
     
@@ -6512,12 +8095,12 @@ PropBag.WriteProperty "BrowserStartLastPath", mStartLast, mDefStartLast
 PropBag.WriteProperty "BrowserStartBlank", m_StartEmpty, m_def_StartEmpty
 PropBag.WriteProperty "CustomRoot", mCustomRoot, m_defCustomRoot
 PropBag.WriteProperty "CustomRootLocked", mCustomRootEnforce, m_defCustomRootEnforce
+PropBag.WriteProperty "RegisterWindow", mRegisterWindow, mDefRegisterWindow
 PropBag.WriteProperty "HighPerformanceMode", mHighPerfMode, mDefHighPerfMode
 PropBag.WriteProperty "BorderStyleControl", m_CtlBorder, m_def_CtlBorder
 PropBag.WriteProperty "BorderStyle", m_Border, m_def_Border
 PropBag.WriteProperty "Font", PropFont, Ambient.Font
 PropBag.WriteProperty "FontDetails", IIf(OLEFontIsEqual(PropFontDt, PropFont) = False, PropFontDt, Nothing)
-DebugAppend "WriteLVFont " & PropFontLV.Name, 444
 PropBag.WriteProperty "FontFileControls", IIf(OLEFontIsEqual(PropFontLV, PropFont) = False, PropFontLV, Nothing)
 PropBag.WriteProperty "FontScaleForDPI", m_FontScaleCXY, m_def_FontScaleCXY
 PropBag.WriteProperty "EnableUserModeSwitch", mUserModeToggle, m_def_UserModeToggle
@@ -6668,6 +8251,9 @@ PropBag.WriteProperty "CustomIconsSize", mcxyCustom, mDefcxyCustom
 PropBag.WriteProperty "AllowGroups", mEnableGrp, mDefEnableGrp
 PropBag.WriteProperty "AllowPasting", mEnablePaste, mDefEnablePaste
 PropBag.WriteProperty "ShowSecurityZone", mDispSecZn, mDefDispSecZn
+PropBag.WriteProperty "NoScroll", mNoScroll, mDefNoScroll
+PropBag.WriteProperty "DropdownShowFullPath", mShowFP, mDefShowFP
+PropBag.WriteProperty "ListViewAlphaShadow", mAlphaShadow, mDefAlphaShadow
 DebugAppend "UserControl_WriteProperties()", 1
     
 End Sub
@@ -7081,10 +8667,12 @@ End Sub
 
 
 Private Sub UserControl_InitProperties() Handles UserControl.InitProperties
+DebugAppend "UserControl_InitProperties", 1111
 mStartLast = mDefStartLast
 m_StartEmpty = m_def_StartEmpty
 mCustomRoot = m_defCustomRoot
 mCustomRootEnforce = m_defCustomRootEnforce
+mRegisterWindow = mDefRegisterWindow
 mHighPerfMode = mDefHighPerfMode
 m_CtlBorder = m_def_CtlBorder
 m_Border = m_def_Border
@@ -7236,6 +8824,9 @@ mcxyCustom = mDefcxyCustom
 mEnableGrp = mDefEnableGrp
 mEnablePaste = mDefEnablePaste
 mDispSecZn = mDefDispSecZn
+mNoScroll = mDefNoScroll
+mShowFP = mDefShowFP
+mAlphaShadow = mDefAlphaShadow
 pvCreate
 End Sub
 
@@ -7295,11 +8886,20 @@ End Function
                 DisableWow64Redir
             End If
         End If
+
     End If
     
+    DebugAppend "pvCreate->m_Mode=" & m_Mode, 1111
     If (m_Mode = SBCTL_DirOnly) Or (m_Mode = SBCTL_DrivesOnly) Or (m_Mode = SBCTL_DirOnlyWithCtls) Then
         m_DtPane = False
         m_PvPane = False
+    Else
+        DebugAppend "pvCreate->userMode=" & Ambient.UserMode & ",mRegisterWindow=" & mRegisterWindow, 1111
+        If Ambient.UserMode Then
+            If mRegisterWindow = True Then
+                Set pWindow = New ShellWindows
+            End If
+        End If
     End If
     pbDetailPane.Visible = m_DtPane
     pbDetailSizer.Visible = m_DtPane
@@ -7691,7 +9291,7 @@ End Function
     DebugAppend "color=&H" & Hex$(m_SysClrText)
     DebugAppend "lvrEnable=" & lvrEnable
     DebugAppend "Ambient.UserMode=" & Ambient.UserMode
-    DebugAppend "Exit UC_SHow, LastSessionPath=" & mLastSessionPath
+    DebugAppend "Exit pvCreate, LastSessionPath=" & mLastSessionPath
     Exit Sub
     e0:
         DebugAppend "ucShellBrowse.pvCreate->Error: " & Err.Description & ", 0x" & Hex$(Err.Number)
@@ -8395,7 +9995,7 @@ Private Function GetLVItemlParam(hwndLV As LongPtr, iItem As Long) As LongPtr
 
 End Function
         
-
+#Region "ListViewAndHeaderMacros"
 ' ============================================================
 ' listview macros
 Private Function ListView_ApproximateViewRect(hWnd As LongPtr, iWidth As Long, _
@@ -9052,13 +10652,6 @@ Private Function ListView_SetSelectedColumn(hWnd As LongPtr, iCol As Long) As Lo
 '    SNDMSG((hwnd), LVM_SETSELECTEDCOLUMN, (WPARAM)(iCol), 0)
 ListView_SetSelectedColumn = SendMessage(hWnd, LVM_SETSELECTEDCOLUMN, iCol, ByVal 0&)
 End Function
-'Private Function IID_IListViewFooter() As UUID
-''{F0034DA8-8A22-4151-8F16-2EBA76565BCC}
-'Static iid As UUID
-' If (iid.Data1 = 0) Then Call DEFINE_UUID(iid, &HF0034DA8, CInt(&H8A22), CInt(&H4151), &H8F, &H16, &H2E, &HBA, &H76, &H56, &H5B, &HCC)
-' IID_IListViewFooter = iid
-'End Function
-'
 
 Private Function ListView_SetCheckStateEx(hwndLV As LongPtr, i As Long, nIndex As Long) As LongPtr
 '#define ListView_SetCheckState(hwndLV, i, fCheck) \
@@ -9224,6 +10817,7 @@ End Function
 Private Function Header_SetItemW(hwndHD As LongPtr, i As Long, phdi As HDITEMW) As Boolean
   Header_SetItemW = SendMessageW(hwndHD, HDM_SETITEMW, ByVal i, phdi)
 End Function
+#End Region
 
 Private Function GetHDItemlParam(hwndHD As LongPtr, iItem As Long) As LongPtr
   Dim tHDI As HDITEMW
@@ -9265,7 +10859,6 @@ If bBlockLoad = True Then Exit Sub
 Dim lpPath As LongPtr, sPath As String
 psi.GetDisplayName SIGDN_DESKTOPABSOLUTEPARSING, lpPath
 sPath = LPWSTRtoStr(lpPath)
-Debug.Print "BrowserOpenItem " & sPath
 If sPath = m_sCurPath Then Exit Sub
 If Left$(sPath, Len(mFldrSrch)) = mFldrSrch Then
     Set siDirect = psi
@@ -9321,6 +10914,8 @@ Else
     End If
 End If
 End Sub
+
+#Region "ControlProperties"
     '**********************************************************************************
     'CONTROL PROPERTIES
     '
@@ -9360,6 +10955,21 @@ End Sub
     Public Property Get CustomRootLocked() As Boolean: CustomRootLocked = mCustomRootEnforce: End Property
     Attribute CustomRootLocked.VB_Description = "Sets whether to allow opening locations that are not within the path specific by CustomRoot. E.g. if you set C:\\ as your custom root, the user cannot load  anything on D:\\."
     Public Property Let CustomRootLocked(bVal As Boolean): mCustomRootEnforce = bVal: End Property
+    Public Property Get RegisterWindow() As Boolean: RegisterWindow = mRegisterWindow: End Property
+    Attribute RegisterWindow.VB_Description = "Register as an Explorer window open to the currently displayed path. System APIs like SHOpenFolderAndSelectItems will be routed to your app."
+    Public Property Let RegisterWindow(bVal As Boolean)
+    If (m_Mode = SBCTL_DirAndFiles) Or (m_Mode = SBCTL_FilesOnly) Then
+        If mRegisterWindow <> bVal Then
+            mRegisterWindow = bVal
+            If Ambient.UserMode Then
+                If pWindow Is Nothing Then Set pWindow = New ShellWindows
+                If mRegisterWindow Then
+                    RegisterCurPath
+                End If
+            End If
+        End If
+    End If
+    End Property
     Public Property Get BrowserPath() As String: BrowserPath = m_sCurPath: End Property
     Attribute BrowserPath.VB_Description = "The initial path of the browser. If this is blank, the path of the app will be used, or if a CustomRoot is specified, that location. Environmental variables like %WINDIR% or %ProgramFiles% are supported. If invalid, the app path is used. Superceded if Br"
     Public Property Let BrowserPath(sNewPath As String)
@@ -10131,6 +11741,12 @@ End Sub
         Dim nOld As SB_CTL_TYPE
         nOld = m_Mode
         m_Mode = lVal
+        If (m_Mode = SBCTL_DirOnly) Or (m_Mode = SBCTL_DrivesOnly) Or (m_Mode = SBCTL_DirOnlyWithCtls) Then
+            If mRegisterWindow Then
+                UnregisterCurPath
+                Set pWindow = Nothing
+            End If
+        End If
         If (m_ControlBox = True) And (m_Mode = SBCTL_DirAndFiles) Then
             fraPreview.Top = cyCombo + (5 * m_ScaleY)
             pbControlBox.Visible = True
@@ -10969,6 +12585,30 @@ End Sub
     Public Property Get DropdownExpandChildren() As SB_EXPDDMODE: DropdownExpandChildren = nExpandSelectedFolderInDropdown: End Property
     Attribute DropdownExpandChildren.VB_Description = "Add the child folders of the selected item in the Directory Dropdown. This is normally done for Directory Mode and Dir Mode w/ Controls, but can be set to all modes or disabled entirely. Folders loaded where this applies cannot use the High Performance L"
     Public Property Let DropdownExpandChildren(nVal As SB_EXPDDMODE): nExpandSelectedFolderInDropdown = nVal: End Property
+    Public Property Get DropdownShowFullPath() As ComboPathOptions: DropdownShowFullPath = mShowFP: End Property
+    Attribute DropdownShowFullPath.VB_Description = "Show the full path in the folder dropdown."
+    Public Property Let DropDownShowFullPath(nVal As ComboPathOptions)
+    If nVal <> mShowFP Then
+    	mShowFP = nVal
+        If mShowFP = SBCPO_UseExplorer Then
+            mFullPath = mExpFullPath
+        Else
+            mFullPath = (mShowFP = SBCPO_ShowFullPath)
+        End If
+    End If
+    End Property
+    Public Property Get ListViewAlphaShadow() As Boolean: ListViewAlphaShadow = mAlphaShadow: End Property
+    Attribute ListViewAlphaShadow.VB_Description = "Apply an alpha shadow to ListView labels. Only available in Icon modes."
+    Public Property Let ListViewAlphaShadow(bVal As Boolean)
+    If mAlphaShadow <> bVal Then
+        mAlphaShadow = bVal
+        If mAlphaShadow Then
+            SetAlphaShadow 1
+        Else
+            SetAlphaShadow 0
+        End If
+    End If
+    End Property
     Public Property Get ListViewOffsetX() As Long: ListViewOffsetX = mLVOffX: End Property
     Attribute ListViewOffsetX.VB_Description = "Add an X offset to the ListView within the control. "
     Public Property Let ListViewOffsetX(lVal As Long)
@@ -11239,6 +12879,21 @@ End Sub
         Else
             SendMessage hLVS, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_AUTOCHECKSELECT, ByVal 0&
         End If
+    End If
+    End Property
+    Public Property Get NoScroll() As Boolean: NoScroll = mNoScroll: End Property
+    Attribute NoScroll.VB_Description = "Sets the LvS_NOSCROLL style."
+    Public Property Let NoScroll(bVal As Boolean)
+    If mNoScroll <> bVal Then
+        mNoScroll = bVal
+        Dim dwStyle As ucsb_LVStyles
+        dwStyle = CLng(GetWindowLong(hLVS, GWL_STYLE))
+        If mNoScroll Then
+            dwStyle = dwStyle Or LVS_NOSCROLL
+        Else
+            dwStyle = dwStyle And Not LVS_NOSCROLL
+        End If
+        Call SetWindowLong(hLVS, GWL_STYLE, dwStyle)
     End If
     End Property
     Public Property Get BackColor() As stdole.OLE_COLOR: BackColor = clrBack: End Property
@@ -11787,7 +13442,7 @@ End Sub
     
     'End Properties
     '**********************************************************************
-
+#End Region
     Private Function LVFontHeight() As Long
     Dim lf As LOGFONTW
     GetObject hFontLVMain, LenB(lf), lf
@@ -13738,7 +15393,6 @@ End Sub
     Dim pKFM As New KnownFolderManager
     Dim pKNF As IKnownFolder
     Dim tID As UUID
-    Dim pUnk As IUnknown
     Dim isiif As IShellItemImageFactory
     Dim isi As IShellItem
     Dim hMenu As LongPtr
@@ -13787,7 +15441,6 @@ End Sub
         Set isiif = Nothing
         Set isi = Nothing
         Set pKNF = Nothing
-        Set pUnk = Nothing
     Next k
     On Error GoTo e2
     DebugAppend "GenerateSpecialFolderMenu::Cleared GPFMI loop", 3
@@ -15147,9 +16800,11 @@ End Sub
         End If
     Next i
     If nItm = -1 Then Exit Sub
+    LVSelectIndex nItm, bSelected, bDeselectOthers, bFocused, bEnsureVisible
+    End Sub
     
+    Private Sub LVSelectIndex(nItm As Long, bSelected As Boolean, Optional bDeselectOthers As Boolean = False, Optional bFocused As Boolean = True, Optional bEnsureVisible As Boolean = True)
     If bDeselectOthers Then ListView_SelectNone hLVS
-    
     Dim lvi As Long
     If bSelected Then
         lvi = LVIS_SELECTED
@@ -15164,8 +16819,32 @@ End Sub
     If bEnsureVisible Then
         SendMessage hLVS, LVM_ENSUREVISIBLE, nItm, ByVal 1&
     End If
-    
     End Sub
+    
+    Private Function LVFindItemByPidl(pidlRel As LongPtr) As Long
+    Dim siItem As IShellItem
+    Dim lpPath As LongPtr, sPath As String
+    Dim i As Long
+    Dim pidl As LongPtr
+    pidl = ILCombine(pidlFQCur, pidlRel)
+    LVFindItemByPidl = -1
+    SHCreateItemFromIDList pidl, IID_IShellItem, siItem
+    If (siItem Is Nothing) = False Then
+        siItem.GetDisplayName SIGDN_DESKTOPABSOLUTEPARSING, lpPath
+        sPath = LPWSTRtoStr(lpPath)
+        If sPath = "" Then Exit Function
+        For i = 0 To UBound(LVEntries)
+            If LVEntries(i).sFullPath = sPath Then
+                LVFindItemByPidl = CLng(SendMessage(hLVS, LVM_MAPIDTOINDEX, LVEntries(i).dwID, ByVal 0))
+                Exit Function
+            End If
+        Next
+    End If
+    Exit Function
+    e0:
+        DebugAppend "LVFindItemByPidl.Error->" & Err.Description & ",0x" & Hex$(Err.Number)
+    End Function
+    
     Private Sub ShowBalloonTipEx(hWnd As LongPtr, sTitle As String, sText As String, btIcon As ucsb_BalloonTipIconConstants)
     Dim lr As LongPtr
     Dim tEBT As EDITBALLOONTIP
@@ -15471,7 +17150,7 @@ End Sub
         End If
     
     End If
-    
+
     If (pcm Is Nothing) = False Then
         Dim pUnk As IUnknownUnrestricted
         hMenu = CreatePopupMenu()
@@ -15617,8 +17296,7 @@ End Sub
     Dim i As Long
     Dim li As Long
     Dim lpName As LongPtr, sName As String
-    Dim siCur As IShellItem, siPar As IShellItem
-    'Call SHCreateItemFromParsingName(StrPtr(m_sCurPath), Nothing, IID_IShellItem, siCur)
+    Dim siPar As IShellItem
     If (siCurPath Is Nothing) = False Then
         On Error Resume Next
         siCurPath.GetParent siPar
@@ -17034,6 +18712,43 @@ End Sub
     SetSelectedItemsEx = nMt
     End Function
     
+    Private Sub RegisterCurPath()
+        On Error GoTo e0
+        DebugAppend "RegisterCurPath->Registering current path as shell window... curreg=" & bPathRegd, 1111
+        If bPathRegd Then UnregisterCurPath
+        If mRegisterWindow = False Then Exit Sub
+        If pWindow Is Nothing Then
+            DebugAppend "RegisterCurPath->pWindow is Nothing", 1111
+            Exit Sub
+        End If
+        If siCurPath Is Nothing Then
+            DebugAppend "RegisterCurPath->siCurPath is nothing"
+            Exit Sub
+        End If
+        Dim vre As Variant
+        Dim vridl As Variant
+        Dim ppidl As IPersistIDList
+        Set ppidl = siCurPath
+        vridl = ppidl
+        pWindow.RegisterPending CLng(App.ThreadID), vridl, VarPtr(vre), SWC_BROWSER, lPathRegCookie
+        DebugAppend "RegisterCurPath->RegisteredPending, lPathRegCookie=" & lPathRegCookie
+        pWindow.Register Me, CLng(hLVS), SWC_BROWSER, lPathRegCookie
+        bPathRegd = True
+        DebugAppend "RegisterCurPath->lPathRegCookie=" & lPathRegCookie & ",hr=" & Err.LastHResult, 1111
+        Exit Sub
+    e0:
+        DebugAppend "RegisterCurPath.Error->" & Err.Description & ", 0x" & Hex$(Err.Number), 1111
+    End Sub
+    Private Sub UnregisterCurPath()
+        If bPathRegd = False Then Exit Sub
+        If pWindow Is Nothing Then Exit Sub
+        pWindow.Revoke lPathRegCookie
+        lPathRegCookie = 0
+        bPathRegd = False
+        DebugAppend "Unregistered last reg'd path", 1111
+    End Sub
+    
+    
     Private Function LVDoubleClick(lIndex As Long) As LongPtr
     DebugAppend "LVDoubleClick.Entry::idx=" & lIndex & ",bBlockLoad=" & bBlockLoad
     If lIndex = -1 Then Exit Function
@@ -17246,11 +18961,11 @@ End Sub
     End If
     Dim lp As LongPtr
     lp = GetLVItemlParam(hLVS, nItem)
-    'Debug.Print "QueryColor " & LVEntries(lp).sName
+    ' DebugAppend "QueryColor " & LVEntries(lp).sName, 2222
     
     If (LVEntries(lp).dwAttrib And SFGAO_COMPRESSED) = SFGAO_COMPRESSED Then
         LVItemGetDispColor = vbBlue
-    '    DebugAppend "BLUEITEM: " & LVEntries(lp).sName
+    '    DebugAppend "BLUEITEM: " & LVEntries(lp).sName & ",attrib=" & dbg_sfgao_tostring(LVEntries(lp).dwAttrib), 2222
         Exit Function
     End If
     If (LVEntries(lp).dwAttrib And SFGAO_ENCRYPTED) = SFGAO_ENCRYPTED Then
@@ -18139,6 +19854,7 @@ End Sub
     If mNoLblWrap Then dwStyle = dwStyle Or LVS_NOLABELWRAP
     If mShowSelAlw Then dwStyle = dwStyle Or LVS_SHOWSELALWAYS
     If mAutoArr Then dwStyle = dwStyle Or LVS_AUTOARRANGE
+    If mNoScroll Then dwStyle = dwStyle Or LVS_NOSCROLL
     If mAlignTop Then
         dwStyle = dwStyle Or LVS_ALIGNTOP
     Else
@@ -18217,15 +19933,41 @@ End Sub
     Me.ForeColor = clrFore
     
     
-    
     If mExplorerStyle Then
         Dim swt1 As String
         swt1 = "explorer"
         Call SetWindowTheme(hLVS, StrPtr(swt1), 0&)
-        If mExplSel Then
-            LVSetExplSel True
+    End If
+    
+    If bIsWin7OrGreater Then
+        Dim pILV As IListView
+    
+        SendMessage hLVS, LVM_QUERYINTERFACE, VarPtr(IID_IListView), pILV
+        If (pILV Is Nothing) = False Then
+            If mExplorerStyle And mExplSel Then
+                pILV.SetSelectionFlags 1, 1
+            End If
+            If mAlphaShadow Then
+                pILV.EnableAlphaShadow 1
+            End If
+        Else
+            DebugAppend "InitLV::Failed to get IListView"
+        End If
+    Else 'Vista; we don't support XP or earlier at all
+        Dim pILVV As IListViewVista
+    
+        SendMessage hLVS, LVM_QUERYINTERFACE, VarPtr(IID_IListViewVista), pILVV
+        If (pILVV Is Nothing) = False Then
+            If mExplorerStyle And mExplSel Then
+                pILVV.SetSelectionFlags 1, 1
+            End If
+        Else
+            DebugAppend "InitLV::Failed to get IListView"
         End If
     End If
+    
+        
+
     
     
     Dim sUserCols() As String
@@ -18938,8 +20680,7 @@ End Sub
     Private Sub LVLoadFolderEx(ByVal sPath As String, Optional bLoadFID As Boolean = False, Optional bFallbackPresent As Boolean = False, Optional siFallback As IShellItem, Optional IsRefresh As Boolean = False, Optional lAssignSearchIdx As Long = -1&)
     'Sync any changes with LVAddEntry
     If Ambient.UserMode = False Then Exit Sub
-    
-    'To time folder loading, uncomment the following two lines
+        'To time folder loading, uncomment the following two lines
     'Then uncomment the other timing/results call for lvlftt2 at the end of this sub
     Dim lvlftt1 As Long, lvlftt2 As Long, lvlftt3 As Long
     lvlftt1 = GetTickCount()
@@ -18963,6 +20704,7 @@ End Sub
     If fNavCan <> S_OK Then Exit Sub
     UpdateStatus mStrOpening
     'If m_DisableWhileLoading Then EnableWindow hLVS, 0&
+    UnregisterCurPath
     Dim i As Long, j As Long
     Dim siParent As IShellItem
     Dim lAtr As SFGAO_Flags, lAtrP As SFGAO_Flags
@@ -19409,6 +21151,7 @@ End Sub
     '                    i = i + 1
     '                    Debug.Print "cb=" & pDir.FileNameLength & ",attrib=" & pDir.FileAttributes & ",id=" & Dec2Hex(Replace(CStr(LargeIntToLongLong(pDir.FileId)), ".", "")) & ",file=" & sTrimmed
     '                    nFiles = nFiles + 1
+                        
                         lAtr = FileAttribsToSFGAO(pDir.FileAttributes)
                         If (m_HiddenPref = SBHP_UseExplorer) Then
                             If (mHPInExp = False) And ((lAtr And SFGAO_HIDDEN) = SFGAO_HIDDEN) Then GoTo nxt
@@ -19699,7 +21442,7 @@ End Sub
             sRpt = LPWSTRtoStr(lpx)
         End If
         Set siCurPath = siParent
-        
+        RegisterCurPath
         nBlocks = nBlocks - 1
         DebugAppend "LVLoadFolderEx::Out nBlocks=" & nBlocks, 2000
         If nBlocks = 0 Then
@@ -19806,6 +21549,24 @@ End Sub
         End If
     End If
     bSearchAutogrouped = False
+    
+    If m_Mode <> SBCTL_FilesOnly Then
+        If mFullPath Then
+            If siParent IsNot Nothing Then
+                Dim lpfsp As LongPtr, sFSP As String
+                siParent.GetDisplayName SIGDN_FILESYSPATH, lpfsp
+                If lpfsp Then
+                    sFSP = LPWSTRtoStr(lpfsp)
+                    If sFSP <> "" Then
+                        bSuppressCBC = True
+                        DebugAppend "SetComboFullPath->" & sFSP, 2222
+                        SendMessageW(hCBEd, WM_SETTEXT, 0, ByVal StrPtr(sFSP))
+                        bSuppressCBC = False
+                    End If
+                End If
+            End If
+        End If
+    End If
     
     'Don't even get me fucking started on the bug that this addresses:
     If (bFlagRootReset = True) Or ((InStr(sTrackPrevLoc, "\\?\usb#") = 0) And (InStr(m_sCurPath, "\\?\usb#") > 0)) Then
@@ -19965,6 +21726,7 @@ End Sub
     If fNavCan <> S_OK Then Exit Sub
     UpdateStatus mStrOpening
     If m_DisableWhileLoading Then EnableWindow hLVS, 0&
+    UnregisterCurPath
     Dim i As Long, j As Long
     Dim pEnum As IEnumShellItems
     Dim siChild As IShellItem
@@ -20262,12 +22024,12 @@ End Sub
                                              'make Quick Access cause such an error.
                         pCatProvider.CreateCategory tSCGUID, IID_IUnknown, pcppv 'pUnkCG 'pCatG '
                         If pcppv Then
+                            DebugAppend "Got categorizer pointer"
                             vbaObjSetAddRef pCatG, pcppv
                         Else
-                            DebugAppend "no catg ptr"
+                            DebugAppend "no categorizer ptr"
                         End If
                         On Error GoTo e0
-                            
                         If (pCatG Is Nothing) = False Then
                             DebugAppend "Got categorizer"
                             bFolderHasCat = True
@@ -21194,7 +22956,7 @@ End Sub
             sRpt = LPWSTRtoStr(lpx)
         End If
         Set siCurPath = siParent
-        
+        RegisterCurPath
         nBlocks = nBlocks - 1
         DebugAppend "LVLoadFolder::Out nBlocks=" & nBlocks, 2000
         If nBlocks = 0 Then
@@ -22507,6 +24269,11 @@ End Sub
     End If
     End Function
     
+    Public Sub LinkShellTree(ByVal hwndTree As LongPtr, ByVal hwndTreeControl As LongPtr)
+        hShellTree = hwndTree
+        hShellTreeContainer = hwndTreeControl
+    End Sub
+    
     Private Sub SearchOptionsPopup()
     DebugAppend "SearchOptionsPopup::Alt=" & bSearchAlt
     Dim fSkip As Long
@@ -23796,15 +25563,25 @@ End Sub
     
     Private Sub LVSetExplSel(bOn As Boolean)
     On Error GoTo LVSetExplSel_Err
-    Dim pILV As IListView
-    
-    SendMessage hLVS, LVM_QUERYINTERFACE, VarPtr(IID_IListView), pILV
-    If (pILV Is Nothing) = False Then
-        pILV.SetSelectionFlags 1, IIf(bOn, 1&, 0&)
+    If bIsWin7OrGreater Then
+        Dim pILV As IListView
+        
+        SendMessage hLVS, LVM_QUERYINTERFACE, VarPtr(IID_IListView), pILV
+        If (pILV Is Nothing) = False Then
+            pILV.SetSelectionFlags 1, IIf(bOn, 1&, 0&)
+        Else
+            DebugAppend "LVSetExplSel::Failed to get IListView"
+        End If
     Else
-        DebugAppend "LVSetExplSel::Failed to get IListView"
+        Dim pILVV As IListViewVista
+        
+        SendMessage hLVS, LVM_QUERYINTERFACE, VarPtr(IID_IListViewVista), pILVV
+        If (pILVV Is Nothing) = False Then
+            pILVV.SetSelectionFlags 1, IIf(bOn, 1&, 0&)
+        Else
+            DebugAppend "LVSetExplSel::Failed to get IListView"
+        End If
     End If
-    
     Exit Sub
     
     LVSetExplSel_Err:
@@ -24403,6 +26180,19 @@ End Sub
     End If
     RaiseEvent SortItems(lSortK, IIf(lSortD, SORT_ASCENDING, SORT_DESCENDING), uColData(lp).szSystemName, uColData(lp).szDisplayName)
     End Sub
+    
+    Private Function GetCurPathCBIdx() As Long
+    Dim i As Long
+    
+    For i = 0 To UBound(cbItems)
+        If (cbItems(i).sFullPath = m_sCurPath) And (cbItems(i).bDeleted = False) Then
+            GetCurPathCBIdx = i
+            Exit For
+        End If
+    Next i
+    
+    End Function
+    
     
     Public Function AddCustomColumn(sTitle As String, dwDispType As PROPDESC_DISPLAYTYPE, Optional lPos As Long = -1&, Optional lDefWidth As Long = -1&, Optional bHasImages As Boolean = False, Optional bShowInColumnDialog As Boolean = False) As Long
     Dim idx As Long
@@ -26356,6 +28146,11 @@ End Sub
     
     Private Sub pvCreateCombo()
     DebugAppend "pvCreateCombo()", 2000
+    If mShowFP = SBCPO_UseExplorer Then
+        mFullPath = mExpFullPath
+    Else
+        mFullPath = (mShowFP = SBCPO_ShowFullPath)
+    End If
     Dim dwStyle As Long
     dwStyle = WS_CHILD Or WS_VISIBLE Or CBS_AUTOHSCROLL Or WS_TABSTOP
     If (m_CbType = SBCT_Simple) And ((m_Mode <> SBCTL_DirOnly) And (m_Mode <> SBCTL_DrivesOnly) And (m_Mode <> SBCTL_DirOnlyWithCtls)) Then m_CbType = m_def_CbType
@@ -28512,7 +30307,15 @@ End Sub
     GetRegistryValueW = TrimNullW(sRes)
     R = RegCloseKey(hKey)
     End Function
-    
+    Private Function GetRegistryDWORD(lKeyType As Long, sPath As String, sKey As String) As Long
+    Dim hKey As LongPtr
+    Dim R As Long
+    Dim lType As Long
+    R = RegOpenKeyExW(lKeyType, StrPtr(sPath), 0, KEY_QUERY_VALUE, hKey)
+    R = RegQueryValueExW(hKey, StrPtr(sKey), 0, REG_DWORD, VarPtr(GetRegistryDWORD), 4)
+    R = RegCloseKey(hKey)
+    End Function
+        
     Public Sub RefreshTree()
     Attribute RefreshTree.VB_Description = "Reloads the directory dropdown."
     'Rebuilds treeview
@@ -29078,7 +30881,7 @@ End Sub
     'copy unicode text to clipboard
     Dim hMem As LongPtr, pMem As LongPtr
     Dim hr As LongPtr, ner As Long
-    sText = sText ' & vbNullChar & vbNullChar
+    ' sText = sText & vbNullChar & vbNullChar
     DebugAppend "ClipSet.Entry"
     If OpenClipboard(UserControl.hWnd) Then
        Call EmptyClipboard
@@ -32890,7 +34693,16 @@ End Sub
     Debug.Print sOut
     
     End Sub
-    Public Sub dbg_hdrheight()
+    Private Sub SetAlphaShadow(ByVal fEnable As Long)
+    If bIsWin7OrGreater Then
+        Dim ilv As IListView
+        SendMessage hLVS, LVM_QUERYINTERFACE, VarPtr(IID_IListView), ilv
+        If ilv Is Nothing Then Exit Sub
+        ilv.EnableAlphaShadow fEnable
+    End If
+    End Sub
+    
+    Private Sub dbg_hdrheight()
     Dim cx As Long
     cx = CLng(SendMessage(hLVS, LVM_ENSURESUBITEMVISIBLE, 2&, ByVal 2&))
     'If cx < 1& Then
@@ -32910,7 +34722,7 @@ End Sub
     'cx = rc.Right - rc.Left
     'SetWindowPos hLVSHdr, 0&, 0&, 0&, cx, 100, SWP_NOMOVE
     End Sub
-    Public Sub dbg_colwidth()
+    Private Sub dbg_colwidth()
         DebugAppend "ColWidth=" & ListView_GetColumnWidth(hLVS, 0), 1111
     End Sub
     
@@ -34005,7 +35817,6 @@ End Sub
         On Error GoTo SetSortArrowAPI_Err
         '</EhHeader>
     Dim HDI As HDITEMW
-    Dim bt As String
     Dim i As Long
     Dim lCnt As Long
     Dim lp As LongPtr
@@ -34030,11 +35841,9 @@ End Sub
         
             End If
         End If
-    '    bt = sColText(lp)
-        bt = uColData(lp).szDisplayName
-        DebugAppend "SetArrow(" & lCol & "," & iSort & ")->" & bt & "," & (HDI.fmt And HDF_SORTDOWN) & "," & (HDI.fmt And HDF_SORTUP)
-        HDI.cchTextMax = Len(bt)
-        HDI.pszText = StrPtr(bt & vbNullChar)
+        DebugAppend "SetArrow(" & lCol & "," & iSort & ")->" & uColData(lp).szDisplayName & "," & (HDI.fmt And HDF_SORTDOWN) & "," & (HDI.fmt And HDF_SORTUP)
+        HDI.cchTextMax = Len(uColData(lp).szDisplayName)
+        HDI.pszText = StrPtr(uColData(lp).szDisplayName)
         Call SendMessage(hLVSHdr, HDM_SETITEMW, i, HDI)
     Next i
      '<EhFooter>
@@ -34050,7 +35859,6 @@ End Sub
         On Error GoTo LVCSetSortArrow_Err
         '</EhHeader>
     Dim HDI As HDITEMW
-    Dim bt As String
     Dim i As Long
     Dim lCnt As Long
     Dim lp As LongPtr
@@ -34072,12 +35880,13 @@ End Sub
             End If
         End If
         If lp = 0 Then
-            bt = scc_PropCol
+            HDI.cchTextMax = Len(scc_PropCol)
+            HDI.pszText = StrPtr(scc_PropCol)
         ElseIf lp = 1 Then
-            bt = scc_AdvCol
+            HDI.cchTextMax = Len(scc_AdvCol)
+            HDI.pszText = StrPtr(scc_AdvCol)
         End If
-        HDI.cchTextMax = Len(bt)
-        HDI.pszText = StrPtr(bt & vbNullChar)
+
         Call SendMessage(hLVCHdr, HDM_SETITEMW, i, HDI)
     Next i
      '<EhFooter>
@@ -34111,7 +35920,7 @@ End Sub
             bt = scc_PropCol
         End If
         HDI.cchTextMax = Len(bt)
-        HDI.pszText = StrPtr(bt & vbNullChar)
+        HDI.pszText = StrPtr(bt)
         Call SendMessage(hLVCHdr, HDM_SETITEMW, i, HDI)
     Next i
      '<EhFooter>
@@ -37348,7 +39157,7 @@ End Function
     If sRet = "" Then sRet = "(unknown)"
     dbg_GetCDISStr = sRet
     End Function
-    Public Function dbg_LVITEM_stateStr(lVal As Long) As String
+    Private Function dbg_LVITEM_stateStr(lVal As Long) As String
     Dim sRet As String
      If (lVal And LVIS_FOCUSED) = LVIS_FOCUSED Then sRet = sRet & "LVIS_FOCUSED Or "
      If (lVal And LVIS_SELECTED) = LVIS_SELECTED Then sRet = sRet & "LVIS_SELECTED Or "
@@ -37564,6 +39373,24 @@ End Function
     DebugAppend "SIGDN_URL::" & LPWSTRtoStr(lp)
     End Sub
     
+    Private Function dbg_svsiflagstr(dw As SVSI_Flags) As String
+    Dim sOut As String
+    If (dw And SVSI_CHECK) = SVSI_CHECK Then sOut = sOut & "SVSI_CHECK|"
+    If (dw And SVSI_CHECK2) = SVSI_CHECK2 Then sOut = sOut & "SVSI_CHECK2|"
+    If (dw And SVSI_DESELECT) = SVSI_DESELECT Then sOut = sOut & "SVSI_DESELECT|"
+    If (dw And SVSI_DESELECTOTHERS) = SVSI_DESELECTOTHERS Then sOut = sOut & "SVSI_DESELECTOTHERS|"
+    If (dw And SVSI_EDIT) = SVSI_EDIT Then sOut = sOut & "SVSI_EDIT|"
+    If (dw And SVSI_ENSUREVISIBLE) = SVSI_ENSUREVISIBLE Then sOut = sOut & "SVSI_ENSUREVISIBLE|"
+    If (dw And SVSI_FOCUSED) = SVSI_FOCUSED Then sOut = sOut & "SVSI_FOCUSED|"
+    If (dw And SVSI_KEYBOARDSELECT) = SVSI_KEYBOARDSELECT Then sOut = sOut & "SVSI_KEYBOARDSELECT|"
+    If (dw And SVSI_NOTAKEFOCUS) = SVSI_NOTAKEFOCUS Then sOut = sOut & "SVSI_NOTAKEFOCUS|"
+    If (dw And SVSI_POSITIONITEM) = SVSI_POSITIONITEM Then sOut = sOut & "SVSI_POSITIONITEM|"
+    If (dw And SVSI_SELECT) = SVSI_SELECT Then sOut = sOut & "SVSI_SELECT|"
+    If (dw And SVSI_SELECTIONMARK) = SVSI_SELECTIONMARK Then sOut = sOut & "SVSI_SELECTIONMARK|"
+    If (dw And SVSI_TRANSLATEPT) = SVSI_TRANSLATEPT Then sOut = sOut & "SVSI_TRANSLATEPT|"
+    dbg_svsiflagstr = sOut
+    End Function
+
     Private Function dbg_sfgao_tostring(atr As SFGAO_Flags) As String
     Dim sOut As String
     If (atr And SFGAO_BROWSABLE) = SFGAO_BROWSABLE Then sOut = sOut & "SFGAO_BROWSEABLE,"
@@ -39126,6 +40953,26 @@ End Function
                         SendMessage hCombo, CB_SETCURSEL, gcs, ByVal 0&
     skpthis:
                     End If
+                    
+                    If mFullPath Then
+                        Dim lIdx As Long
+                        lIdx = CLng(GetCBXItemlParam(hCombo, gcs))
+                        Dim siSel As IShellItem
+                        SHCreateItemFromParsingName StrPtr(cbItems(lIdx).sFullPath), Nothing, IID_IShellItem, siSel
+                        If siSel IsNot Nothing Then
+                            Dim lpfsp As LongPtr, sFSP As String
+                            siSel.GetDisplayName SIGDN_FILESYSPATH, lpfsp
+                            If lpfsp Then
+                                sFSP = LPWSTRtoStr(lpfsp)
+                                If sFSP <> "" Then
+                                    bSuppressCBC = True
+                                    DebugAppend "CBWndProc::SetComboFullPath->" & sFSP, 2222
+                                    SendMessageW(hCBEd, WM_SETTEXT, 0, ByVal StrPtr(sFSP))
+                                    bSuppressCBC = False
+                                End If
+                            End If
+                        End If
+                    End If
                 Case CBN_SETFOCUS
     '                DebugAppend "CBN_SETFOCUS " & dbg_lkuph(lng_hWnd)
                     hFocused = lng_hWnd
@@ -39143,14 +40990,16 @@ End Function
                     End If
                 
                 Case CBN_EDITCHANGE
-                    Dim sOrTx As String
-                    sCbText = GetComboTextW(hCBEd)
-                    sOrTx = sCbText
-                    RaiseEvent ComboEditChange(sCbText)
-                    If sCbText <> sOrTx Then
-                        Call SendMessageW(hCBEd, WM_SETTEXT, 0&, ByVal StrPtr(sCbText))
+                    If bSuppressCBC = False Then
+                        Dim sOrTx As String
+                        sCbText = GetComboTextW(hCBEd)
+                        sOrTx = sCbText
+                        RaiseEvent ComboEditChange(sCbText)
+                        If sCbText <> sOrTx Then
+                            Call SendMessageW(hCBEd, WM_SETTEXT, 0&, ByVal StrPtr(sCbText))
+                        End If
                     End If
-    
+                    
                 Case CBN_DROPDOWN
                     cbSanityCheck1 = GetTickCount()
                     bComboOpen = True
@@ -40932,6 +42781,9 @@ End Function
     Resume Next
     
     End Function
+    
+
+
             
     #End Region
     

@@ -2675,31 +2675,7 @@ End Sub
 Private Sub UserControl_ExitFocus() Handles UserControl.ExitFocus
 RaiseEvent ExitFocus
 End Sub
-   Private Sub Class_Terminate()
-        ExperimentalLog("myToolWindow::Class_Terminate")
-        
-    End Sub
-
-
-    ' The twinBASIC UserControl currently provides a logging facility so that we can monitor the calls 
-    '  to the various OLE interfaces from the ActiveX host.  Set the LogPath to use this feature.
-    Private Const LogPath = ""
-    Private logCount As Long = 0
-    Private Sub ExperimentalLog(ByVal Text As String) Handles UserControl.ExperimentalLog
-        DebugAppend "TWINBASIC MSG: " & Text, -1 'tbShellTree has it's own logging facility
-        ' If Len(LogPath) = 0 Then Exit Sub
-
-        ' If logCount = 0 Then
-        ' 	Open LogPath For Output As #1
-        '     Close #1
-        ' End If
-        ' logCount += 1
- 
-        ' Open LogPath For Append As #1
-        ' Print #1, Text
-        ' Close #1                ' close for each entry to ensure file buffers flushed
-    End Sub
-    
+   
    
     Private Sub UserControl_Initialize() Handles UserControl.Initialize
     DebugAppend "UserControl_Initialize "
