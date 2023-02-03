@@ -4,7 +4,7 @@
 Public Class ucShellBrowse
 Option Explicit
 
-Private Const mVersionStr = "ucShellBrowse 12.0"
+Private Const mVersionStr = "ucShellBrowse 12.0 R1"
 Private Const mVersionApp = "ucShellBrowse"
 Private Const mVersionMjr = 12
 Private Const mVersionMnr = 0
@@ -213,6 +213,11 @@ Private Const mVersionMnr = 0
 '---------------------------------------------------------------------------------
 '
 '------------------------------------CHANGELOG------------------------------------
+'
+'New in v12.0 R1 (Released 02 Feb 2023)
+'
+'-Updated tbShellLib to 2.6.62 with fixed hex literals, and fixed a couple (unused)
+' ones in this control.
 '
 'New in v12.0 (Released 02 Feb 2023)
 '
@@ -3743,8 +3748,8 @@ Public Enum ucsb_StaticControlStyles
     SS_EDITCONTROL = &H2000
     SS_ENDELLIPSIS = &H4000
     SS_PATHELLIPSIS = &H8000&
-    SS_WORDELLIPSIS = &HC000
-    SS_ELLIPSISMASK = &HC000
+    SS_WORDELLIPSIS = &HC000&
+    SS_ELLIPSISMASK = &HC000&
 End Enum
 
 Private Const ANSI_CHARSET As Byte = &H0
@@ -4509,7 +4514,7 @@ Private Enum ucsb_LVStyles
   LVS_NOSCROLL = &H2000
   LVS_NOCOLUMNHEADER = &H4000
   LVS_NOSORTHEADER = &H8000&
-  LVS_TYPESTYLEMASK = &HFC00
+  LVS_TYPESTYLEMASK = &HFC00&
   LVS_ALIGNTOP = &H0
   LVS_ALIGNMASK = &HC00
 End Enum   ' LVStyles
@@ -4949,7 +4954,7 @@ Private Enum LVITEM_state
   LVIS_ACTIVATING = &H20
  
   LVIS_OVERLAYMASK = &HF00
-  LVIS_STATEIMAGEMASK = &HF000
+  LVIS_STATEIMAGEMASK = &HF000&
 End Enum
 Private Type LVBKIMAGE
   ulFlags As LVBKIMAGE_Flags
