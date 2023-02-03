@@ -1,6 +1,6 @@
 # ShellControls
 ## Shell Browser and Shell Tree Controls
-## ucShellBrowse v11.3 R2 and ucShellTree v2.18 R1
+## ucShellBrowse v12.0 and ucShellTree v2.8 R1
 
 This repository contains a twinBASIC x86/x64 compatible port of my shell controls, ucShellBrowse and ucShellTree.
 
@@ -16,15 +16,68 @@ There's still some work to do in twinBASIC to complete user control support, but
 
 ### Using these controls in your project
 
-**Requires [twinBASIC Beta 236](https://github.com/twinbasic/twinbasic/releases) or newer**
+**Requires [twinBASIC Beta 239](https://github.com/twinbasic/twinbasic/releases) or newer**
 
 The demos are all set to open and run, to set these up in your project:
 
 These projects use tbShellLib, the x64-compatible successor to oleexp.tlb written in twinBASIC. First add a reference to 'twinBASIC Shell Library' in Settings->COM Type Library / Active-X References by clicking TWINPACK PACKAGES and selecting it from the list, or manually downloading it from it's [repository](https://github.com/fafalone/tbShellLib).
 
-ShellControls.twinpack contains both controls as a tB Package and can be added via the same references location (Import the file, it's not on the package server yet). This reference must come before WinNativeForms; tbShellLib must still be added. Note that packages are read-only when added to a project.
+ShellControls.twinpack contains both controls as a tB Package and can be added via the same references location (Import the file, it's not on the package server yet). This reference must come before WinNativeForms; tbShellLib must still be added. Note that packages are read-only when added to a project. As of twinBASIC Beta 239, you can now experiment with building this as an Active-X DLL. You can then use the controls in VB6; however they're not working in VBA yet.
 
 As an alternative, to have them in an editable form, for ucShellTree, you need to import ucShellTree.twin and ucShellTree.tbcontrol. For ucShellBrowse, import ucShellBrowse.twin and ucShellBrowse.tbcontrol.
+
+### Update
+
+**IMPORTANT:** These controls now require [twinBASIC Beta 239](https://github.com/twinbasic/twinbasic/releases) or newer. The changes in/for this release allow building them as Active-X DLLs that can be used in VB6; however they're not working in VBA yet. They also require tbShellLib 2.6.60 or newer, if you're adding them to your own project.
+
+**ucShellBrowse v12.0 Changelog**
+
+```
+-There's now a RegisterWindow option that, if True, will register this control as
+ a shell window. It will be seen by the system as if it were an Explorer window,
+ and can be interacted with via IShellView, IShellBrowser, IFolderView, etc, which
+ includes responding to APIs such as SHOpenFolderAndSelectItems. 
+ For instance, if you use your web browser to download to C:\download, and this
+ control is open to C:\download, and you click the 'show in folder' button, it
+ will select the file in this control rather than open an actual Explorer window.
+
+ Programs like my 'List open windows and properties' demo will also be able to
+ obtain all that information from this control. See the following:
+ https://www.vbforums.com/showthread.php?818959
+ All members that are applicable to this control have been implemented, with the
+ exception I don't intend to implement the FolderItem, Folder, etc interfaces
+ for use with IShellFolderViewDual/shell.application.
+
+ Some features must be implemented by the host form/application. For instance,
+ in order to respond to requests to close the window, see e.g.
+ https://www.vbforums.com/showthread.php?t=898235 the control will raise the
+ new RequestExit event, letting your app know the window should close.
+
+ This option is False by default. Not available in DrivesOnly mode, DirOnly
+ mode, or DirOnlyWithCtls mode.
+ NOTE: If you have multiple ShellBrowse controls showing the same path, it's
+       strongly advised only one registers as a shell window.
+
+-Added LinkshellTree sub to store hwnd for associated ucShellTree; for 
+ IShellBrowser.GetControlWindow only for now, but may do more in the future.
+
+-Added DropdownShowFullPath option to show the full path in the path dropdown.
+
+-Added ListViewAlphaShadow option, an undocumented feature that applies an alpha
+ shadow to ListView labels when in Icon modes (Medium Icon, Large Icon, XL Icon,
+ Thumbnail, and Custom, in this control).
+
+-Added NoScroll (LVS_NOSCROLL) style option.
+
+-(Bug fix) Column header text could sometimes become corrupted due to early
+           release of temporary strings.
+
+-(Bug fix) This control is labeled as supporting Windows Vista, but some
+           ListView features that were available on Vista didn't work as the
+           control only used the Windows 7+ version of IListView. This has been
+           corrected and all features supported on Vista are available.
+```
+
 
 ### The Demos
 
@@ -48,7 +101,7 @@ Shows combining ucShellBrowse and ucShellTree:
 
 ![image](https://user-images.githubusercontent.com/7834493/213373633-e539fc13-0287-496e-9d69-a3518a3d6327.png)
 
-## Updates
+## Older Updates
 
 (Jan 22 2023) ucShellBrowse R2: Previously described error handling for categorizer errors had mistkanely been removed.
 
