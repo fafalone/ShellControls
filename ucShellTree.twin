@@ -1,15 +1,17 @@
 [ FormDesignerId ("152922CC-D332-4D27-BEF0-7D0887461FEF") ]
 [ ClassId ("43C02F35-3CE8-4D19-A139-028E05C7EBE5") ]
+[ InterfaceId ("C028E25E-E050-4AC5-B710-E8791CFB6274") ]
+[ EventInterfaceId ("40C15AFC-0600-4BF1-9525-1AEFFC476BD2") ]
 [ COMControl ]
 Public Class ucShellTree
 Option Explicit
 
-Private Const mVersionStr As String = "Shell Tree Control 2.8 R2"
+Private Const mVersionStr As String = "Shell Tree Control 2.9"
 #Region "README"
 ''*********************************************************************************************
 '
 'ucShellTree.twin
-'Shell Tree Control v2.8 R2 - twinBASIC Implementation
+'Shell Tree Control v2.9 - twinBASIC Implementation
 '
 'Author: fafalone
 '(c) 2018-2023
@@ -61,6 +63,9 @@ Private Const mVersionStr As String = "Shell Tree Control 2.8 R2"
 '
 '
 '---------------------------------------CHANGELOG----------------------------------------
+'
+'v2.9 (Release Jan 15th, 2024)
+'-Now using a mirrored image list to support arbitrary icon size.
 '
 'v2.8 R2
 '-Updated tbShellLib to 2.6.62 with fixed hex literals, and fixed a couple ones in this
@@ -344,7 +349,7 @@ Private Const mVersionStr As String = "Shell Tree Control 2.8 R2"
 
 'USER OPTIONS
 'The following are meant to be toggled based on your preferences:
-Private Const dbg_PrintToImmediate As Boolean = False 'This control has very extensive debug information, you may not want
+Private Const dbg_PrintToImmediate As Boolean = True 'This control has very extensive debug information, you may not want
                                                      'to see that in your IDE.
 Private Const dbg_IncludeDate As Boolean = True 'Prefix all Debug output with the date and time, [yyyy-mm-dd Hh:Mm:Ss]
 Private Const dbg_RaiseEvent As Boolean = True 'Raise DebugMessage event
@@ -419,6 +424,30 @@ Private bQkAc As Boolean
 Private sUserFolder As String
 Private sUserDesktop As String
 
+Private himlTV As LongPtr
+Private himl16 As LongPtr
+Private himl32 As LongPtr
+Private himl48 As LongPtr
+Private himl64 As LongPtr
+Private himl96 As LongPtr
+Private himl128 As LongPtr
+Private himl256 As LongPtr
+Private imlSysJM As IImageList
+
+Private mIconSize As Long
+Private Const mDefIconSize As Long = 24
+
+Private gdipToken As LongPtr
+
+Private Type SysImgCacheEntry
+    sysimlid As Long
+    limlidx As Long
+End Type
+Private SysImgCache() As SysImgCacheEntry
+Private nSysImgCache As Long
+Private bOvrAdded(16) As Boolean
+
+
 Private Type TVEntry
     bFolder As Boolean
     bZip As Boolean
@@ -467,7 +496,7 @@ Private gExPaths() As String
 Private nExPaths As Long
 Private nItr As LongPtr
 Private hSysIL As LongPtr
-Private pIML As iImageList
+Private pIML As IImageList
 Private g_fDeleting As Boolean
 Private fNoExpand As Long
 Private sFavPath As String
@@ -1455,7 +1484,7 @@ Private Type NMCUSTOMDRAW
     dwDrawStage As Long
     hDC As LongPtr
     RC As RECT
-    dwItemSpec As Longptr
+    dwItemSpec As LongPtr
     uItemState As Long
     lItemlParam As LongPtr
 End Type
@@ -1587,6 +1616,25 @@ Private Enum ucst_MF_State
   MFS_DEFAULT = MF_DEFAULT
 End Enum
 
+#If TWINBASIC Then
+#If Win64 = 0 Then
+[ PackingAlignment (1) ]
+#End If
+Public Type SHFILEOPSTRUCT
+    hWnd        As LongPtr
+    wFunc       As FILEOP
+    pFrom       As LongPtr
+    pTo         As LongPtr
+    #If Win64 Then
+    fFlags As FILEOP_FLAGS 'We can use this trick since on Win64, this UDT isn't byte-packed
+    #Else
+    /* [ TypeHint(FILEOP_FLAGS) */ fFlags      As Integer
+    #End If
+    fAnyOperationsAborted    As BOOL
+    hNameMappings   As LongPtr
+    lpszProgressTitle   As LongPtr
+End Type
+#Else
 Private Type SHFILEOPSTRUCT
    hWnd        As LongPtr
    wFunc       As FILEOP
@@ -1594,9 +1642,12 @@ Private Type SHFILEOPSTRUCT
    pTo         As LongPtr
    fFlags      As FILEOP_FLAGS
    fAborted    As Boolean
+   'Members below this point invalid on VB6
    hNameMaps   As LongPtr
    lpszProgressTitle   As LongPtr
  End Type
+#End If
+
 #End Region
 
 #Region "IPAO"
@@ -1770,32 +1821,32 @@ If IID.Data1 = &H117 And IID.Data2 = &H0 And IID.Data3 = &H0 Then
         IOleIPAO_QueryInterface = S_OK
     Else
         This.OriginalIOleIPAO.QueryInterface(IID, pvObj)
-        IOleIPAO_QueryInterface = Err.LastHResult
+        IOleIPAO_QueryInterface = Err.LastHresult
     End If
 Else
     This.OriginalIOleIPAO.QueryInterface(IID, pvObj)
-    IOleIPAO_QueryInterface = Err.LastHResult
+    IOleIPAO_QueryInterface = Err.LastHresult
 End If
 End Function
 
 Private Function IOleIPAO_AddRef(ByRef This As VTableIPAODataStruct) As Long
 This.OriginalIOleIPAO.AddRef
-IOleIPAO_AddRef = Err.LastHResult
+IOleIPAO_AddRef = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_Release(ByRef This As VTableIPAODataStruct) As Long
 This.OriginalIOleIPAO.Release
-IOleIPAO_Release = Err.LastHResult
+IOleIPAO_Release = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_GetWindow(ByRef This As VTableIPAODataStruct, ByRef hWnd As LongPtr) As Long
 This.OriginalIOleIPAO.GetWindow(hWnd)
-IOleIPAO_GetWindow = Err.LastHResult
+IOleIPAO_GetWindow = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_ContextSensitiveHelp(ByRef This As VTableIPAODataStruct, ByVal EnterMode As Long) As Long
 This.OriginalIOleIPAO.ContextSensitiveHelp(EnterMode)
-IOleIPAO_ContextSensitiveHelp = Err.LastHResult
+IOleIPAO_ContextSensitiveHelp = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_TranslateAccelerator(ByRef This As VTableIPAODataStruct, ByRef Msg As MSG) As Long
@@ -1809,32 +1860,32 @@ IOleIPAO_TranslateAccelerator = S_OK
 This.IOleIPAO.TranslateAccelerator Handled, IOleIPAO_TranslateAccelerator, Msg.hWnd, Msg.message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
 If Handled = False Then
     This.OriginalIOleIPAO.TranslateAccelerator(VarPtr(Msg))
-    IOleIPAO_TranslateAccelerator = Err.LastHResult
+    IOleIPAO_TranslateAccelerator = Err.LastHresult
 End If
 Exit Function
 CATCH_EXCEPTION:
     This.OriginalIOleIPAO.TranslateAccelerator(VarPtr(Msg))
-    IOleIPAO_TranslateAccelerator = Err.LastHResult
+    IOleIPAO_TranslateAccelerator = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_OnFrameWindowActivate(ByRef This As VTableIPAODataStruct, ByVal Activate As Long) As Long
 This.OriginalIOleIPAO.OnFrameWindowActivate(Activate)
-IOleIPAO_OnFrameWindowActivate = Err.LastHResult
+IOleIPAO_OnFrameWindowActivate = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_OnDocWindowActivate(ByRef This As VTableIPAODataStruct, ByVal Activate As Long) As Long
 This.OriginalIOleIPAO.OnDocWindowActivate(Activate)
-IOleIPAO_OnDocWindowActivate = Err.LastHResult
+IOleIPAO_OnDocWindowActivate = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_ResizeBorder(ByRef This As VTableIPAODataStruct, ByRef RC As OLERECT, ByVal UIWindow As IOleInPlaceUIWindow, ByVal FrameWindow As Long) As Long
 This.OriginalIOleIPAO.ResizeBorder(VarPtr(RC), UIWindow, FrameWindow)
-IOleIPAO_ResizeBorder = Err.LastHResult
+IOleIPAO_ResizeBorder = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_EnableModeless(ByRef This As VTableIPAODataStruct, ByVal Enable As Long) As Long
 This.OriginalIOleIPAO.EnableModeless(Enable)
-IOleIPAO_EnableModeless = Err.LastHResult
+IOleIPAO_EnableModeless = Err.LastHresult
 End Function
 
 
@@ -2562,6 +2613,7 @@ End Function
         mExpComp = PropBag.ReadProperty("AutoExpandComputer", mDefExpComp)
         mExpLib = PropBag.ReadProperty("AutoExpandLibraries", mDefExpLib)
         m_NoWow64 = PropBag.ReadProperty("DisableWow64Redirect", m_def_NoWow64)
+        mIconSize = PropBag.ReadProperty("IconSize", mDefIconSize)
         pvCreate
     End Sub
     
@@ -2616,6 +2668,8 @@ End Function
         PropBag.WriteProperty "AutoExpandComputer", mExpComp, mDefExpComp
         PropBag.WriteProperty "AutoExpandLibraries", mExpLib, mDefExpLib
         PropBag.WriteProperty "DisableWow64Redirect", m_NoWow64, m_def_NoWow64
+        PropBag.WriteProperty "IconSize", mIconSize, mDefIconSize
+        
         'DebugAppend "writeprops out"
     End Sub
 
@@ -2668,6 +2722,7 @@ Private Sub UserControl_InitProperties() Handles UserControl.InitProperties
     m_Win10QA = m_def_Win10QA
     m_NoWow64 = m_def_NoWow64
     mIndent = mDefIndent
+    mIconSize = mDefIconSize
 DebugAppend "InitProps"
 pvCreate
 End Sub
@@ -2688,7 +2743,12 @@ End Sub
     m_ScaleX = GetDeviceCaps(hDC, LOGPIXELSX) / 96
     DebugAppend "dpix=" & GetDeviceCaps(hDC, LOGPIXELSX) / 96, 1111
     m_ScaleY = GetDeviceCaps(hDC, LOGPIXELSY) / 96
+    
     ReleaseDC 0&, hDC
+    
+    gdipToken = InitGDIPlus()
+    
+    ReDim SysImgCache(0)
         ReadWindowsVersion
         IsComCtl6 = (ComCtlVersion >= 6)
         Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
@@ -2756,6 +2816,8 @@ End Sub
             DeleteObject hFontTV
             hFontTV = 0
         End If
+        
+        FreeGDIPlus(gdipToken)
     End Sub
     
     Private Sub UserControl_Resize() Handles UserControl.Resize
@@ -3615,6 +3677,14 @@ If bVal <> mHasButtons Then
     SetWindowLong hTVD, GWL_STYLE, dwStyle
 End If
 End Property
+Property Get IconSize() As Long: IconSize = mIconSize: End Property
+Attribute IconSize.VB_Description = "Gets/sets the folder/file icon size in the TreeView. This will be scaled by system zoom."
+Public Property Let IconSize(cxy As Long)
+    cxy *= m_ScaleX
+    If cxy <> mIconSize Then
+        mIconSize = cxy
+    End If
+End Property
 Public Property Get ShowLines() As Boolean: ShowLines = mShowLines: End Property
 Attribute ShowLines.VB_Description = "Show lines connecting the levels of the tree. Works best when ExplorerStyle is disabled."
 Public Property Let ShowLines(bVal As Boolean)
@@ -4164,12 +4234,12 @@ If hGlobal Then
     Call CopyMemory(ByVal lpGlobal, nVal, LenB(nVal))
     DebugAppend "adddil.copymem"
     Call GlobalUnlock(hGlobal)
-    sTg.TYMED = TYMED_HGLOBAL
+    sTg.tymed = TYMED_HGLOBAL
     sTg.data = lpGlobal
     fmt.cfFormat = CF_PREFERREDDROPEFFECT
     fmt.dwAspect = DVASPECT_CONTENT
     fmt.lIndex = -1
-    fmt.TYMED = TYMED_HGLOBAL
+    fmt.tymed = TYMED_HGLOBAL
     ido.SetData fmt, sTg, 1
 Else
     DebugAppend "failed to get hglobal"
@@ -4235,13 +4305,13 @@ If hGlobal Then
     Call CopyMemory(ByVal lpGlobal, tDD, LenB(tDD))
     Call GlobalUnlock(hGlobal)
     
-    sTg.TYMED = TYMED_HGLOBAL
+    sTg.tymed = TYMED_HGLOBAL
     sTg.data = lpGlobal
     
     fmt.cfFormat = CF_DROPDESCRIPTION
     fmt.dwAspect = DVASPECT_CONTENT
     fmt.lIndex = -1
-    fmt.TYMED = TYMED_HGLOBAL
+    fmt.tymed = TYMED_HGLOBAL
         
     ido.SetData fmt, sTg, 1
 End If
@@ -5153,7 +5223,7 @@ If DataObjSupportsFormat(pdo, CF_UNICODETEXT) Then
     tFMT.cfFormat = CF_UNICODETEXT
     tFMT.dwAspect = DVASPECT_CONTENT
     tFMT.lIndex = -1
-    tFMT.TYMED = TYMED_HGLOBAL
+    tFMT.tymed = TYMED_HGLOBAL
 
     pdo.GetData tFMT, tSTG
     lpText = GlobalLock(tSTG.data)
@@ -5164,7 +5234,7 @@ ElseIf DataObjSupportsFormat(pdo, CF_TEXT) Then 'if there's no unicode chars the
     tFMT.cfFormat = CF_TEXT
     tFMT.dwAspect = DVASPECT_CONTENT
     tFMT.lIndex = -1
-    tFMT.TYMED = TYMED_HGLOBAL
+    tFMT.tymed = TYMED_HGLOBAL
 
     pdo.GetData tFMT, tSTG
     lpText = GlobalLock(tSTG.data)
@@ -5472,7 +5542,11 @@ DebugAppend "m_Win10QA=" & m_Win10QA & ", bIsWin10OrGreater=" & bIsWin10OrGreate
             End If
         End If
         If pidlParF Then CoTaskMemFree pidlParF
-        TVEntries(1).nIcon = lpIcon
+        Dim pidlFav As LongPtr
+        Dim ppidl As IPersistIDList
+        Set ppidl = siFav
+        ppidl.GetIDList(pidlFav)
+        TVEntries(1).nIcon = TranslateIcon(lpIcon, siFav, pidlParF, pidlFav, mIconSize, mIconSize, pidlChF)
         tVI.Mask = TVIF_CHILDREN Or TVIF_TEXT Or TVIF_IMAGE Or TVIF_SELECTEDIMAGE Or TVIF_PARAM Or TVIF_STATE
         tVI.cChildren = 1
         TVEntries(1).sName = sName
@@ -5567,14 +5641,14 @@ If (siDesk Is Nothing) = False Then
         sDesktopPath = sFull
     End If
     CoTaskMemFree pidlDesktop
-    TVEntries(0).nIcon = lpIcon
+    TVEntries(0).nIcon = TranslateIcon(lpIcon, siDesk, 0, pidlDesktop, mIconSize, mIconSize, 0)
     tVI.Mask = TVIF_CHILDREN Or TVIF_TEXT Or TVIF_IMAGE Or TVIF_SELECTEDIMAGE Or TVIF_PARAM Or TVIF_STATE
     tVI.cChildren = 1
     TVEntries(0).sName = sName
     tVI.cchTextMax = Len(sName)
     tVI.pszText = StrPtr(sName)
-    tVI.iImage = lpIcon
-    tVI.iSelectedImage = lpIcon
+    tVI.iImage = TVEntries(0).nIcon
+    tVI.iSelectedImage = TVEntries(0).nIcon
     tVI.StateMask = TVIS_STATEIMAGEMASK
     tVI.State = IndexToStateImageMask(0)
     tVI.lParam = 0&
@@ -5732,7 +5806,7 @@ Private Function DataObjSupportsFormat(pIDO As IDataObject, lFmt As Long, Option
 Dim tFMT As FORMATETC
 With tFMT
     .cfFormat = lFmt
-    .TYMED = ty
+    .tymed = ty
     .dwAspect = dva
     .lIndex = lIndex
     .pDVTARGETDEVICE = lDev
@@ -5904,7 +5978,7 @@ If ((lAtr And SFGAO_FOLDER) = SFGAO_FOLDER) Or (mShowFiles = True) Or (bFav = Tr
             End If
         End If
         End If
-        siChild.GetDisplayName SIGDN_NORMALDISPLAY, lpName
+        siChild.GetDisplayName SIGDN_PARENTRELATIVEFORUI, lpName
         sName = LPWSTRtoStr(lpName)
         TVEntries(nCur).sFullPath = sFPP
         TVEntries(nCur).sName = sName
@@ -5939,6 +6013,7 @@ If ((lAtr And SFGAO_FOLDER) = SFGAO_FOLDER) Or (mShowFiles = True) Or (bFav = Tr
               DebugAppend "lpIcon on fallback=" & lpIcon
             End If
             If lpIcon = -1 Then lpIcon = 0
+            
         End If
         lpIconOvr = -1
         If mExtOverlay Then
@@ -5957,8 +6032,9 @@ If ((lAtr And SFGAO_FOLDER) = SFGAO_FOLDER) Or (mShowFiles = True) Or (bFav = Tr
                 lpIconOvr = 2
             End If
         End If
+        EnsureOverlay lpIconOvr
         On Error GoTo e0
-        TVEntries(nCur).nIcon = lpIcon
+        TVEntries(nCur).nIcon = TranslateIcon(lpIcon, siChild, pidlPar, TVEntries(nCur).pidlFQ, mIconSize, mIconSize, pidlRel)
         TVEntries(nCur).nOverlay = lpIconOvr
         TVEntries(nCur).pidlRel = pidlRel
         TVEntries(nCur).hParentNode = hitemParent
@@ -5972,8 +6048,8 @@ If ((lAtr And SFGAO_FOLDER) = SFGAO_FOLDER) Or (mShowFiles = True) Or (bFav = Tr
         End If
         tVI.cchTextMax = Len(TVEntries(nCur).sName)
         tVI.pszText = StrPtr(TVEntries(nCur).sName)
-        tVI.iImage = lpIcon
-        tVI.iSelectedImage = lpIcon
+        tVI.iImage = TVEntries(nCur).nIcon
+        tVI.iSelectedImage = TVEntries(nCur).nIcon
         tVI.lParam = nCur
         If lpIconOvr > -1 Then
             tVI.Mask = tVI.Mask Or TVIF_STATE
@@ -6014,6 +6090,351 @@ Exit Sub
 e0:
     DebugAppend "ucShellTree.TVAddItem->Error: " & Err.Description & ", 0x" & Hex$(Err.Number)
 '</EhFooter>
+End Sub
+
+Private Function TranslateIcon(nIcon As Long, si As IShellItem, pidlFQCur As LongPtr, pidlFQ As LongPtr, cx As Long, cy As Long, Optional pidlRel As LongPtr = 0, Optional bFlag1 As Boolean = False) As Long
+'Takes a system image list index and returns the local TreeView index. 
+'If not added already, adds it.
+Dim lIdx As Long
+lIdx = SysImlCacheLookup(nIcon)
+If lIdx > -1 Then
+    Debug.Print "TranslateIcon " & nIcon & "|" & lIdx & " (Cached)"
+    Return lIdx
+End If
+lIdx = AddToHIMLNoDLL(himlTV, si, pidlFQCur, pidlFQ, cx, cy, SIIGBF_ICONONLY, pidlRel)
+ReDim Preserve SysImgCache(nSysImgCache)
+SysImgCache(nSysImgCache).sysimlid = nIcon
+SysImgCache(nSysImgCache).limlidx = lIdx
+nSysImgCache = nSysImgCache + 1
+Debug.Print "TranslateIcon " & nIcon & "|" & lIdx & " (added)"
+Return lIdx
+End Function
+
+Private Function EnsureOverlay(nIdx As Long) As Long
+    'Same as above but for overlays. You'd think since there's only 16 you could just copy them all...
+    'But they're not loaded into the system list until you've queried the image index for a file. 
+    
+    If bOvrAdded(nIdx) Then Return 1
+    
+    Dim nOvr As Long
+    Dim hIcon As LongPtr
+    Dim nPos As Long
+    imlSysJM.GetOverlayImage nIdx, nOvr
+    If nOvr >= 0 Then
+        imlSysJM.GetIcon nOvr, ILD_TRANSPARENT, hIcon
+        nPos = ImageList_AddIcon(himlTV, hIcon)
+    '            DebugAppend "nPos=" & nPos & ",hIcon=" & hIcon & ",nOvr=" & nOvr & ",idx=" & LVEntries(i).nOverlay
+        Call DestroyIcon(hIcon)
+        ImageList_SetOverlayImage himlTV, nPos, nIdx
+        bOvrAdded(nIdx) = True
+    End If
+End Function
+
+
+Private Function SysImlCacheLookup(nFI As Long) As Long
+Dim i As Long
+For i = 0 To UBound(SysImgCache)
+    If SysImgCache(i).sysimlid = nFI Then
+        SysImlCacheLookup = SysImgCache(i).limlidx
+        Exit Function
+    End If
+Next i
+SysImlCacheLookup = -1
+End Function
+Private Function AddToHIMLNoDLL(himl As LongPtr, si As IShellItem, pidlFQCur As LongPtr, pidlFQ As LongPtr, cx As Long, cy As Long, lFlags As SIIGBF, Optional pidlRel As LongPtr = 0) As Long
+Dim isiif As IShellItemImageFactory
+Dim hr As Long
+Dim pidlcr As LongPtr
+Dim hBmp As LongPtr
+If (si Is Nothing) Then
+    If (pidlFQ = 0&) And (pidlRel <> 0&) Then
+        'Virtual object; try to recreate pidl
+        pidlcr = ILCombine(pidlFQCur, pidlRel)
+    Else
+        pidlcr = pidlFQ
+    End If
+    hr = SHCreateItemFromIDList(pidlcr, IID_IShellItemImageFactory, isiif)
+Else
+    Set isiif = si
+End If
+    
+Dim tsz As SIZE, ull As LongLong
+tsz.cx = cx: tsz.cy = cy
+CopyMemory ull, tsz, 8
+hr = isiif.GetImage(ull, lFlags, hBmp)
+If hr = S_OK Then
+'    If ThumbShouldFrame(hBmp) Then
+'        hr = E_FAIL 'This manual checking should only be needed for IL_AddMasked
+                    'But it can't hurt to verify anyway; when a fail is returned
+                    'from this function it goes to the GDIP scaler/framer.
+'    End If
+End If
+        
+If hr = S_OK Then
+    Dim clrMsk As Long
+    If IsComCtl6 = False Then
+        OleTranslateColor clrFore, 0&, clrMsk
+        AddToHIMLNoDLL = ImageList_AddMasked(himl, hBmp, clrMsk)
+    Else
+        AddToHIMLNoDLL = ImageList_Add(himl, hBmp, 0&)
+        If (AddToHIMLNoDLL = -1) And (hBmp <> 0) And (hBmp <> -1) Then
+            AddToHIMLNoDLL = AddToImageListEx(himl, hBmp, cx, cy)
+        End If
+                
+    End If
+    DeleteObject hBmp
+Else
+    AddToHIMLNoDLL = -1
+End If
+    
+Set isiif = Nothing
+    Debug.Print "AddToHIMLNoDLL return=" & AddToHIMLNoDLL
+End Function
+Private Function AddToImageListEx(himl As LongPtr, hBmp As LongPtr, minX As Long, minY As Long) As Long
+'imagelist_add seems to fail if an image is smaller than the requested size
+'despite the fact that a valid hThumb is returned
+'this function will scale the image up, then try to add
+    
+Dim lX As Long, lY As Long
+Dim hDC As LongPtr
+Dim hBmpNew As LongPtr
+Dim gimg As LongPtr
+On Error GoTo e0
+    
+GdipCreateBitmapFromHBITMAP hBmp, ByVal 0&, gimg
+If gimg Then
+    GdipGetImageWidth gimg, lX
+    GdipGetImageHeight gimg, lY
+        
+'    If (lX < minX) Or (lY < minY) Then
+        DebugAppend "Addhimlex: resizing"
+        InitDC hDC, hBmpNew, &HFF000000, minX, minY
+        'gdipResize gimg, hDC, minX, minY, True
+        If (lX > minX) Or (lY > minY) Then
+            gdipResize gimg, hDC, minX, minY, True
+            'gdipDrawCentered gimg, hDC, minX, minY, False
+        ElseIf (lX = minX) Or (lY = minY) Then
+            gdipDrawCenteredNoScale gimg, hDC, minX, minY
+        Else
+            gdipDrawCentered gimg, hDC, minX, minY, True
+        End If
+        GdipDisposeImage gimg
+        GetBitmap hDC, hBmpNew
+'    Else
+'        DebugAppend "addhimlex: using original"
+'        hBmpNew = hBmp
+'    End If
+Else
+    DebugAppend "addhimlex failed to generate gdip image"
+    hBmpNew = hBmp
+End If
+If IsComCtl6 = False Then
+    Dim clrMsk As Long
+    OleTranslateColor clrFore, 0&, clrMsk
+    AddToImageListEx = ImageList_AddMasked(himl, hBmpNew, clrMsk)
+Else
+    AddToImageListEx = ImageList_Add(himl, hBmpNew, 0&)
+End If
+    
+On Error GoTo 0
+Exit Function
+    
+e0:
+DebugAppend "ucShellBrowse.AddToImageListEx.Error->" & Err.Description & " (" & Err.Number & ")"
+    
+End Function
+
+' Initialises the hDC to draw
+Private Sub InitDC(hDC As LongPtr, hBitmap As LongPtr, BackColor As Long, Width As Long, Height As Long)
+    ' Create a memory DC and select a bitmap into it, fill it in with the backcolor
+    hDC = CreateCompatibleDC(ByVal 0&)
+    hBitmap = Create32BitHBITMAP(hDC, Width, Height)
+    hBitmap = SelectObject(hDC, hBitmap)
+        
+End Sub
+
+Private Function Create32BitHBITMAP(hDC As LongPtr, cx As Long, cy As Long) As LongPtr
+Dim bmi As BITMAPINFO
+    bmi.bmiHeader.biSize = LenB(bmi.bmiHeader)
+    bmi.bmiHeader.biPlanes = 1
+    bmi.bmiHeader.biCompression = 0
+    
+    bmi.bmiHeader.biWidth = cx
+    bmi.bmiHeader.biHeight = cy
+    bmi.bmiHeader.biBitCount = 32
+    Create32BitHBITMAP = CreateDIBSection(hDC, bmi, DIB_RGB_COLORS, ByVal 0&, 0, 0)
+        
+End Function
+
+' Replaces the old bitmap of the hDC, Returns the bitmap and Deletes the hDC
+Private Sub GetBitmap(hDC As LongPtr, hBitmap As LongPtr)
+    hBitmap = SelectObject(hDC, hBitmap)
+    DeleteDC hDC
+End Sub
+
+' Resize the picture using GDI plus
+Private Sub gdipResize(Img As LongPtr, hDC As LongPtr, Width As Long, Height As Long, Optional RetainRatio As Boolean = False)
+    Dim graphics   As LongPtr      ' Graphics Object Pointer
+    Dim OrWidth    As Long      ' Original Image Width
+    Dim OrHeight   As Long      ' Original Image Height
+    Dim OrRatio    As Double    ' Original Image Ratio
+    Dim DesRatio   As Double    ' Destination rect Ratio
+    Dim DestX      As Long      ' Destination image X
+    Dim DestY      As Long      ' Destination image Y
+    Dim DestWidth  As Long      ' Destination image Width
+    Dim DestHeight As Long      ' Destination image Height
+        
+    GdipCreateFromHDC hDC, graphics
+    GdipSetInterpolationMode graphics, InterpolationModeHighQualityBicubic
+        
+    If RetainRatio Then
+        GdipGetImageWidth Img, OrWidth
+        GdipGetImageHeight Img, OrHeight
+            
+        OrRatio = OrWidth / OrHeight
+        DesRatio = Width / Height
+            
+        ' Calculate destination coordinates
+        DestWidth = IIf(DesRatio < OrRatio, Width, Height * OrRatio)
+        DestHeight = IIf(DesRatio < OrRatio, Width / OrRatio, Height)
+'        DestX = (Width - DestWidth) / 2
+'        DestY = (Height - DestHeight) / 2
+        If DestWidth > DestHeight Then
+            DestY = (DestWidth - DestHeight) '/ 2
+        ElseIf DestHeight > DestWidth Then
+            DestX = (DestHeight - DestWidth) '/ 2
+        End If
+'        DestX = 0
+'        DestY = 0
+    
+        GdipDrawImageRectRectI graphics, Img, DestX, DestY, DestWidth, DestHeight, 0, 0, OrWidth, OrHeight, UnitPixel, 0, 0, 0
+    Else
+        GdipDrawImageRectI graphics, Img, 0, 0, Width, Height
+    End If
+    GdipDeleteGraphics graphics
+End Sub
+
+Private Sub gdipDrawCentered(Img As LongPtr, hDC As LongPtr, Width As Long, Height As Long, Optional bDrawBorder As Boolean = False)
+'draw a smaller image centered on a larger background
+DebugAppend "gdipDrawCentered", 9
+    Dim graphics   As LongPtr      ' Graphics Object Pointer
+    Dim OrWidth    As Long      ' Original Image Width
+    Dim OrHeight   As Long      ' Original Image Height
+    GdipGetImageWidth Img, OrWidth
+    GdipGetImageHeight Img, OrHeight
+    GdipCreateFromHDC hDC, graphics
+    GdipSetInterpolationMode graphics, InterpolationModeHighQualityBicubic
+    
+    Dim DestX      As Long      ' Destination image X
+    Dim DestY      As Long      ' Destination image Y
+    Dim DestWidth  As Long      ' Destination image Width
+    Dim DestHeight As Long      ' Destination image Height
+    Dim maxCXY As Long
+    Dim dRatio As Double
+'If m_ThumbScaleCXY Then
+If False Then
+    ' maxCXY = m_ThumbCXY '* m_ScaleX
+    ' dRatio = OrWidth / OrHeight
+        
+    ' DestWidth = OrWidth * m_ScaleX
+    ' DestHeight = OrHeight * m_ScaleY
+    ' If DestWidth > maxCXY Then
+    '     DestWidth = maxCXY
+    '     DestHeight = DestWidth \ dRatio
+    ' ElseIf DestHeight > maxCXY Then
+    '     DestHeight = maxCXY
+    '     DestWidth = DestHeight * dRatio
+    ' End If
+    ' DebugAppend "gdipDraw scaled " & OrWidth & "," & OrHeight & " to " & DestWidth & "x" & DestHeight, 22
+    ' DestX = (Width - DestWidth) \ 2
+    ' DestY = (Height - DestHeight) \ 2
+Else
+    DestX = (Width - OrWidth) \ 2
+    DestY = (Height - OrHeight) \ 2
+End If
+    
+If bDrawBorder Then
+    Dim hPen As LongPtr, lRet As Long
+    'GdipCreatePen1 &HFFCFCFCF, 2, ByVal 2&, hPen '&HFFD6D6D6
+    'Frame was hard to see on dark background; adjust for luminance
+    Dim clr As Integer
+    Dim cBlend As Long
+    Dim col As Long
+    OleTranslateColor clrBack, 0&, col
+'        DebugAppend "col=" & Hex$(col)
+    Dim R As Integer
+    Dim g As Integer
+    Dim b As Integer
+    R = &HFF& And col
+    g = (&HFF00& And col) \ 256
+    b = (&HFF0000 And col) \ 65536
+    Dim lum As Long
+    lum = CLng(Round((0.2126 * R + 0.7152 * g + 0.0722 * b), 0))
+'        DebugAppend "lum=" & lum
+    clr = 200 - (240 - lum)
+    If clr > 214 Then clr = 214
+    If clr < 75 Then clr = 75
+    cBlend = &HFF000000 + RGB(clr, clr, clr)
+    GdipCreatePen1 cBlend, 2, ByVal 2&, hPen
+    lRet = GdipDrawRectangleI(graphics, hPen, 0, 0, Width - 1, Height - 1)
+    GdipDeletePen hPen
+End If
+    
+'If m_ThumbScaleCXY Then'
+If False Then
+    GdipDrawImageRectRectI graphics, Img, DestX, DestY, DestWidth, DestHeight, 0, 0, OrWidth, OrHeight, UnitPixel, 0, 0, 0
+Else
+    GdipDrawImageRectI graphics, Img, DestX, DestY, OrWidth, OrHeight
+End If
+    
+GdipDeleteGraphics graphics
+    
+End Sub
+
+Private Sub gdipDrawCenteredNoScale(Img As LongPtr, hDC As LongPtr, Width As Long, Height As Long)
+'draw a smaller image centered on a larger background
+DebugAppend "gdipDrawCentered", 9
+    Dim graphics   As LongPtr      ' Graphics Object Pointer
+    Dim OrWidth    As Long      ' Original Image Width
+    Dim OrHeight   As Long      ' Original Image Height
+    GdipGetImageWidth Img, OrWidth
+    GdipGetImageHeight Img, OrHeight
+    GdipCreateFromHDC hDC, graphics
+    GdipSetInterpolationMode graphics, InterpolationModeHighQualityBicubic
+    
+    Dim DestX      As Long      ' Destination image X
+    Dim DestY      As Long      ' Destination image Y
+    Dim DestWidth  As Long      ' Destination image Width
+    Dim DestHeight As Long      ' Destination image Height
+    
+'If m_ThumbScaleCXY Then
+'    DestWidth = OrWidth * m_ScaleX
+'    DestHeight = OrHeight * m_ScaleY
+'    DestX = (Width - DestWidth) \ 2
+'    DestY = (Height - OrHeight) \ 2
+'Else
+    DestX = (Width - OrWidth) \ 2
+    DestY = (Height - OrHeight) \ 2
+    
+    GdipDrawImageRectI graphics, Img, DestX, DestY, OrWidth, OrHeight
+    
+GdipDeleteGraphics graphics
+    
+End Sub
+
+' Initialises GDI Plus
+Private Function InitGDIPlus() As LongPtr
+    Dim Token    As LongPtr
+    Dim gdipInit As GdiplusStartupInput
+        
+    gdipInit.GdiplusVersion = 1
+    GdiplusStartup Token, gdipInit, ByVal 0&
+    InitGDIPlus = Token
+End Function
+    
+' Frees GDI Plus
+Private Sub FreeGDIPlus(Token As LongPtr)
+    GdiplusShutdown Token
 End Sub
 
 Private Sub TVExpandFolder(lParam As LongPtr, hitemParent As LongPtr)
@@ -6212,6 +6633,7 @@ If (siParent Is Nothing) = False Then
 '                        DebugAppend "QueryInterface=0x" & Hex$(hr)
                         If hr = S_OK Then
                             pIcon.GetIconOf pidlRel, GIL_FORSHELL, lpIcon
+                            Debug.Print "IShellIcon=" & lpIcon & " for " & sName
                         Else
                           Dim pidlcb As LongPtr
                           pidlcb = ILCombine(pidlPar, pidlRel)
@@ -6238,8 +6660,9 @@ If (siParent Is Nothing) = False Then
                             lpIconOvr = 2
                         End If
                     End If
+                    EnsureOverlay lpIconOvr
                     On Error GoTo e0
-                    TVEntries(nCur).nIcon = lpIcon
+                    TVEntries(nCur).nIcon = TranslateIcon(lpIcon, siChild, pidlPar, TVEntries(nCur).pidlFQ, mIconSize, mIconSize, pidlRel)
                     TVEntries(nCur).nOverlay = lpIconOvr
                     TVEntries(nCur).pidlFQPar = pidlPar
                     TVEntries(nCur).pidlRel = pidlRel
@@ -6261,8 +6684,8 @@ If (siParent Is Nothing) = False Then
                     End If
                     tVI.cchTextMax = Len(TVEntries(nCur).sName)
                     tVI.pszText = StrPtr(TVEntries(nCur).sName)
-                    tVI.iImage = lpIcon
-                    tVI.iSelectedImage = lpIcon
+                    tVI.iImage = TVEntries(nCur).nIcon
+                    tVI.iSelectedImage = TVEntries(nCur).nIcon
                     tVI.lParam = nCur
                     If lpIconOvr > -1 Then
                         tVI.Mask = tVI.Mask Or TVIF_STATE
@@ -6488,14 +6911,19 @@ If mExplorerStyle Then
     Call SetWindowTheme(hTVD, StrPtr(sTheme), 0)
 End If
 
-Call SHGetImageList(SHIL_SYSSMALL, IID_IImageList, pIML)
-hSysIL = ObjPtr(pIML)
-Call SendMessage(hTVD, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal hSysIL)
+InitImageLists
+Call SendMessage(hTVD, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal himlTV)
 
 'TreeView_SetImageList hTVD, himlTVCheck, TVSIL_STATE 'if you want to go back to custom checks
 
 End Sub
 
+Private Sub InitImageLists()
+    himlTV = ImageList_Create(mIconSize, mIconSize, ILC_COLOR32 Or ILC_HIGHQUALITYSCALE, 1, 1)
+    Call SHGetImageList(SHIL_JUMBO, IID_IImageList, imlSysJM)
+hSysIL = ObjPtr(imlSysJM)
+
+End Sub
 Private Function TrimNullW(startstr As String) As String
 
    TrimNullW = Left$(startstr, lstrlenW(ByVal StrPtr(startstr)))
@@ -6671,7 +7099,7 @@ Dim lEf As Long
     tFMT.cfFormat = CF_PREFERREDDROPEFFECT
     tFMT.dwAspect = DVASPECT_CONTENT
     tFMT.lIndex = -1
-    tFMT.TYMED = TYMED_HGLOBAL
+    tFMT.tymed = TYMED_HGLOBAL
 
     pDataObj.GetData tFMT, tSTG
     lpGlobal = GlobalLock(tSTG.data)
@@ -7140,6 +7568,7 @@ If Ambient.UserMode Then
     Subclass UserControl.hWnd, AddressOf ShellTreeSubclassProc, UserControl.hWnd, ObjPtr(Me)
 End If
 If mFavorites Then nCur = 1
+mIconSize *= m_ScaleX
 InitTV
 If Ambient.UserMode Then
     If m_NoWow64 Then
@@ -7214,7 +7643,7 @@ Private Function GDIFontFromOLEFont(ByVal Font As IFont) As Long
 GDIFontFromOLEFont = Font.hFont
 End Function
 
-Private Function ImageList_AddIcon(himl As Long, hIcon As Long) As Long
+Private Function ImageList_AddIcon(himl As LongPtr, hIcon As LongPtr) As Long
   ImageList_AddIcon = ImageList_ReplaceIcon(himl, -1, hIcon)
 End Function
 
@@ -7363,7 +7792,7 @@ DebugAppend "HandleShellNotify::code=" & dbg_LookUpSHCNE(lEvent) & ",itm1=" & sz
                 .sNameFull = sNameFull
                 .sFullPath = sFull
                 If .nIcon <> nIcon Then
-                    .nIcon = nIcon
+                    .nIcon = TranslateIcon(nIcon, siItem2, TVEntries(nCur).pidlFQPar, TVEntries(nCur).pidlFQ, mIconSize, mIconSize, ILFindLastID(TVEntries(nCur).pidlFQ))
                     tVI.Mask = TVIF_IMAGE
                     tVI.iImage = nIcon
                     tVI.iSelectedImage = nIcon
