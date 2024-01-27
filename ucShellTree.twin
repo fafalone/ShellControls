@@ -6,12 +6,12 @@
 Public Class ucShellTree
 Option Explicit
 
-Private Const mVersionStr As String = "Shell Tree Control 2.9"
+Private Const mVersionStr As String = "Shell Tree Control 2.9.1"
 #Region "README"
 ''*********************************************************************************************
 '
 'ucShellTree.twin
-'Shell Tree Control v2.9 - twinBASIC Implementation
+'Shell Tree Control v2.9.1 - twinBASIC Implementation
 '
 'Author: fafalone
 '(c) 2018-2023
@@ -63,6 +63,15 @@ Private Const mVersionStr As String = "Shell Tree Control 2.9"
 '
 '
 '---------------------------------------CHANGELOG----------------------------------------
+'
+'v2.9.1 (Released Jan 27th, 2024)
+'-(Bug fix) AutoCheck = False not respected when expanding a checked folder (thanks to
+'           VBForums user Mith for report and fix)
+'-(Bug fix) When AutoCheck = False and CheckBoxes = True is set at runtime, checkboxes
+'           improperly cycled through partial checks. This is currently fixed as a work-
+'           around that will not work properly if ExclusionChecks = True (and AutoCheck
+'           = False), but it may be some time before I Can run down a proper fix.
+'
 '
 'v2.9 (Release Jan 15th, 2024)
 '-Now using a mirrored image list to support arbitrary icon size.
@@ -6704,8 +6713,9 @@ If (siParent Is Nothing) = False Then
                         TreeView_SetCheckStateEx hTVD, hitemPrev, 0
                     Else
                         If TreeView_GetCheckState(hTVD, hitemParent) = 2 Then
-                            TreeView_SetCheckState hTVD, hitemPrev, 1
-'                                    TreeView_SetItemState hTVD, hitemPrev, IndexToStateImageMask(3), TVIS_STATEIMAGEMASK
+                           If mAutocheck = True Then
+                             TreeView_SetCheckState hTVD, hitemPrev, 1
+                            End If
                         End If
                     End If
                     If fDisable Then
@@ -8584,8 +8594,12 @@ Select Case uMsg
                     End If
                 ElseIf ((nmtvic.uStateNew And TVIS_STATEIMAGEMASK) = &H3000) And (mAutocheck = False) Then
                     DebugAppend "ItemExclude"
-                    TVEntries(nmtvic.lParam).Checked = False
-                    TVEntries(nmtvic.lParam).Excluded = True
+                    If mExCheckboxes Then
+                        TVEntries(nmtvic.lParam).Checked = False
+                        TVEntries(nmtvic.lParam).Excluded = True
+                    Else
+                        SetTVItemStateImage nmtvic.hItem, tvcsEmpty
+                    End If
                 ElseIf (nmtvic.uStateNew And TVIS_STATEIMAGEMASK) = &H4000 Then
                     TVEntries(nmtvic.lParam).Checked = False
                     TVEntries(nmtvic.lParam).Excluded = True
