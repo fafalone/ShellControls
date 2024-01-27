@@ -1,6 +1,6 @@
 # ShellControls
 ## Shell Browser and Shell Tree Controls
-## ucShellBrowse v12.0 R1 and ucShellTree v2.9
+## ucShellBrowse v12.0 R1 and ucShellTree v2.9.1
 ### Updated 03 Feb 2023
 
 This repository contains a twinBASIC x86/x64 compatible port of my shell controls, ucShellBrowse and ucShellTree.
@@ -19,6 +19,9 @@ There's still some work to do in twinBASIC to complete user control support, but
 
 **Requires [twinBASIC Beta 239](https://github.com/twinbasic/twinbasic/releases) or newer**
 
+>[!IMPORTANT]
+>Currently not working in twinBASIC Beta 424-428.
+
 The demos are all set to open and run, to set these up in your project:
 
 These projects use tbShellLib, the x64-compatible successor to oleexp.tlb written in twinBASIC. First add a reference to 'twinBASIC Shell Library' in Settings->COM Type Library / Active-X References by clicking TWINPACK PACKAGES and selecting it from the list, or manually downloading it from it's [repository](https://github.com/fafalone/tbShellLib).
@@ -29,9 +32,19 @@ As an alternative, to have them in an editable form, for ucShellTree, you need t
 
 ### Update
 
-**IMPORTANT:** These controls now require [twinBASIC Beta 239](https://github.com/twinbasic/twinbasic/releases) or newer. The changes in/for this release allow building them as Active-X DLLs that can be used in VB6; however they're not working in VBA yet. They also require tbShellLib 2.6.60 or newer, if you're adding them to your own project.
+**IMPORTANT:** These controls now require [twinBASIC Beta 239](https://github.com/twinbasic/twinbasic/releases) (**temporary** through 423). The changes in/for this release allow building them as Active-X DLLs that can be used in VB6; however they're not working in VBA yet. They also require tbShellLib 2.6.60 or newer, if you're adding them to your own project.
 
-**ucShellTree v2.9 Update**
+**ucShellTree v2.9.1 Update**
+```
+-(Bug fix) AutoCheck = False not respected when expanding a checked folder (thanks to 
+            VBForums user Mith for report and fix) 
+ -(Bug fix) When AutoCheck = False and CheckBoxes = True is set at runtime, checkboxes 
+            improperly cycled through partial checks. This is currently fixed as a work- 
+            around that will not work properly if ExclusionChecks = True (and AutoCheck 
+            = False), but it may be some time before I Can run down a proper fix.
+```
+
+**ucShellTree v2.9 Update**\
 ![image](https://github.com/fafalone/ShellControls/assets/7834493/24301b7e-ea8d-4ab6-83a1-09f70b964288)
 
 I have not updated the joint projects yet-- the controls package or the FileDialogDemo. **Only** tbShellTree.twinproj and ucShellTree.twin/tbcontrol have been updated to 2.9. I'll look at the others next week after the new tB beta is out.\
