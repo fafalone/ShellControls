@@ -20,7 +20,7 @@ There's still some work to do in twinBASIC to complete user control support, but
 **Requires [twinBASIC Beta 239](https://github.com/twinbasic/twinbasic/releases) or newer**
 
 >[!IMPORTANT]
->Currently not working in twinBASIC Beta 424-428.
+>TEMPORARY: Currently not working in twinBASIC Beta 424 and newer.
 
 The demos are all set to open and run, to set these up in your project:
 
