@@ -17,10 +17,10 @@ There's still some work to do in twinBASIC to complete user control support, but
 
 ### Using these controls in your project
 
-**Requires [twinBASIC Beta 239](https://github.com/twinbasic/twinbasic/releases) or newer**
+**Requires [twinBASIC Beta 432](https://github.com/twinbasic/twinbasic/releases) or newer**
 
 >[!IMPORTANT]
->TEMPORARY: Currently not working in twinBASIC Beta 424 and newer.
+>Now requires twinBASIC 432 or newer; it was broken in 424-431. You can still use it in 239-423 as well.
 
 The demos are all set to open and run, to set these up in your project:
 
@@ -32,7 +32,7 @@ As an alternative, to have them in an editable form, for ucShellTree, you need t
 
 ### Update
 
-**IMPORTANT:** These controls now require [twinBASIC Beta 239](https://github.com/twinbasic/twinbasic/releases) (**temporary** through 423). The changes in/for this release allow building them as Active-X DLLs that can be used in VB6; however they're not working in VBA yet. They also require tbShellLib 2.6.60 or newer, if you're adding them to your own project.
+**IMPORTANT:** These controls now require [twinBASIC Beta 432](https://github.com/twinbasic/twinbasic/releases). The changes in/for this release allow building them as Active-X DLLs that can be used in VB6; however they're not working in VBA yet. They also require WinDevLib 7.0 or newer, if you're adding them to your own project.
 
 **ucShellTree v2.9.1 Update**
 ```
