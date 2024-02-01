@@ -1,0 +1,25 @@
+[ Description ("") ]
+[ FormDesignerId ("66B02E82-E553-4CBF-BFBE-BDD5AB49C2E8") ]
+[ PredeclaredId ]
+Class ShellTreeDemo
+
+    Private Sub Form_Resize() Handles Form.Resize
+        ucShellTree1.Width = Me.ScaleWidth - 10
+        ucShellTree1.Height = Me.ScaleHeight - 68
+    End Sub
+    
+    
+    Private Sub ucShellTree1_ItemSelect(sName As String, sFullPath As String, bFolder As Boolean, hItem As LongPtr) Handles ucShellTree1.ItemSelect
+        Label1.Caption = "Selected: " & sName & " (" & sFullPath & ")"
+    End Sub
+    
+    Private Sub Command1_Click() Handles Command1.Click
+        ucShellTree1.OpenToPath "C:\Windows", False
+    End Sub
+    
+    Private Sub Form_Load() Handles Form.Load
+        'ucShellTree1.Checkboxes = True
+    End Sub
+    
+   
+End Class
