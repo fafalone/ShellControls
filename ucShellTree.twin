@@ -1,29 +1,32 @@
-[ FormDesignerId ("152922CC-D332-4D27-BEF0-7D0887461FEF") ]
-[ ClassId ("43C02F35-3CE8-4D19-A139-028E05C7EBE5") ]
-[ InterfaceId ("C028E25E-E050-4AC5-B710-E8791CFB6274") ]
-[ EventInterfaceId ("40C15AFC-0600-4BF1-9525-1AEFFC476BD2") ]
-[ COMControl ]
+[FormDesignerId("152922CC-D332-4D27-BEF0-7D0887461FEF")]
+[ClassId("85A86C8E-6760-4A3A-9829-9757C29E1A60")]
+[InterfaceId("C0C3AAC5-88FC-49E2-B061-151FDB8E0BAC")]
+[EventInterfaceId("1D32F2E5-68B8-4168-B712-C80C57BC83BB")]
+[COMControl]
+[Description("ShellControls ucShellTree")]
 Public Class ucShellTree
 Option Explicit
 
-Private Const mVersionStr As String = "Shell Tree Control 2.9.1"
+Private Const mVersionStr As String = "Shell Tree Control 2.9.2"
+
 #Region "README"
 ''*********************************************************************************************
+'ShellControls TB
+'{88049843-B8DE-4955-BD3B-E6A5790F5217}
 '
 'ucShellTree.twin
-'Shell Tree Control v2.9.1 - twinBASIC Implementation
+'Shell Tree Control v2.9.2 - twinBASIC Implementation
 '
 'Author: fafalone
-'(c) 2018-2023
+'(c) 2018-2024
 '
 'For questions, comments, and bug reports, stop by the project thread:
 'http://www.vbforums.com/showthread.php?862137-ucShellTree-Full-featured-Shell-Tree-UserControl
 '
 '
 'This twinBASIC version doesn't use tlb since upgrading oleexp to x64 compatibility wasn't 
-'happening... all oleexp imports are in the ShellInterfaces.twin module (interfaces, enums, 
-'types, and apis). This project doesn't use it, but there's an x64 compatible successor to
-'oleexp: tbShellLib.
+'happening... all oleexp imports are handled by an x64 compatible successor to
+'oleexp: WinDevLib.
 '
 '
 '----------------------------------------ABOUT-------------------------------------------
@@ -63,10 +66,45 @@ Private Const mVersionStr As String = "Shell Tree Control 2.9.1"
 '
 '
 '---------------------------------------CHANGELOG----------------------------------------
+'v2.9.2 
+'
+'Special thanks to VBForums user Mith for his incredible work helping with new features
+'and bug fixes! Credit goes to him for most of the changes in 2.9.2 alpha and final.
+'
+'-Added ShowOnlyFileCheckboxes option: When Checkboxes = True and ShowFiles = True, will 
+' show checkboxes only for files.
+'
+'-Try to load cached icons first
+'
+'-Minor sizing adjustment to eliminate 4px border.
+'
+'-(Bug fix) Default share/shortcut overlays not showing.
+'
+'-(Bug fix) New icon methods didn't properly support running without ComCtl6.
+'
+'-(Bug fix) Always Show extensions wasn't working.
+'
+'-(Bug fix) Disabling of Wow64 redirection wasn't reverted on terminate.
+'
+'-(Bug fix) If DPI awareness was on, IconSize would continuously grow.
+'
+'v2.9.2 (ALPHA, 29 Jan 2024)
+'-New FileExtensions property to choose between following Explorer's setting for hiding
+' known extensions, over forcing them to always show.
+'
+'-Added property CheckedPathCount.
+'
+'-Added UserOption mNeverExpandZip, to prevent expansion of .zip when ShowFiles = True.
+'
+'-(Bug fix) Border property not restored correctly due to re-reading it with the wrong
+'           name from the property bag.
+'
+'-(Bug fix) Opening to a custom root would add the root as a child of itself.
 '
 'v2.9.1 (Released Jan 27th, 2024)
 '-(Bug fix) AutoCheck = False not respected when expanding a checked folder (thanks to
 '           VBForums user Mith for report and fix)
+'
 '-(Bug fix) When AutoCheck = False and CheckBoxes = True is set at runtime, checkboxes
 '           improperly cycled through partial checks. This is currently fixed as a work-
 '           around that will not work properly if ExclusionChecks = True (and AutoCheck
@@ -358,11 +396,13 @@ Private Const mVersionStr As String = "Shell Tree Control 2.9.1"
 
 'USER OPTIONS
 'The following are meant to be toggled based on your preferences:
-Private Const dbg_PrintToImmediate As Boolean = True 'This control has very extensive debug information, you may not want
+Private Const dbg_PrintToImmediate As Boolean = False 'This control has very extensive debug information, you may not want
                                                      'to see that in your IDE.
 Private Const dbg_IncludeDate As Boolean = True 'Prefix all Debug output with the date and time, [yyyy-mm-dd Hh:Mm:Ss]
 Private Const dbg_RaiseEvent As Boolean = True 'Raise DebugMessage event
 Private Const dbg_MinLevel As Long = 0& 'Only fire debug statement if iLvl >= this value
+
+Private Const mNeverExpandZip As Boolean = False 'Never expand a zip under any circumstances.
 '-----------------------------------------------------------------------------------------------
 
 #Region "ProjectDeclares"
@@ -442,6 +482,7 @@ Private himl96 As LongPtr
 Private himl128 As LongPtr
 Private himl256 As LongPtr
 Private imlSysJM As IImageList
+Private imlSysSM As IImageList
 
 Private mIconSize As Long
 Private Const mDefIconSize As Long = 24
@@ -475,7 +516,7 @@ Private Type TVEntry
     hParentNode As LongPtr
     nIcon As Long
     nOverlay As Long
-    dwAttrib As SFGAO_Flags
+    dwAttrib As SFGAOF
     Checked As Boolean
     Excluded As Boolean
     bDisabled As Boolean
@@ -585,6 +626,9 @@ Private Const mSingleExpand_def As Boolean = False
 Private mMultiSel As Boolean
 Private Const mDefMultiSel As Boolean = False
 
+Private mShowOnlyFileCheckbox As Boolean
+Private Const mDefShowOnlyFileCheckbox As Boolean = False
+
 Private mDisableDD As Boolean
 Private Const mDefDisableDD As Boolean = False
 
@@ -661,6 +705,9 @@ Private Const mDefExpLib As Boolean = True
 Private m_NoWow64 As Boolean
 Private Const m_def_NoWow64 As Boolean = False
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292A05")]
+#End If
 Public Enum ST_HDN_PREF
     STHP_UseExplorer = 0&
     STHP_AlwaysShow = 1&
@@ -670,6 +717,9 @@ Private m_HiddenPref As ST_HDN_PREF
 Private Const m_def_HiddenPref As Long = 0&
 Private mHPInExp As Boolean
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292A06")]
+#End If
 Public Enum ST_SPRHDN_PREF
     STSHP_UseExplorer = 0&
     STSHP_AlwaysShow = 1&
@@ -679,8 +729,23 @@ Private m_SuperHiddenPref As ST_SPRHDN_PREF
 Private Const m_def_SuperHiddenPref As Long = 0&
 Private mSHPInExp As Boolean
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292A07")]
+#End If
+Public Enum ST_EXT_PREF
+    STEP_UseExplorer = 0&
+    STEP_AlwaysShow = 1&
+End Enum
+Private m_ForceExt As ST_EXT_PREF
+Private Const m_def_ForceExt As Long = 0&
+Private mExSetExt As Boolean
+
+
 'Private mBorder As Boolean
 'Private Const mBorder_def As Boolean = True
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292A08")]
+#End If
 Public Enum ST_BORDERSTYLE
     STBS_None = 0&
     STBS_Standard = 1&
@@ -1627,7 +1692,7 @@ End Enum
 
 #If TWINBASIC Then
 #If Win64 = 0 Then
-[ PackingAlignment (1) ]
+[PackingAlignment(1)]
 #End If
 Public Type SHFILEOPSTRUCT
     hWnd        As LongPtr
@@ -2603,7 +2668,6 @@ End Function
         lRaiseHover = PropBag.ReadProperty("ActiveDropHoverTime", m_def_lRaiseHover)
         mLabelEdit = PropBag.ReadProperty("LabelEditRename", mLabelEdit_def)
         mNameColors = PropBag.ReadProperty("NameColors", mNameColors_def)
-        mBorder = PropBag.ReadProperty("Border", mBorder_def)
         mInitialPath = PropBag.ReadProperty("InitialPath", mInitialPath_def)
         mCustomRoot = PropBag.ReadProperty("CustomRoot", mCustomRoot_def)
         mRootHasCheckbox = PropBag.ReadProperty("RootHasCheckbox", mRootHasCheckbox_def)
@@ -2623,6 +2687,8 @@ End Function
         mExpLib = PropBag.ReadProperty("AutoExpandLibraries", mDefExpLib)
         m_NoWow64 = PropBag.ReadProperty("DisableWow64Redirect", m_def_NoWow64)
         mIconSize = PropBag.ReadProperty("IconSize", mDefIconSize)
+        m_ForceExt = PropBag.ReadProperty("FileExtensions", m_def_ForceExt)
+        mShowOnlyFileCheckbox = PropBag.ReadProperty("ShowOnlyFileCheckboxes", mDefShowOnlyFileCheckbox)
         pvCreate
     End Sub
     
@@ -2678,7 +2744,8 @@ End Function
         PropBag.WriteProperty "AutoExpandLibraries", mExpLib, mDefExpLib
         PropBag.WriteProperty "DisableWow64Redirect", m_NoWow64, m_def_NoWow64
         PropBag.WriteProperty "IconSize", mIconSize, mDefIconSize
-        
+        PropBag.WriteProperty "FileExtensions", m_ForceExt, m_def_ForceExt
+        PropBag.WriteProperty "ShowOnlyFileCheckboxes", mShowOnlyFileCheckbox, mDefShowOnlyFileCheckbox
         'DebugAppend "writeprops out"
     End Sub
 
@@ -2732,6 +2799,8 @@ Private Sub UserControl_InitProperties() Handles UserControl.InitProperties
     m_NoWow64 = m_def_NoWow64
     mIndent = mDefIndent
     mIconSize = mDefIconSize
+    m_ForceExt = m_def_ForceExt
+    mShowOnlyFileCheckbox = mDefShowOnlyFileCheckbox
 DebugAppend "InitProps"
 pvCreate
 End Sub
@@ -2825,7 +2894,7 @@ End Sub
             DeleteObject hFontTV
             hFontTV = 0
         End If
-        
+        If m_NoWow64 Then RevertWow64Redir()
         FreeGDIPlus(gdipToken)
     End Sub
     
@@ -2839,8 +2908,8 @@ End Sub
             Call GetClientRect(UserControl.hWnd, RC)
             Call GetClientRect(UserControl.ContainerHwnd, rcCH)
             DebugAppend "ResizeTreeView::hwnd=" & UserControl.hWnd & ",cthwnd=" & UserControl.ContainerHwnd & ",rc.Bottom=" & RC.Bottom & ",cy=" & UserControl.Height & ",scy=" & UserControl.ScaleHeight & ",ctcx=" & rcCH.Right & ",ctcy=" & rcCH.Bottom & ",m_ScaleX=" & m_ScaleX & ",m_ScaleY=" & m_ScaleY
-            Call SetWindowPos(hTVD, 0, 0, 0, RC.Right - 4, RC.Bottom - 4, 0)
-
+            ' Call SetWindowPos(hTVD, 0, 0, 0, RC.Right - 4, RC.Bottom - 4, 0)
+            Call SetWindowPos(hTVD, 0, 0, 0, RC.Right, RC.Bottom, 0)
             'DebugAppend "rcuc.Bottom=" & rcUC.Bottom
         End If
 
@@ -3313,7 +3382,7 @@ Dim bFl As Boolean
 siSelected.GetDisplayName SIGDN_NORMALDISPLAY, lpName
 sName = LPWSTRtoStr(lpName)
 DebugAppend "SetSel(" & n & ") " & sName & ",path=" & sSelectedItem
-Dim lAtr As SFGAO_Flags
+Dim lAtr As SFGAOF
 siSelected.GetAttributes SFGAO_FOLDER, lAtr
 If (lAtr And SFGAO_FOLDER) = SFGAO_FOLDER Then
     bFl = True
@@ -3585,6 +3654,9 @@ End Property
 Public Property Get ShowFiles() As Boolean: ShowFiles = mShowFiles: End Property
 Attribute ShowFiles.VB_Description = "Show files in the tree in addition to folders."
 Public Property Let ShowFiles(bVal As Boolean): mShowFiles = bVal: End Property
+Public Property Get FileExtensions() As ST_EXT_PREF: FileExtensions = m_ForceExt: End Property
+Attribute FileExtensions.VB_Description = "When files are shown, sets whether to always show file extensions or use Explorer's setting."
+Public Property Let FileExtensions(lVal As ST_EXT_PREF): m_ForceExt = lVal: End Property
 Public Property Get ExtendedOverlays() As Boolean: ExtendedOverlays = mExtOverlay: End Property
 Attribute ExtendedOverlays.VB_Description = "Show the extended overlays sometimes found in programs like TortoiseSVN, Dropbox, or Github. WARNING: Extreme performance cost, reduces folder load times by 10-100x."
 Public Property Let ExtendedOverlays(bVal As Boolean): mExtOverlay = bVal: End Property
@@ -3686,10 +3758,13 @@ If bVal <> mHasButtons Then
     SetWindowLong hTVD, GWL_STYLE, dwStyle
 End If
 End Property
+Public Property Get ShowOnlyFileCheckbox() As Boolean: Return mShowOnlyFileCheckbox: End Property
+Public Property Let ShowOnlyFileCheckboxes(ByVal bValue As Boolean)
+    mShowOnlyFileCheckbox = bValue
+End Property
 Property Get IconSize() As Long: IconSize = mIconSize: End Property
 Attribute IconSize.VB_Description = "Gets/sets the folder/file icon size in the TreeView. This will be scaled by system zoom."
 Public Property Let IconSize(cxy As Long)
-    cxy *= m_ScaleX
     If cxy <> mIconSize Then
         mIconSize = cxy
     End If
@@ -3920,7 +3995,21 @@ Else
     RevertWow64Redir
 End If
 End Property
+Public Property Get CheckedPathCount() As Long
+    CheckedPathCount = GetCheckedPathCount()
+End Property
 
+Private Function GetCheckedPathCount() As Long
+Dim i As Long
+Dim lCount As Long
+lCount = 0
+For i = 0 To UBound(TVEntries)
+    If (TVEntries(i).Checked = True) And (TVEntries(i).bDeleted = False) Then
+        lCount = lCount + 1
+    End If
+Next i
+GetCheckedPathCount = lCount
+End Function
 'End Control Properties
 '********************************************************
 
@@ -3975,7 +4064,7 @@ Else
 End If
 End Sub
 
-Private Function dbg_sfgao_tostring(atr As SFGAO_Flags) As String
+Private Function dbg_sfgao_tostring(atr As SFGAOF) As String
 Dim sOut As String
 If (atr And SFGAO_BROWSABLE) = SFGAO_BROWSABLE Then sOut = sOut & "SFGAO_BROWSEABLE,"
 If (atr And SFGAO_CANCOPY) = SFGAO_CANCOPY Then sOut = sOut & "SFGAO_CANCOPY,"
@@ -4039,7 +4128,7 @@ Dim wfd As WIN32_FIND_DATAW
 siLink.BindToHandler 0&, BHID_SFUIObject, IID_IShellLinkW, isl
 If (isl Is Nothing) = False Then
     sTmp = String$(MAX_PATH, 0)
-    isl.GetPath sTmp, MAX_PATH, wfd, 0&
+    isl.GetPath StrPtr(sTmp), MAX_PATH, wfd, 0&
     sTmp = TrimNullW(sTmp)
 '    If sTmp = "" Then
 '        Dim pidl As Long
@@ -4352,6 +4441,14 @@ If Ambient.UserMode Then
 End If
 End Sub
 
+Public Sub HardResetTreeView()
+'Removes all items and inserts from root
+If Ambient.UserMode Then
+   DestroyWindow hTVD
+   pvCreate
+End If
+End Sub
+
 Public Sub RefreshTreeView()
 'Resets to the root then expands all the previous locations
 'The lengthy code involves minimizing the OpenToPath calls by calculating
@@ -4375,6 +4472,28 @@ e0:
 
 End Sub
 
+Public Sub HardRefreshTreeView()
+'Resets to the root then expands all the previous locations
+'The lengthy code involves minimizing the OpenToPath calls by calculating
+'smallest group of folders that will give us the same setup. E.g.:
+'C:\a\b\(c,d,e,f) will call only C:\a\b\c, and not d,e,f or C:\a or b, because
+'expanding to c will give us a b d e and f too
+Dim i As Long
+Dim sData() As String
+
+If CalcRefreshData(sData) Then
+    HardResetTreeView
+    
+    For i = 0 To UBound(sData)
+        OpenToPath sData(i), False
+    Next i
+End If
+OpenToPath sSelectedItem, False, True
+Exit Sub
+e0:
+    DebugAppend "PruneParentsFromRPL.Error->" & Err.Description & "(0x" & Hex$(Err.Number) & ")"
+
+End Sub
 
 Public Sub FontSetByHFONT(hFont As Long)
 
@@ -4664,6 +4783,7 @@ End Sub
 
 Public Sub OpenToPath(sFullPath As String, bExpandTarget As Boolean, Optional bSelectTarget As Boolean = True)
 'OpenToItem by path instead of shell item
+If sFullPath = mCustomRoot Then Exit Sub
 If sFullPath = sSelectedItem Then Exit Sub
 Dim psi As IShellItem
 SHCreateItemFromParsingName StrPtr(sFullPath), Nothing, IID_IShellItem, psi
@@ -4677,6 +4797,7 @@ If bLoadDone = False Then Exit Sub
 Dim lpFull As LongPtr, sFull As String
 si.GetDisplayName SIGDN_DESKTOPABSOLUTEPARSING, lpFull
 sFull = LPWSTRtoStr(lpFull)
+If sFull = mCustomRoot Then Exit Sub
 If (sFull <> "") Then
     If sFull = sSelectedItem Then Exit Sub
 End If
@@ -4754,7 +4875,7 @@ Dim i As Long
 Dim bFlag As Boolean
 Dim lp As Long
 Dim lpFull As LongPtr, sFull As String
-Dim lAtr As SFGAO_Flags
+Dim lAtr As SFGAOF
 Dim hPar As LongPtr
 Dim siPar As IShellItem, siPar2 As IShellItem
 Dim idx As Long
@@ -4921,7 +5042,7 @@ Dim hItem As LongPtr
 Dim lp As LongPtr
 Dim aTmp() As String
 Dim lpsz As LongPtr
-Dim lpAtr As SFGAO_Flags
+Dim lpAtr As SFGAOF
 Dim nIdx As Long
 On Error GoTo e0
 
@@ -4959,7 +5080,7 @@ Dim i As Long
 End Sub
 
 Private Function TVItemIsZip(hwnd As LongPtr, lParam As LongPtr) As Boolean
-Dim lAtr As SFGAO_Flags
+Dim lAtr As SFGAOF
 
 lAtr = SFGAO_STREAM 'it already has SFGAO_FOLDER by virtue of being in the list
 Dim nIdx As Long
@@ -5433,7 +5554,11 @@ Private Function StateImageMaskToIndex(ByVal ImgState As Long) As Long
 End Function
 
 Private Function INDEXTOOVERLAYMASK(iOverlay As Long) As Long
-  INDEXTOOVERLAYMASK = iOverlay * (2 ^ 8)
+  #If TWINBASIC Then
+      Return ((iOverlay) << 8)
+  #Else
+    INDEXTOOVERLAYMASK = iOverlay * (2 ^ 8)
+  #End If
 End Function
 
 Private Function GetFileIconIndexPIDL(pidl As LongPtr, uType As Long) As Long
@@ -5488,7 +5613,7 @@ Dim pidlPar As LongPtr, pidlRel As LongPtr
 Dim lpIcon As Long
 Dim pcl As Long, pcl2 As Long
 Dim nCur As Long
-Dim lAtr As SFGAO_Flags
+Dim lAtr As SFGAOF
 Dim lpName As LongPtr, sName As String
 Dim lpFull As LongPtr, sFull As String
 Dim lpNameFull As LongPtr
@@ -5555,7 +5680,8 @@ DebugAppend "m_Win10QA=" & m_Win10QA & ", bIsWin10OrGreater=" & bIsWin10OrGreate
         Dim ppidl As IPersistIDList
         Set ppidl = siFav
         ppidl.GetIDList(pidlFav)
-        TVEntries(1).nIcon = TranslateIcon(lpIcon, siFav, pidlParF, pidlFav, mIconSize, mIconSize, pidlChF)
+        siFav.GetAttributes SFGAO_FOLDER Or SFGAO_FILESYSANCESTOR Or SFGAO_STREAM, lAtr
+        TVEntries(1).nIcon = TranslateIcon(lpIcon, siFav, lAtr, pidlParF, pidlFav, mIconSize * m_ScaleX, mIconSize * m_ScaleY, pidlChF)
         tVI.Mask = TVIF_CHILDREN Or TVIF_TEXT Or TVIF_IMAGE Or TVIF_SELECTEDIMAGE Or TVIF_PARAM Or TVIF_STATE
         tVI.cChildren = 1
         TVEntries(1).sName = sName
@@ -5577,7 +5703,6 @@ DebugAppend "m_Win10QA=" & m_Win10QA & ", bIsWin10OrGreater=" & bIsWin10OrGreate
         TVEntries(1).hNode = m_hFav
         TVEntries(1).hParentNode = -1
         
-        siFav.GetAttributes SFGAO_FOLDER Or SFGAO_FILESYSANCESTOR Or SFGAO_STREAM, lAtr
         TVEntries(1).dwAttrib = lAtr
     '    TVEntries(1).bFolder = True
         TVEntries(1).bDropTarget = True
@@ -5650,7 +5775,7 @@ If (siDesk Is Nothing) = False Then
         sDesktopPath = sFull
     End If
     CoTaskMemFree pidlDesktop
-    TVEntries(0).nIcon = TranslateIcon(lpIcon, siDesk, 0, pidlDesktop, mIconSize, mIconSize, 0)
+    TVEntries(0).nIcon = TranslateIcon(lpIcon, siDesk, lAtr, 0, pidlDesktop, mIconSize * m_ScaleX, mIconSize * m_ScaleY, 0)
     tVI.Mask = TVIF_CHILDREN Or TVIF_TEXT Or TVIF_IMAGE Or TVIF_SELECTEDIMAGE Or TVIF_PARAM Or TVIF_STATE
     tVI.cChildren = 1
     TVEntries(0).sName = sName
@@ -5906,7 +6031,7 @@ Dim pidlDesktop As LongPtr
 Dim pidlPar As LongPtr, pidlRel As LongPtr
 Dim lpIcon As Long
 Dim pcl As Long, pcl2 As Long
-Dim lAtr As SFGAO_Flags
+Dim lAtr As SFGAOF
 Dim lpName As LongPtr, sName As String
 Dim lpFull As LongPtr, sFull As String
 Dim lpNameFull As LongPtr, sNameFull As String
@@ -5971,25 +6096,41 @@ If ((lAtr And SFGAO_FOLDER) = SFGAO_FOLDER) Or (mShowFiles = True) Or (bFav = Tr
 '            End If
         End If
         If fDisable = 0& Then
-        If (lAtr And SFGAO_HASSUBFOLDER) = SFGAO_HASSUBFOLDER Then
-            If (TVEntries(nCur).bZip = False) Or ((TVEntries(nCur).bZip = True) And (mExpandZip = True)) Then
-                tVI.cChildren = 1
-                tVI.Mask = tVI.Mask Or TVIF_CHILDREN
-            End If
-        Else
-            If (mShowFiles = True) Then
-                If bFolder = True Then
-                    If FolderIsEmpty(siChild) = False Then
+            If (bZip = False) Or ((bZip = True) And (mNeverExpandZip = False)) Then
+                If (lAtr And SFGAO_HASSUBFOLDER) = SFGAO_HASSUBFOLDER Then
+                    If (TVEntries(nCur).bZip = False) Or ((TVEntries(nCur).bZip = True) And (mExpandZip = True)) Then
                         tVI.cChildren = 1
                         tVI.Mask = tVI.Mask Or TVIF_CHILDREN
+                    End If
+                Else
+                    If (mShowFiles = True) Then
+                        If bFolder = True Then
+                            If FolderIsEmpty(siChild) = False Then
+                                tVI.cChildren = 1
+                                tVI.Mask = tVI.Mask Or TVIF_CHILDREN
+                            End If
+                        End If
                     End If
                 End If
             End If
         End If
+        If (mShowFiles = True) And (mExpandZip = False) Then
+            If (bFolder = True) And (bZip = True) Then
+                bFolder = False
+            End If
         End If
-        siChild.GetDisplayName SIGDN_PARENTRELATIVEFORUI, lpName
+        siChild.GetDisplayName SIGDN_DESKTOPABSOLUTEPARSING, lpFull
+        sFull = LPWSTRtoStr(lpFull)
+        siChild.GetDisplayName SIGDN_NORMALDISPLAY, lpName
         sName = LPWSTRtoStr(lpName)
-        TVEntries(nCur).sFullPath = sFPP
+        If m_ForceExt = STEP_AlwaysShow Then
+            ' siChild.GetDisplayName SIGDN_PARENTRELATIVEPARSING, lpNameFull
+            ' sNameFull = LPWSTRtoStr(lpNameFull)
+            If (Left$(sNameFull, 3) <> "::{") And (Left$(sNameFull, 5) <> "uuid:") And ((InStr(sNameFull, "\?\usb#")) = 0) And (Left$(sNameFull, 7) <> "usb#vid") Then
+                sName = sNameFull
+            End If
+        End If
+        TVEntries(nCur).sFullPath = sFull
         TVEntries(nCur).sName = sName
         TVEntries(nCur).bFolder = bFolder
         TVEntries(nCur).sParentFull = StrGetPath(TVEntries(nCur).sFullPath)
@@ -6043,7 +6184,7 @@ If ((lAtr And SFGAO_FOLDER) = SFGAO_FOLDER) Or (mShowFiles = True) Or (bFav = Tr
         End If
         EnsureOverlay lpIconOvr
         On Error GoTo e0
-        TVEntries(nCur).nIcon = TranslateIcon(lpIcon, siChild, pidlPar, TVEntries(nCur).pidlFQ, mIconSize, mIconSize, pidlRel)
+        TVEntries(nCur).nIcon = TranslateIcon(lpIcon, siChild, lAtr, pidlPar, TVEntries(nCur).pidlFQ, mIconSize * m_ScaleX, mIconSize * m_ScaleY, pidlRel)
         TVEntries(nCur).nOverlay = lpIconOvr
         TVEntries(nCur).pidlRel = pidlRel
         TVEntries(nCur).hParentNode = hitemParent
@@ -6081,6 +6222,10 @@ If ((lAtr And SFGAO_FOLDER) = SFGAO_FOLDER) Or (mShowFiles = True) Or (bFav = Tr
             TreeView_SetItemStateEx hTVD, hitemPrev, TVIS_EX_DISABLED
         End If
         
+        If (bFolder = True) And (mShowOnlyFileCheckbox = True) And (mShowFiles = True) Then
+            TreeView_SetCheckState hTVD, hitemPrev, 0
+        End If
+        
         'Re-sort the new item
         Set psfCur = psf
         Dim tvscb As TVSORTCB
@@ -6101,38 +6246,37 @@ e0:
 '</EhFooter>
 End Sub
 
-Private Function TranslateIcon(nIcon As Long, si As IShellItem, pidlFQCur As LongPtr, pidlFQ As LongPtr, cx As Long, cy As Long, Optional pidlRel As LongPtr = 0, Optional bFlag1 As Boolean = False) As Long
+Private Function TranslateIcon(nIcon As Long, si As IShellItem, dwAttr As SFGAOF, pidlFQCur As LongPtr, pidlFQ As LongPtr, cx As Long, cy As Long, Optional pidlRel As LongPtr = 0, Optional bFlag1 As Boolean = False) As Long
 'Takes a system image list index and returns the local TreeView index. 
 'If not added already, adds it.
 Dim lIdx As Long
 lIdx = SysImlCacheLookup(nIcon)
 If lIdx > -1 Then
-    Debug.Print "TranslateIcon " & nIcon & "|" & lIdx & " (Cached)"
+    'Debug.Print "TranslateIcon " & nIcon & "|" & lIdx & " (Cached)"
     Return lIdx
 End If
-lIdx = AddToHIMLNoDLL(himlTV, si, pidlFQCur, pidlFQ, cx, cy, SIIGBF_ICONONLY, pidlRel)
+lIdx = AddToHIMLNoDLL(himlTV, si, dwAttr, pidlFQCur, pidlFQ, cx, cy, pidlRel)
 ReDim Preserve SysImgCache(nSysImgCache)
 SysImgCache(nSysImgCache).sysimlid = nIcon
 SysImgCache(nSysImgCache).limlidx = lIdx
 nSysImgCache = nSysImgCache + 1
-Debug.Print "TranslateIcon " & nIcon & "|" & lIdx & " (added)"
+'Debug.Print "TranslateIcon " & nIcon & "|" & lIdx & " (added)"
 Return lIdx
 End Function
 
 Private Function EnsureOverlay(nIdx As Long) As Long
-    'Same as above but for overlays. You'd think since there's only 16 you could just copy them all...
-    'But they're not loaded into the system list until you've queried the image index for a file. 
+    If nIdx = -1 Then Return 0
+    Debug.Print "added = " & bOvrAdded(nIdx)
     
     If bOvrAdded(nIdx) Then Return 1
     
     Dim nOvr As Long
     Dim hIcon As LongPtr
     Dim nPos As Long
-    imlSysJM.GetOverlayImage nIdx, nOvr
+    imlSysSM.GetOverlayImage nIdx, nOvr
     If nOvr >= 0 Then
-        imlSysJM.GetIcon nOvr, ILD_TRANSPARENT, hIcon
+        imlSysSM.GetIcon nOvr, ILD_TRANSPARENT, hIcon
         nPos = ImageList_AddIcon(himlTV, hIcon)
-    '            DebugAppend "nPos=" & nPos & ",hIcon=" & hIcon & ",nOvr=" & nOvr & ",idx=" & LVEntries(i).nOverlay
         Call DestroyIcon(hIcon)
         ImageList_SetOverlayImage himlTV, nPos, nIdx
         bOvrAdded(nIdx) = True
@@ -6150,7 +6294,7 @@ For i = 0 To UBound(SysImgCache)
 Next i
 SysImlCacheLookup = -1
 End Function
-Private Function AddToHIMLNoDLL(himl As LongPtr, si As IShellItem, pidlFQCur As LongPtr, pidlFQ As LongPtr, cx As Long, cy As Long, lFlags As SIIGBF, Optional pidlRel As LongPtr = 0) As Long
+Private Function AddToHIMLNoDLL(himl As LongPtr, si As IShellItem, dwAttr As SFGAOF, pidlFQCur As LongPtr, pidlFQ As LongPtr, cx As Long, cy As Long, Optional pidlRel As LongPtr = 0) As Long
 Dim isiif As IShellItemImageFactory
 Dim hr As Long
 Dim pidlcr As LongPtr
@@ -6170,6 +6314,12 @@ End If
 Dim tsz As SIZE, ull As LongLong
 tsz.cx = cx: tsz.cy = cy
 CopyMemory ull, tsz, 8
+Dim lFlags As SIIGBF
+If (dwAttr And SFGAO_FOLDER) = SFGAO_FOLDER Then
+    lFlags = SIIGBF_ICONONLY Or SIIGBF_INCACHEONLY
+Else
+    lFlags = SIIGBF_ICONONLY
+End If
 hr = isiif.GetImage(ull, lFlags, hBmp)
 If hr = S_OK Then
 '    If ThumbShouldFrame(hBmp) Then
@@ -6177,6 +6327,9 @@ If hr = S_OK Then
                     'But it can't hurt to verify anyway; when a fail is returned
                     'from this function it goes to the GDIP scaler/framer.
 '    End If
+Else
+    lFlags = SIIGBF_ICONONLY
+    hr = isiif.GetImage(ull, lFlags, hBmp)
 End If
         
 If hr = S_OK Then
@@ -6466,7 +6619,7 @@ Dim pidlDesktop As LongPtr
 Dim pidlPar As LongPtr, pidlRel As LongPtr
 Dim lpIcon As Long
 Dim pcl As Long, pcl2 As Long
-Dim lAtr As SFGAO_Flags
+Dim lAtr As SFGAOF
 Dim lpName As LongPtr, sName As String
 Dim lpFull As LongPtr, sFull As String
 Dim lpNameFull As LongPtr, sNameFull As String
@@ -6526,7 +6679,49 @@ End If
 Dim fDisable As Long
 
 If (siParent Is Nothing) = False Then
-    siParent.BindToHandler 0&, BHID_EnumItems, IID_IEnumShellItems, pEnum
+    Dim pbc As IBindCtx
+    Dim hrbc As Long = CreateBindCtx(0, pbc)
+    If (pbc Is Nothing) = False Then
+        Dim sppb As IPropertyBag
+        Dim spunk As IUnknownUnrestricted
+        hrbc = PSCreateMemoryPropertyStore(IID_IUnknown, spunk)
+        If SUCCEEDED(hrbc) Then
+            pbc.RegisterObjectParam(StrPtr(STR_PROPERTYBAG_PARAM), spunk)
+            Set sppb = spunk
+            If (sppb Is Nothing) = False Then
+                PSPropertyBag_WriteDWORD(sppb, STR_ENUM_ITEMS_FLAGS, SHCONTF_NONFOLDERS Or SHCONTF_FOLDERS Or SHCONTF_INCLUDEHIDDEN Or SHCONTF_INCLUDESUPERHIDDEN)
+                Debug.Print "Wrote BindCtx dw"
+            Else
+                Debug.Print "QI for PropertyBag failed"
+            End If
+        Else
+            Debug.Print "PSCreateMemPstore failed"
+        End If
+        siParent.BindToHandler ObjPtr(pbc), BHID_EnumItems, IID_IEnumShellItems, pEnum
+    Else
+        siParent.BindToHandler 0, BHID_EnumItems, IID_IEnumShellItems, pEnum
+    End If
+    ' Dim psfp As IShellFolder
+    ' Dim peil As IEnumIDList
+    ' Dim pidlEnum As LongPtr
+    ' Dim pidlPar1 As LongPtr
+    ' Dim ppil As IPersistIDList
+    ' Set ppil = siParent
+    ' ppil.GetIDList pidlPar
+    ' Dim hrbh As Long: hrbh = siParent.BindToHandler(0, BHID_SFObject, IID_IShellFolder, psfp)
+    ' If (psfp Is Nothing) = False Then
+    '     psfp.EnumObjects 0, SHCONTF_FOLDERS Or SHCONTF_INCLUDEHIDDEN Or SHCONTF_INCLUDESUPERHIDDEN, peil
+    ' Else
+    '     Debug.Print "Failed to get IShellFolder for siParent; 0x" & Hex$(hrbh)
+    '     Exit Sub
+    ' End If
+ 
+
+    ' If (peil Is Nothing) = False Then
+    '    bFilling = True
+    '    tc1 = GetTickCount()
+    '    Do While peil.Next(1&, pidlEnum, pcl) = S_OK
+    '       SHCreateItemFromIDList ILCombine(pidlPar, pidlEnum), IID_IShellItem, siChild
     If (pEnum Is Nothing) = False Then
         bFilling = True
         tc1 = GetTickCount()
@@ -6599,28 +6794,44 @@ If (siParent Is Nothing) = False Then
                     End If
                     If fDisable = 0& Then
                         If bFav = False Then
-                            If (lAtr And SFGAO_HASSUBFOLDER) = SFGAO_HASSUBFOLDER Then
-                                If (TVEntries(nCur).bZip = False) Or ((TVEntries(nCur).bZip = True) And (mExpandZip = True)) Then
-                                    tVI.cChildren = 1
-                                    tVI.Mask = tVI.Mask Or TVIF_CHILDREN
-                                End If
-                            Else
-                                If (mShowFiles = True) Then
-                                    If bFolder = True Then
-                                        If FolderIsEmpty(siChild) = False Then
-                                            tVI.cChildren = 1
-                                            tVI.Mask = tVI.Mask Or TVIF_CHILDREN
+                            If (bZip = False) Or ((bZip = True) And (mNeverExpandZip = False)) Then
+                                If (lAtr And SFGAO_HASSUBFOLDER) = SFGAO_HASSUBFOLDER Then
+                                    If (TVEntries(nCur).bZip = False) Or ((TVEntries(nCur).bZip = True) And (mExpandZip = True)) Then
+                                        tVI.cChildren = 1
+                                        tVI.Mask = tVI.Mask Or TVIF_CHILDREN
+                                    End If
+                                Else
+                                    If (mShowFiles = True) Then
+                                        If bFolder = True Then
+                                            If FolderIsEmpty(siChild) = False Then
+                                                tVI.cChildren = 1
+                                                tVI.Mask = tVI.Mask Or TVIF_CHILDREN
+                                            End If
                                         End If
                                     End If
                                 End If
                             End If
                         End If
                     End If
-                    siChild.GetDisplayName SIGDN_NORMALDISPLAY, lpName
-                    sName = LPWSTRtoStr(lpName)
+                    
 '                    DebugAppend sName & " atr=" & dbg_sfgao_tostring(lAtr)
                     siChild.GetDisplayName SIGDN_DESKTOPABSOLUTEPARSING, lpFull
-                    TVEntries(nCur).sFullPath = LPWSTRtoStr(lpFull)
+                    sFull = LPWSTRtoStr(lpFull)
+                    siChild.GetDisplayName SIGDN_NORMALDISPLAY, lpName
+                    sName = LPWSTRtoStr(lpName)
+                    If m_ForceExt = STEP_AlwaysShow Then
+                        ' siChild.GetDisplayName SIGDN_PARENTRELATIVEPARSING, lpNameFull
+                        ' sNameFull = LPWSTRtoStr(lpNameFull)
+                        If (Left$(sNameFull, 3) <> "::{") And (Left$(sNameFull, 5) <> "uuid:") And ((InStr(sNameFull, "\?\usb#")) = 0) And (Left$(sNameFull, 7) <> "usb#vid") Then
+                            sName = sNameFull
+                        End If
+                    End If
+                    If (mShowFiles = True) And (mExpandZip = False) Then
+                        If (bFolder = True) And (bZip = True) Then
+                            bFolder = False
+                        End If
+                    End If
+                    TVEntries(nCur).sFullPath = sFull
                     TVEntries(nCur).sName = sName
                     TVEntries(nCur).bFolder = bFolder
                     TVEntries(nCur).sParentFull = StrGetPath(TVEntries(nCur).sFullPath)
@@ -6671,7 +6882,7 @@ If (siParent Is Nothing) = False Then
                     End If
                     EnsureOverlay lpIconOvr
                     On Error GoTo e0
-                    TVEntries(nCur).nIcon = TranslateIcon(lpIcon, siChild, pidlPar, TVEntries(nCur).pidlFQ, mIconSize, mIconSize, pidlRel)
+                    TVEntries(nCur).nIcon = TranslateIcon(lpIcon, siChild, lAtr, pidlPar, TVEntries(nCur).pidlFQ, mIconSize * m_ScaleX, mIconSize * m_ScaleY, pidlRel)
                     TVEntries(nCur).nOverlay = lpIconOvr
                     TVEntries(nCur).pidlFQPar = pidlPar
                     TVEntries(nCur).pidlRel = pidlRel
@@ -6709,9 +6920,11 @@ If (siParent Is Nothing) = False Then
                     TVEntries(nCur).hNode = hitemPrev
                     nCount = nCount + 1
                     
-                    If bFav Then
+                    If bFav Or ((bFolder = True) And (mShowOnlyFileCheckbox = True) And (mShowFiles = True)) Then
                         TreeView_SetCheckStateEx hTVD, hitemPrev, 0
+                        Debug.Print "ForceCheckState0 " & TVEntries(nCur).sName
                     Else
+                        Debug.Print "NOForceCheckState0 " & TVEntries(nCur).sName & ", bFolder=" & bFolder
                         If TreeView_GetCheckState(hTVD, hitemParent) = 2 Then
                            If mAutocheck = True Then
                              TreeView_SetCheckState hTVD, hitemPrev, 1
@@ -6929,11 +7142,20 @@ Call SendMessage(hTVD, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal himlTV)
 End Sub
 
 Private Sub InitImageLists()
-    himlTV = ImageList_Create(mIconSize, mIconSize, ILC_COLOR32 Or ILC_HIGHQUALITYSCALE, 1, 1)
+    'himlTV = ImageList_Create(mIconSize, mIconSize, ILC_COLOR32 Or ILC_MASK Or ILC_HIGHQUALITYSCALE, 1, 1)
+    If IsComCtl6 = False Then
+        himlTV = ImageList_Create(mIconSize * m_ScaleX, mIconSize * m_ScaleY, ILC_COLOR32 Or ILC_MASK, 1, 1)
+        Dim clbk As Long
+        OleTranslateColor clrBack, 0&, clbk
+        ImageList_SetBkColor himlTV, clbk
+    Else
+        himlTV = ImageList_Create(mIconSize * m_ScaleX, mIconSize * m_ScaleY, ILC_COLOR32 Or ILC_MASK Or ILC_HIGHQUALITYSCALE, 1, 1)
+    End If
     Call SHGetImageList(SHIL_JUMBO, IID_IImageList, imlSysJM)
-hSysIL = ObjPtr(imlSysJM)
-
+    Call SHGetImageList(SHIL_SMALL, IID_IImageList, imlSysSM)
+    hSysIL = ObjPtr(imlSysJM)
 End Sub
+
 Private Function TrimNullW(startstr As String) As String
 
    TrimNullW = Left$(startstr, lstrlenW(ByVal StrPtr(startstr)))
@@ -7136,7 +7358,7 @@ If DataObjSupportsFormat(pdo, CF_HDROP) Then 'clipboard has files for us
         lEfct = DROPEFFECT_COPY
     End If
     If ((siSelected Is Nothing) = False) Then
-        Dim lAtr As SFGAO_Flags
+        Dim lAtr As SFGAOF
         siSelected.GetAttributes SFGAO_FOLDER, lAtr
         If (lAtr And SFGAO_FOLDER) = SFGAO_FOLDER Then
             Set siDrop = siSelected
@@ -7578,7 +7800,6 @@ If Ambient.UserMode Then
     Subclass UserControl.hWnd, AddressOf ShellTreeSubclassProc, UserControl.hWnd, ObjPtr(Me)
 End If
 If mFavorites Then nCur = 1
-mIconSize *= m_ScaleX
 InitTV
 If Ambient.UserMode Then
     If m_NoWow64 Then
@@ -7787,12 +8008,19 @@ DebugAppend "HandleShellNotify::code=" & dbg_LookUpSHCNE(lEvent) & ",itm1=" & sz
             Dim lpFull As LongPtr, lpNameFull As LongPtr
             Dim sName As String, sFull As String, sNameFull As String
             Dim nIcon As Long
-            siItem2.GetDisplayName SIGDN_NORMALDISPLAY, lpName
-            sName = LPWSTRtoStr(lpName)
+            Dim lAtr As SFGAOF
+            siItem2.GetAttributes SFGAO_FOLDER, lAtr
             siItem2.GetDisplayName SIGDN_DESKTOPABSOLUTEPARSING, lpFull
             sFull = LPWSTRtoStr(lpFull)
-            siItem2.GetDisplayName SIGDN_PARENTRELATIVEPARSING, lpNameFull
-            sNameFull = LPWSTRtoStr(lpNameFull)
+            siItem2.GetDisplayName SIGDN_NORMALDISPLAY, lpName
+            sName = LPWSTRtoStr(lpName)
+            If m_ForceExt = STEP_AlwaysShow Then
+                siItem2.GetDisplayName SIGDN_PARENTRELATIVEPARSING, lpNameFull
+                sNameFull = LPWSTRtoStr(lpNameFull)
+                If (Left$(sNameFull, 3) <> "::{") And (Left$(sNameFull, 5) <> "uuid:") And ((InStr(sNameFull, "\?\usb#")) = 0) And (Left$(sNameFull, 7) <> "usb#vid") Then
+                    sName = sNameFull
+                End If
+            End If
             nIcon = GetFileIconIndexPIDL(pidl2, SHGFI_SMALLICON)
             
             lIdx = GetIndexFromNode(hNode)
@@ -7802,7 +8030,7 @@ DebugAppend "HandleShellNotify::code=" & dbg_LookUpSHCNE(lEvent) & ",itm1=" & sz
                 .sNameFull = sNameFull
                 .sFullPath = sFull
                 If .nIcon <> nIcon Then
-                    .nIcon = TranslateIcon(nIcon, siItem2, TVEntries(nCur).pidlFQPar, TVEntries(nCur).pidlFQ, mIconSize, mIconSize, ILFindLastID(TVEntries(nCur).pidlFQ))
+                    .nIcon = TranslateIcon(nIcon, siItem2, lAtr, TVEntries(nCur).pidlFQPar, TVEntries(nCur).pidlFQ, mIconSize * m_ScaleX, mIconSize * m_ScaleY, ILFindLastID(TVEntries(nCur).pidlFQ))
                     tVI.Mask = TVIF_IMAGE
                     tVI.iImage = nIcon
                     tVI.iSelectedImage = nIcon
@@ -8498,6 +8726,27 @@ Select Case uMsg
                             Exit Function
                         End If
                     End If
+                ElseIf (bFilling = False) And (g_fDeleting = False) Then
+                      'MITH
+                     Call CopyMemory(nmtvic, ByVal lParam, LenB(nmtvic))
+                     tvix.Mask = TVIF_STATEEX
+                     tvix.hItem = nmtvic.hItem
+                     If (tvix.uStateEx And TVIS_EX_DISABLED) = TVIS_EX_DISABLED Then 'for some reason disabled items can still be checked...
+                         DebugAppend "ChangeBlockB: Disabled"
+                         ShellTreeSubclassProc = 1
+                         Exit Function
+                     End If
+                     Call SendMessage(hTVDW, TVM_GETITEM, 0, tvix)
+                     If (nmtvic.hItem = m_hRoot) And (mRootHasCheckbox = False) Then
+                        ShellTreeSubclassProc = 1
+                        Exit Function
+                     End If
+                     idx = GetTVItemlParam(hTVD, nmtvic.hItem)
+                     tNew = TVEntries(idx)
+                     If (tNew.bFolder = True And mShowOnlyFileCheckbox = True And mShowFiles = True) Then
+                        ShellTreeSubclassProc = 1
+                        Exit Function
+                     End If
                 End If
                 
             Case TVN_ITEMCHANGEDW
@@ -8516,7 +8765,7 @@ Select Case uMsg
                         
                         If (nmtvic.uStateNew And TVIS_STATEIMAGEMASK) = &H2000 Then 'item has been checked
                             Dim sPath As String
-                            RaiseEvent ItemCheck(TVEntries(nmtvic.lParam).sName, TVEntries(nmtvic.lParam).sFullPath, TVEntries(nmtvic.lParam).bFolder, 1&, nmtvic.hItem)
+                            'RaiseEvent ItemCheck(TVEntries(nmtvic.lParam).sName, TVEntries(nmtvic.lParam).sFullPath, TVEntries(nmtvic.lParam).bFolder, 1&, nmtvic.hItem)
                             If bSetParents = False Then
                                 'set child states
                                 If (nmtvic.uStateNew And TVIS_EXPANDEDONCE) = TVIS_EXPANDEDONCE Then
@@ -8548,7 +8797,7 @@ Select Case uMsg
                            End If
                         ElseIf (nmtvic.uStateNew And TVIS_STATEIMAGEMASK) = &H1000 Then
                             DebugAppend "UncheckEntry " & GetTVItemText(hTVD, nmtvic.hItem)
-                            RaiseEvent ItemCheck(TVEntries(nmtvic.lParam).sName, TVEntries(nmtvic.lParam).sFullPath, TVEntries(nmtvic.lParam).bFolder, 0&, nmtvic.hItem)
+                            ' RaiseEvent ItemCheck(TVEntries(nmtvic.lParam).sName, TVEntries(nmtvic.lParam).sFullPath, TVEntries(nmtvic.lParam).bFolder, 0&, nmtvic.hItem)
                             If bSetParents = False Then
                                 Dim bSib As Boolean
                                 hItemRoot = TreeView_GetRoot(hTVD)
@@ -8583,10 +8832,12 @@ Select Case uMsg
                 If (nmtvic.uStateNew And TVIS_STATEIMAGEMASK) = &H1000 Then
                     TVEntries(nmtvic.lParam).Checked = False
                     TVEntries(nmtvic.lParam).Excluded = False
+                    RaiseEvent ItemCheck(TVEntries(nmtvic.lParam).sName, TVEntries(nmtvic.lParam).sFullPath, TVEntries(nmtvic.lParam).bFolder, 0&, nmtvic.hItem)
                 ElseIf (nmtvic.uStateNew And TVIS_STATEIMAGEMASK) = &H2000 Then
                     DebugAppend "ItemCheck"
                     TVEntries(nmtvic.lParam).Checked = True
                     TVEntries(nmtvic.lParam).Excluded = False
+                    RaiseEvent ItemCheck(TVEntries(nmtvic.lParam).sName, TVEntries(nmtvic.lParam).sFullPath, TVEntries(nmtvic.lParam).bFolder, 1&, nmtvic.hItem)
                 ElseIf ((nmtvic.uStateNew And TVIS_STATEIMAGEMASK) = &H3000) And (mAutocheck = True) Then
                     TVEntries(nmtvic.lParam).Checked = False
                     If mExCheckboxes Then

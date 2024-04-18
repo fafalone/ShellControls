@@ -1,23 +1,29 @@
-[ FormDesignerId ("8CE9DEA3-CF96-4344-87A8-3F6F9ECBBD42") ]
-[ ClassId ("64B7FBF6-FCB5-470D-A624-EB45FDD4A7A0") ]
-[ COMControl ]
+[FormDesignerId("8CE9DEA3-CF96-4344-87A8-3F6F9ECBBD42")]
+[ClassId("5671D988-7A34-498C-B5B9-F9854B25E541")]
+[InterfaceId("DDE0D44A-E6A2-469F-A0A1-5F3F6C7962FF")]
+[EventInterfaceId("801C05C1-C578-4EC4-8069-F0466A2330C6")]
+[COMControl]
+[Description("ShellControls ucShellBrowse")]
 Public Class ucShellBrowse
 Option Explicit
 
-Private Const mVersionStr = "ucShellBrowse 12.0 R1"
+Private Const mVersionStr = "ucShellBrowse 12.1"
 Private Const mVersionApp = "ucShellBrowse"
 Private Const mVersionMjr = 12
-Private Const mVersionMnr = 0
+Private Const mVersionMnr = 1
 #Region "README"
+'ShellControls TB
+'{665DCB9F-F70C-493C-B293-5B808EA80DA1}
+'
 ' ***********************************************************************
 ' *                                                                     *
-' * ucShellBrowse v12.0 - twinBASIC Version - x84/x64 compatible *BETA* *
+' * ucShellBrowse v12.1 - twinBASIC Version - x84/x64 compatible *BETA* *
 ' * Shell Browser Control                                               *
 ' *                                                                     *
-' * Released: 03 Feb 2023                                               *
+' * Released: April 18th,  2024                                         *
 ' *                                                                     *
 ' * Author: Jon Johnson (aka fafalone).                                 *
-' * (c) 2017-2023                                                       *
+' * (c) 2017-2024                                                       *
 ' *                                                                     *
 ' ***********************************************************************
 '
@@ -214,10 +220,27 @@ Private Const mVersionMnr = 0
 '
 '------------------------------------CHANGELOG------------------------------------
 '
+'New in v12.1 BETA (Released 18 April 2024)
+'
+'-Made LVS_EX_DOUBLEBUFFER an optional style (ListViewDoubleBuffer, default True)
+'
+'-Updated IWebBrowser[App] implementation to use Boolean for VARIANT_BOOL instead
+' of Integer (along with updating tbShellLib version which made this change).
+'
+'-Pointer math operations are now large-address safe, allowing safe use in apps
+' or as an OCX with LARGEADDRESSAWARE enabled.
+'
+'-Errors loading a single file are no longer fatal to the entire folder; also
+' generally improved error handling in load folder routines.
+'
+'-(Bug fix) Thumbnail view broken in all modes except 32bit compiled.
+'
+'
 'New in v12.0 R1 (Released 02 Feb 2023)
 '
 '-Updated tbShellLib to 2.6.62 with fixed hex literals, and fixed a couple (unused)
 ' ones in this control.
+'
 '
 'New in v12.0 (Released 02 Feb 2023)
 '
@@ -727,7 +750,7 @@ Private Const dbg_LogAppend As Boolean = False 'Append the existing log file, if
 Private Const dbg_LogOverwrite As Boolean = False 'If dbg_LogAppend is False, this sets whether to overwrite the existing file
                                                   'or create a new file.
 Private Const dbg_LogExeOnly As Boolean = True 'Only turn on writing to external debug log for the compiled exe (if dbg_PrintToFile is enabled).
-Private Const dbg_MinLevel As Long = 2222&   'Only log to immediate/file messages >= this level
+Private Const dbg_MinLevel As Long = 0   'Only log to immediate/file messages >= this level
 '**************************************************************************************
 
 '*************************************VB6 EXE NAME*************************************
@@ -1009,6 +1032,8 @@ Private Const sQMT32 = "Copy the full path of the current location to the clipbo
 'New in v9.x
 Private Const sQMT33 = "Paste the files in the clipboard to the current folder."
 
+'New in 12.2
+Private Const sFileLoadErr = "Note: Some files were not loaded due to error(s)."
 '(End of strings for localization)
 '******************************************************************************************************************
 #End Region
@@ -1123,9 +1148,9 @@ Private pThumbCache As LocalThumbnailCache
 Private ImgPrvLTC As LocalThumbnailCache
 Private pStoreCache As IPropertyStore
 Private stcPst As IPropertyStore
-Private imlSys16 As iImageList
+Private imlSys16 As IImageList
 Private imlSys32 As IImageList2
-Private imlSysJM As iImageList
+Private imlSysJM As IImageList
 Private imlMisc As IImageList2
 Private mIShIcon As IShellIcon
 Private pWindow As ShellWindows
@@ -1167,6 +1192,9 @@ Private clrColSel As stdole.OLE_COLOR
 Private mRegisterWindow As Boolean
 Private Const mDefRegisterWindow As Boolean = False
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B06")]
+#End If
 Public Enum ShellBrowseView
     SB_VIEW_ICON = &H0
     SB_VIEW_DETAILS = &H1
@@ -1191,6 +1219,9 @@ Private Const m_def_StartEmpty As Boolean = False
 Private mHighPerfMode As Boolean
 Private Const mDefHighPerfMode As Boolean = True
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B07")]
+#End If
 Public Enum ShellBrowseGroupBy
     SBGB_None = &H0
     SBGB_Name = &H1
@@ -1205,6 +1236,9 @@ End Enum
 Private m_GroupMode As ShellBrowseGroupBy
 Private Const m_def_GroupMode As Long = SBGB_None
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B08")]
+#End If
 Public Enum ComboPathOptions
     SBCPO_UseExplorer
     SBCPO_NameOnly
@@ -1335,7 +1369,7 @@ Private Const m_def_OneClickAct As Boolean = False
 Private m_TwoClickAct As Boolean
 Private Const m_def_TwoClickAct As Boolean = False
 
-Private mNoScroll As boolean
+Private mNoScroll As Boolean
 Private Const mDefNoScroll As Boolean = False
 
 Private m_ULHot As Boolean
@@ -1462,6 +1496,9 @@ Private Const m_def_FollowLinks As Boolean = True
 Private m_NoDblClkNav As Boolean
 Private Const m_def_NoDblClkNav As Boolean = False
 
+Private mLVDB As Boolean
+Private Const mDefLVDB As Boolean = True
+
 Private mUserModeToggle As Boolean
 Private Const m_def_UserModeToggle As Boolean = True
 
@@ -1489,6 +1526,9 @@ Private Const mDefSFinBKM As Boolean = True
 Private mLMMaxCX As Long
 Private Const mDefLMMaxCX As Long = 200&
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B09")]
+#End If
 Public Enum SB_EXT_PREF
     SBEP_UseExplorer = 0&
     SBEP_AlwaysShow = 1&
@@ -1497,6 +1537,9 @@ Private m_ForceExt As SB_EXT_PREF
 Private Const m_def_ForceExt As Long = 0&
 Private mExSetExt As Boolean
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B0A")]
+#End If
 Public Enum SB_HDN_PREF
     SBHP_UseExplorer = 0&
     SBHP_AlwaysShow = 1&
@@ -1506,6 +1549,9 @@ Private m_HiddenPref As SB_HDN_PREF
 Private Const m_def_HiddenPref As Long = 0&
 Private mHPInExp As Boolean
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B0B")]
+#End If
 Public Enum SB_SPRHDN_PREF
     SBSHP_UseExplorer = 0&
     SBSHP_AlwaysShow = 1&
@@ -1515,6 +1561,9 @@ Private m_SuperHiddenPref As SB_SPRHDN_PREF
 Private Const m_def_SuperHiddenPref As Long = 0&
 Private mSHPInExp As Boolean
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B0C")]
+#End If
 Public Enum SB_NAV_BUTTONS
     SBNB_None = 0&
     SBNB_Normal = 1&
@@ -1524,6 +1573,9 @@ End Enum
 Private m_NavBtnType As SB_NAV_BUTTONS
 Private Const m_def_NavBtnType As Long = SBNB_ThemeButton
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B0D")]
+#End If
 Public Enum SB_CTL_TYPE    'Main Control Type
     SBCTL_DirAndFiles = 0& 'Shows the Directory Dropdown combo and the File View
     SBCTL_DirOnly = 1&     'Shows only the Directory Dropdown
@@ -1534,6 +1586,9 @@ End Enum
 Private m_Mode As SB_CTL_TYPE
 Private Const m_def_Mode As Long = 0&
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B0E")]
+#End If
 Public Enum SB_COMBO_TYPE
     SBCT_Dropdown = 1&
     SBCT_DropdownList = 2&
@@ -1542,6 +1597,9 @@ End Enum
 Private m_CbType As SB_COMBO_TYPE
 Private Const m_def_CbType As Long = SBCT_Dropdown
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B0F")]
+#End If
 Public Enum SB_BORDERSTYLE 'ListView border
     SBBS_None = 0&
     SBBS_Standard = 1&
@@ -1551,6 +1609,9 @@ End Enum
 Private m_Border As SB_BORDERSTYLE
 Private Const m_def_Border As Long = 1&
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B10")]
+#End If
 Public Enum SB_CTLBORDER 'Border around entire control
     SBCBS_None = 0&
     SBCBS_Single = 1&
@@ -1560,6 +1621,9 @@ End Enum
 Private m_CtlBorder As SB_CTLBORDER
 Private Const m_def_CtlBorder As Long = 0&
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B11")]
+#End If
 Public Enum SB_INFOTIPMODE
     SBITM_Disable = 0&
     SBITM_LabelTipOnly = 1&
@@ -1572,6 +1636,9 @@ Private Const mDefInfoTipMode As Long = 2&
 Private mInfoTipLimitHPF As Boolean
 Private Const mDefInfoTipLimitHPF As Boolean = True 'Formerly bLimitInfoTipsInHighPerfMode
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B12")]
+#End If
 Public Enum SB_EXPDDMODE
     SBEDM_DirModesOnly = 0&
     SBEDM_AllModes = 1&
@@ -1664,6 +1731,9 @@ Private m_GroupSubsetLinkText As String
 Private m_PreviewVidThumb As Boolean
 Private Const m_def_PreviewVidThumb As Boolean = False
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B12")]
+#End If
 Public Enum SB_DDMODE
     SBDD_DragDrop = 0&
     SBDD_Disabled = 1&
@@ -1682,6 +1752,9 @@ Private Const mDefEnableGrp As Boolean = True
 Private mEnablePaste As Boolean
 Private Const mDefEnablePaste As Boolean = True
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B13")]
+#End If
 Public Enum SB_COL_LOCK
     SBCL_None = 0& 'No forced control
     SBCL_LockNoAuto = 1& 'Only the columns specified in DefaultColumns are shown; Explorer defaults are not loaded
@@ -1690,12 +1763,18 @@ End Enum
 Private m_ColLock As SB_COL_LOCK
 Private Const m_def_ColLock As Long = SBCL_None
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B14")]
+#End If
 Public Enum SB_ITEMSEL_MODE
     SBIM_FilesAndFolders = 0&
     SBIM_FilesOnly = 1&
     SBIM_FoldersOnly = 2&
 End Enum
 
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B15")]
+#End If
 Public Enum SB_COLOR_PREF
     SBCP_UseExplorer = 0&
     SBCP_ForceOn = 1&
@@ -1951,7 +2030,7 @@ Private lGrpTCnt() As Long
 Private lGrpDCnt() As Long
 
 Private hThemeNav As LongPtr
-Private iNavStateCur As ucsb_NAV_BB_STATE
+Private iNavStateCur As NAV_BB_STATE
 Private bBackEnable As Boolean
 Private bBkBtnDown As Boolean
 Private lOffBkBtn As Long
@@ -1960,7 +2039,7 @@ Private cxThemeButtonB As Long, cyThemeButtonB As Long
 
 Private bHistoryOp As Boolean
 Private bEnableFwd As Boolean
-Private iFwdNavStateCur As ucsb_NAV_FB_STATE
+Private iFwdNavStateCur As NAV_FB_STATE
 Private bFwBtnDown As Boolean
 Private lOffFwBtn As Long
 
@@ -2053,7 +2132,7 @@ Private WithEvents PropFontDt As StdFont
 Private mUsingCustomIcons As Boolean
 
 Private mUseAdvancedSort As Boolean
-Private mAdvSortFlags As ucsb_COMPARE_FLAGS
+Private mAdvSortFlags As SB_COMPARE_FLAGS
 Private mAdvSortLocale As String
 Private mLastSortInfo As Long
 
@@ -2418,7 +2497,7 @@ Private Type UCSBFile
     bLinkExe As Boolean
     bSelMark As Boolean
     bIsADS As Boolean
-    dwAttrib As SFGAO_Flags
+    dwAttrib As SFGAOF
     nIcon As Long
     nFileIcon As Long
     idxThumb As Long
@@ -2540,6 +2619,9 @@ Private nLastDtPaneOp As Long
 Private szLVBKUrl As String
 Private PropPicture As stdole.IPictureDisp
 Private PropPictureWatermark As Boolean
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B16")]
+#End If
 Public Enum SBPictureAlignmentConstants
     SBPicAlignTopLeft = 0
     SBPicAlignTopRight = 1
@@ -2561,7 +2643,7 @@ Private Const m_sVerbRedo As String = "redo" 'For Ctrl+Y redo
 '
 '=================================================================================
 '
-'---------------------------------------------------------------------------------                ' close for each entry to ensure file buffers flushed
+'---------------------------------------------------------------------------------
 #End Region
 
 #Region "APIDeclares"
@@ -2569,7 +2651,7 @@ Private Const m_sVerbRedo As String = "redo" 'For Ctrl+Y redo
 Private Const TRANSPARENT = 1&
 Private Const OPAQUE = 2&
 
-Private Declare PtrSafe Function AssocGetPerceivedType Lib "shlwapi.dll" (ByVal pszExt As LongPtr, ptype As ucsb_PERCEIVED, pflag As ucsb_PERCEIVEDFLAG, ppszType As LongPtr) As Long
+Private Declare PtrSafe Function AssocGetPerceivedType Lib "shlwapi.dll" (ByVal pszExt As LongPtr, ptype As PERCEIVED, pflag As PERCEIVEDFLAG, ppszType As LongPtr) As Long
 Private Declare PtrSafe Function AssocQueryString Lib "shlwapi.dll" Alias "AssocQueryStringA" (ByVal Flags As ASSOCF, ByVal str As ASSOCSTR, ByVal pszAssoc As String, ByVal pszExtra As String, ByVal pszOut As String, ByRef pcchOut As Long) As Long
 Private Declare PtrSafe Function BitBlt Lib "gdi32" (ByVal hDestDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hSrcDC As LongPtr, ByVal XSrc As Long, ByVal YSrc As Long, ByVal dwRop As Long) As Long
 Private Declare PtrSafe Function ClientToScreen Lib "user32" (ByVal hWnd As LongPtr, lpPoint As Any) As Long  ' lpPoint As POINTAPI) As Long
@@ -2579,7 +2661,7 @@ Private Declare PtrSafe Function CloseThemeData Lib "uxtheme" (ByVal hTheme As L
 Private Declare PtrSafe Function CLSIDFromString Lib "ole32" (ByVal lpszGuid As LongPtr, pGuid As Any) As Long
 Private Declare PtrSafe Function CoCreateInstance Lib "ole32" (rclsid As Any, ByVal pUnkOuter As LongPtr, ByVal dwClsContext As Long, riid As UUID, pvarResult As Any) As Long
 Private Declare PtrSafe Function CompareFileTime Lib "kernel32" (ByVal lpFileTime1 As LongPtr, ByVal lpFileTime2 As LongPtr) As Long
-Private Declare PtrSafe Function CompareStringEx Lib "kernel32" (ByVal lpLocaleName As LongPtr, ByVal dwCmpFlags As ucsb_COMPARE_FLAGS, ByVal lpString1 As LongPtr, ByVal cchCount1 As Long, ByVal lpString2 As LongPtr, ByVal cchCount2 As Long, ByVal lpVersionInformation As LongPtr, ByVal lpReserved As LongPtr, ByVal lParam As LongPtr) As ucsb_CSTR_RETURNS
+Private Declare PtrSafe Function CompareStringEx Lib "kernel32" (ByVal lpLocaleName As LongPtr, ByVal dwCmpFlags As SB_COMPARE_FLAGS, ByVal lpString1 As LongPtr, ByVal cchCount1 As Long, ByVal lpString2 As LongPtr, ByVal cchCount2 As Long, ByVal lpVersionInformation As LongPtr, ByVal lpReserved As LongPtr, ByVal lParam As LongPtr) As CSTR_RETURNS
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As LongPtr)
 Private Declare PtrSafe Sub CoTaskMemFree Lib "ole32" (ByVal pv As LongPtr)
 Private Declare PtrSafe Function CreateCompatibleBitmap Lib "gdi32" (ByVal hDC As LongPtr, ByVal nWidth As Long, ByVal nHeight As Long) As LongPtr
@@ -2604,7 +2686,7 @@ Private Declare PtrSafe Function DispatchMessage Lib "user32" Alias "DispatchMes
 Private Declare PtrSafe Function DllGetVersion Lib "comctl32" (ByRef pdvi As DLLVERSIONINFO) As Long
 Private Declare PtrSafe Function DragQueryFileW Lib "shell32.dll" (ByVal hDrop As LongPtr, ByVal iFile As Long, Optional ByVal lpszFile As LongPtr, Optional ByVal cch As Long) As Long
 Private Declare PtrSafe Function DrawIconEx Lib "user32" (ByVal hDC As LongPtr, ByVal XLeft As Long, ByVal YTop As Long, ByVal hIcon As LongPtr, ByVal CXWidth As Long, ByVal CYWidth As Long, ByVal istepIfAniCur As Long, ByVal hbrFlickerFreeDraw As LongPtr, ByVal diFlags As Long) As Long
-Private Declare PtrSafe Function DrawText Lib "user32" Alias "DrawTextW" (ByVal hDC As LongPtr, ByVal lpchText As LongPtr, ByVal nCount As Long, ByRef lpRect As RECT, ByVal uFormat As ucsb_DT_Flags) As Long
+Private Declare PtrSafe Function DrawText Lib "user32" Alias "DrawTextW" (ByVal hDC As LongPtr, ByVal lpchText As LongPtr, ByVal nCount As Long, ByRef lpRect As RECT, ByVal uFormat As DT_Flags) As Long
 Private Declare PtrSafe Function DrawThemeBackground Lib "uxtheme" (ByVal hTheme As LongPtr, ByVal lhDC As LongPtr, ByVal iPartId As Long, ByVal iStateId As Long, pRect As RECT, pClipRect As Any) As Long
 Private Declare PtrSafe Function EmptyClipboard Lib "user32" () As Long
 Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
@@ -2623,7 +2705,7 @@ Private Declare PtrSafe Function GetCursorPos Lib "user32" (lpPoint As Any) As L
 Private Declare PtrSafe Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetDeviceCaps Lib "gdi32" (ByVal hDC As LongPtr, ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function GetDIBits Lib "gdi32" (ByVal aHDC As LongPtr, ByVal hBitmap As LongPtr, ByVal nStartScan As Long, ByVal nNumScans As Long, ByRef lpBits As Any, ByRef lpBI As BITMAPINFO, ByVal wUsage As Long) As Long
-Private Declare PtrSafe Function GetDriveType Lib "kernel32" Alias "GetDriveTypeW" (ByVal lpRootPathName As LongPtr) As ucsb_GDT_Types
+Private Declare PtrSafe Function GetDriveType Lib "kernel32" Alias "GetDriveTypeW" (ByVal lpRootPathName As LongPtr) As GDT_Types
 Private Declare PtrSafe Function GetFileSize Lib "kernel32" (ByVal hFile As LongPtr, lpFileSizeHigh As Long) As Long
 Private Declare PtrSafe Function GetFileVersionInfoSizeW Lib "version.dll" (ByVal lptstrFilename As LongPtr, lpdwHandle As Long) As Long
 Private Declare PtrSafe Function GetFileVersionInfoW Lib "version.dll" (ByVal lptstrFilename As LongPtr, ByVal dwhandle As Long, ByVal dwLen As Long, lpData As Any) As Long
@@ -2636,7 +2718,7 @@ Private Declare PtrSafe Function GetMenuItemID Lib "user32" (ByVal hMenu As Long
 Private Declare PtrSafe Function GetModuleFileName Lib "kernel32" Alias "GetModuleFileNameA" (ByVal hModule As LongPtr, ByVal lpFileName As String, ByVal nSize As Long) As Long
 Private Declare PtrSafe Function GetObject Lib "gdi32" Alias "GetObjectA" (ByVal hObject As LongPtr, ByVal nCount As Long, lpObject As Any) As Long
 Private Declare PtrSafe Function GetObjectW Lib "gdi32" (ByVal hObject As LongPtr, ByVal nCount As Long, lpObject As Any) As Long
-Private Declare PtrSafe Function GetStockObject Lib "gdi32.dll" (ByVal nIndex As ucsb_StockObjects) As LongPtr
+Private Declare PtrSafe Function GetStockObject Lib "gdi32.dll" (ByVal nIndex As StockObjects) As LongPtr
 Private Declare PtrSafe Function GetStringTypeExW Lib "kernel32" (ByVal Locale As Long, ByVal dwInfoType As GST_Class, ByVal lpSrcStr As LongPtr, ByVal cchSrc As Long, lpCharType As Integer) As Long
 Private Declare PtrSafe Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32.dll" (ByVal nIndex As SystemMetrics) As Long
@@ -2654,7 +2736,7 @@ Private Declare PtrSafe Function IsEqualIID Lib "ole32" Alias "IsEqualGUID" (iid
 Private Declare PtrSafe Function IsWow64Process Lib "kernel32.dll" (ByVal hProcess As LongPtr, ByRef Wow64Process As Long) As Long
 Private Declare PtrSafe Function KillTimer Lib "user32" (ByVal hWnd As LongPtr, ByVal uIDEvent As LongPtr) As Long
 Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
-Private Declare PtrSafe Function LoadImageW Lib "user32" (ByVal hInst As LongPtr, ByVal lpsz As LongPtr, ByVal dwImageType As ucsb_ImageTypes, ByVal dwDesiredWidth As Long, ByVal dwDesiredHeight As Long, ByVal dwFlags As ucsb_LoadResourceFlags) As LongPtr
+Private Declare PtrSafe Function LoadImageW Lib "user32" (ByVal hInst As LongPtr, ByVal lpsz As LongPtr, ByVal dwImageType As ImageTypes, ByVal dwDesiredWidth As Long, ByVal dwDesiredHeight As Long, ByVal dwFlags As LoadResourceFlags) As LongPtr
 Private Declare PtrSafe Function LoadLibraryW Lib "kernel32" (ByVal lpLibFileName As LongPtr) As LongPtr
 Private Declare PtrSafe Function LoadResource Lib "kernel32" (ByVal hInstance As LongPtr, ByVal hResInfo As LongPtr) As LongPtr
 Private Declare PtrSafe Function LocalFileTimeToFileTime Lib "kernel32" (lpLocalFileTime As FILETIME, lpFileTime As FILETIME) As Long
@@ -2683,10 +2765,10 @@ Private Declare PtrSafe Function PathIsDirectoryW Lib "shlwapi" (ByVal lpszPath 
 Private Declare PtrSafe Function PathFindFileNameW Lib "shlwapi" (ByVal pszPath As LongPtr) As LongPtr
 Private Declare PtrSafe Function PathIsNetworkPath Lib "shlwapi" Alias "PathIsNetworkPathW" (ByVal pszPath As LongPtr) As Long
 Private Declare PtrSafe Function PathMatchSpecW Lib "shlwapi" (ByVal pszFileParam As LongPtr, ByVal pszSpec As LongPtr) As Long
-Private Declare PtrSafe Function PathMatchSpecExW Lib "shlwapi" (ByVal pszFile As LongPtr, ByVal pszSpec As LongPtr, ByVal dwFlags As ucsb_PMS_Flags) As Long
+Private Declare PtrSafe Function PathMatchSpecExW Lib "shlwapi" (ByVal pszFile As LongPtr, ByVal pszSpec As LongPtr, ByVal dwFlags As PMS_Flags) As Long
 Private Declare PtrSafe Function PathYetAnotherMakeUniqueName Lib "shell32.dll" (ByVal pszUniqueName As LongPtr, ByVal pszPath As LongPtr, Optional ByVal pszShort As LongPtr, Optional ByVal pszFileSpec As LongPtr) As Long
 Private Declare PtrSafe Function PeekMessage Lib "user32" Alias "PeekMessageW" (lpMsg As MSG, ByVal hWnd As LongPtr, ByVal wMsgFilterMin As Long, ByVal wMsgFilterMax As Long, ByVal wRemoveMsg As Long) As Long
-Private Declare PtrSafe Function PlaySound Lib "winmm.dll" Alias "PlaySoundW" (ByVal lpszName As LongPtr, ByVal hModule As LongPtr, ByVal dwFlags As ucsb_SND_FLAGS) As Long
+Private Declare PtrSafe Function PlaySound Lib "winmm.dll" Alias "PlaySoundW" (ByVal lpszName As LongPtr, ByVal hModule As LongPtr, ByVal dwFlags As SND_FLAGS) As Long
 Private Declare PtrSafe Function PropVariantChangeType Lib "propsys" (ByRef ppropvarDest As Any, ByRef propvarSrc As Any, ByVal Flags As Long, ByVal vt As VARENUM) As Long
 Private Declare PtrSafe Function PropVariantClear Lib "ole32" (ByRef propvar As Any) As Long
 Private Declare PtrSafe Function PropVariantToVariant Lib "propsys" (ByRef propvar As Any, ByRef var As Variant) As Long
@@ -2725,7 +2807,7 @@ Private Declare PtrSafe Function SetRect Lib "user32" (ByRef lpRect As RECT, ByV
 Private Declare PtrSafe Function SetTextColor Lib "gdi32" (ByVal hDC As LongPtr, ByVal crColor As Long) As Long
 Private Declare PtrSafe Function SetTimer Lib "user32" (ByVal hWnd As LongPtr, ByVal nIDEvent As LongPtr, ByVal uElapse As Long, ByVal lpTimerFunc As LongPtr) As LongPtr
 Private Declare PtrSafe Function SetVolumeLabelW Lib "kernel32" (ByVal lpRootPathName As LongPtr, ByVal lpVolumeName As LongPtr) As Long
-Private Declare PtrSafe Function SetWindowPos Lib "user32" (ByVal hWnd As LongPtr, ByVal hWndInsertAfter As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal cy As Long, ByVal wFlags As ucsb_SWP_Flags) As Long
+Private Declare PtrSafe Function SetWindowPos Lib "user32" (ByVal hWnd As LongPtr, ByVal hWndInsertAfter As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal cy As Long, ByVal wFlags As SWP_Flags) As Long
 Private Declare PtrSafe Function SetWindowTextW Lib "user32" (ByVal hWnd As LongPtr, ByVal lpString As LongPtr) As Long
 Private Declare PtrSafe Function SetWindowTheme Lib "uxtheme" (ByVal hWnd As LongPtr, ByVal pszSubAppName As LongPtr, ByVal pszSubIdList As LongPtr) As Long
 Private Declare PtrSafe Function SHCreateShellItem Lib "shell32" (ByVal pidlParent As LongPtr, ByVal psfParent As LongPtr, ByVal pidl As LongPtr, ppsi As IShellItem) As Long
@@ -2733,8 +2815,8 @@ Private Declare PtrSafe Function SHDefExtractIconW Lib "shell32" (ByVal pszIconF
 Private Declare PtrSafe Function SHDoDragDrop Lib "Shell32" (ByVal hWnd As LongPtr, ByVal pdtobj As LongPtr, ByVal pdsrc As LongPtr, ByVal dwEffect As Long, pdwEffect As Long) As Long
 Private Declare PtrSafe Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteW" (ByVal hWnd As LongPtr, ByVal lpOperation As LongPtr, ByVal lpFile As LongPtr, ByVal lpParameters As LongPtr, ByVal lpDirectory As LongPtr, ByVal nShowCmd As SHOWWINDOW) As LongPtr
 Private Declare PtrSafe Function SHFileOperationW Lib "shell32" (lpFileOp As SHFILEOPSTRUCT) As Long
-Private Declare PtrSafe Function SHGetFileInfo Lib "shell32" Alias "SHGetFileInfoA" (ByVal pszPath As Any, ByVal dwFileAttributes As Long, psfi As SHFILEINFO, ByVal cbFileInfo As Long, ByVal uFlags As ucsb_SHGFI_flags) As LongPtr
-Private Declare PtrSafe Function SHGetFileInfoW Lib "shell32" (ByVal pszPath As Any, ByVal dwFileAttributes As Long, psfi As SHFILEINFO, ByVal cbFileInfo As Long, ByVal uFlags As ucsb_SHGFI_flags) As LongPtr
+Private Declare PtrSafe Function SHGetFileInfo Lib "shell32" Alias "SHGetFileInfoA" (ByVal pszPath As Any, ByVal dwFileAttributes As Long, psfi As SHFILEINFO, ByVal cbFileInfo As Long, ByVal uFlags As SHGFI_flags) As LongPtr
+Private Declare PtrSafe Function SHGetFileInfoW Lib "shell32" (ByVal pszPath As Any, ByVal dwFileAttributes As Long, psfi As SHFILEINFOW, ByVal cbFileInfo As Long, ByVal uFlags As SHGFI_flags) As LongPtr
 Private Declare PtrSafe Function SHGetFolderLocation Lib "shell32.dll" (ByVal hWndOwner As LongPtr, ByVal nFolder As Long, ByVal hToken As LongPtr, ByVal dwReserved As Long, ppidl As LongPtr) As Long
 Private Declare PtrSafe Function SHGetPathFromIDListW Lib "shell32.dll" (ByVal pidl As LongPtr, ByVal pszPath As LongPtr) As Long
 Private Declare PtrSafe Function SHGetPropertyStoreFromParsingName Lib "shell32" (ByVal pszPath As LongPtr, pbc As Any, ByVal Flags As GETPROPERTYSTOREFLAGS, riid As UUID, ppv As Any) As Long
@@ -2752,13 +2834,13 @@ Private Declare PtrSafe Function SystemParametersInfo Lib "user32" Alias "System
 Private Declare PtrSafe Function SystemTimeToFileTime Lib "kernel32" (lpSystemTime As SYSTEMTIME, lpFileTime As FILETIME) As Long
 Private Declare PtrSafe Function TaskDialog Lib "comctl32.dll" (ByVal hwndParent As LongPtr, ByVal hInstance As LongPtr, ByVal pszWindowTitle As LongPtr, ByVal pszMainInstruction As LongPtr, ByVal pszContent As LongPtr, ByVal dwCommonButtons As Long, ByVal pszIcon As LongPtr, pnButton As Long) As Long
 Private Declare PtrSafe Function TrackMouseEvent Lib "user32" (lpEventTrack As TrackMouseEventStruct) As Boolean
-Private Declare PtrSafe Function TrackPopupMenu Lib "user32" (ByVal hMenu As LongPtr, ByVal wFlags As ucsb_TPM_wFlags, ByVal x As Long, ByVal y As Long, ByVal nReserved As Long, ByVal hwnd As LongPtr, lpRC As Any) As Long
-Private Declare PtrSafe Function TrackPopupMenuEx Lib "user32" (ByVal hMenu As LongPtr, ByVal wFlags As ucsb_TPM_wFlags, ByVal X As Long, ByVal Y As Long, ByVal hWnd As LongPtr, lptpm As Any) As Long
+Private Declare PtrSafe Function TrackPopupMenu Lib "user32" (ByVal hMenu As LongPtr, ByVal wFlags As TPM_wFlags, ByVal x As Long, ByVal y As Long, ByVal nReserved As Long, ByVal hwnd As LongPtr, lpRC As Any) As Long
+Private Declare PtrSafe Function TrackPopupMenuEx Lib "user32" (ByVal hMenu As LongPtr, ByVal wFlags As TPM_wFlags, ByVal X As Long, ByVal Y As Long, ByVal hWnd As LongPtr, lptpm As Any) As Long
 Private Declare PtrSafe Function TranslateMessage Lib "user32" (ByRef lpMsg As Any) As Long
 Private Declare PtrSafe Function UpdateWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function VariantToFileTime Lib "propsys" (varIn As Variant, ByVal stfOut As Long, pftOut As FILETIME) As Long
 Private Declare PtrSafe Function VariantToPropVariant Lib "propsys.dll" (ByRef pvar As Variant, ByRef ppropvar As Variant) As Long
-Private Declare PtrSafe Function vbaObjSetAddRef Lib "msvbvm60.dll" Alias "__vbaObjSetAddref" (ByRef objDest As Object, ByVal pObject As LongPtr) As LongPtr 'THIS IS REDIRECTED TO A TWINBASIC INTERNAL IMPLEMENTATION
+[IgnoreWarnings(TB0015)] Private Declare PtrSafe Function vbaObjSetAddRef Lib "msvbvm60.dll" Alias "__vbaObjSetAddref" (ByRef objDest As Object, ByVal pObject As LongPtr) As LongPtr 'THIS IS REDIRECTED TO A TWINBASIC INTERNAL IMPLEMENTATION
 Private Declare PtrSafe Function VerQueryValue Lib "version.dll" Alias "VerQueryValueA" (pBlock As Any, lpSubBlock As Any, lplpBuffer As Any, puLen As Long) As Long
 Private Declare PtrSafe Function VerQueryValueW Lib "version.dll" (ByRef pBlock As Any, ByVal lpSubBlock As LongPtr, ByRef lplpBuffer As LongPtr, ByRef puLen As Long) As Long
 Private Declare PtrSafe Function VirtualQuery Lib "kernel32.dll" (ByVal addr As LongPtr, pMBI As Any, ByVal lenMBI As LongPtr) As LongPtr
@@ -2780,7 +2862,7 @@ Private Declare PtrSafe Function ImageList_Add Lib "comctl32.dll" (ByVal himl As
 Private Declare PtrSafe Function ImageList_AddMasked Lib "comctl32.dll" (ByVal himl As LongPtr, ByVal hbmImage As LongPtr, ByVal crMask As Long) As Long
 Private Declare PtrSafe Function ImageList_BeginDrag Lib "comctl32.dll" (ByVal himlTrack As LongPtr, ByVal iTrack As Long, ByVal dxHotspot As Long, ByVal dyHotspot As Long) As Boolean
 Private Declare PtrSafe Function ImageList_Copy Lib "comctl32.dll" (ByVal himlDst As LongPtr, ByVal iDst As Long, ByVal himlSrc As LongPtr, ByVal iSrc As Long, ByVal uFlags As Long) As Boolean
-Private Declare PtrSafe Function ImageList_Create Lib "comctl32.dll" (ByVal cx As Long, ByVal cy As Long, ByVal Flags As ucsb_IL_CreateFlags, ByVal cInitial As Long, ByVal cGrow As Long) As LongPtr
+Private Declare PtrSafe Function ImageList_Create Lib "comctl32.dll" (ByVal cx As Long, ByVal cy As Long, ByVal Flags As IL_CreateFlags, ByVal cInitial As Long, ByVal cGrow As Long) As LongPtr
 Private Declare PtrSafe Function ImageList_Destroy Lib "comctl32.dll" (ByVal himl As LongPtr) As Boolean
 Private Declare PtrSafe Function ImageList_DragEnter Lib "comctl32.dll" (ByVal hWndLock As LongPtr, ByVal X As Long, ByVal Y As Long) As Boolean
 Private Declare PtrSafe Function ImageList_DragMove Lib "comctl32.dll" (ByVal X As Long, ByVal Y As Long) As Boolean
@@ -2898,7 +2980,7 @@ Private CF_PREFERREDDROPEFFECT As Long
 Private CF_COMPUTEDDRAGIMAGE As Long
 Private CF_INDRAGLOOP As Long
 
-Private Enum ucsb_SHGFI_flags
+Private Enum SHGFI_flags
   SHGFI_LARGEICON = &H0            ' sfi.hIcon is large icon
   SHGFI_SMALLICON = &H1            ' sfi.hIcon is small icon
   SHGFI_OPENICON = &H2              ' sfi.hIcon is open icon
@@ -2933,17 +3015,17 @@ Private Type EDITBALLOONTIP
     cbStruct As Long
     pszTitle As LongPtr
     pszText As LongPtr
-    ttiIcon As ucsb_BalloonTipIconConstants ' ; // From TTI_*
+    ttiIcon As BalloonTipIconConstants ' ; // From TTI_*
 End Type
 
-Private Enum ucsb_BalloonTipIconConstants
+Private Enum BalloonTipIconConstants
    TTI_NONE = 0
    TTI_INFO = 1
    TTI_WARNING = 2
    TTI_ERROR = 3
 End Enum
 
-Private Enum ucsb_TPM_wFlags
+Private Enum TPM_wFlags
   TPM_LEFTBUTTON = &H0
   TPM_RIGHTBUTTON = &H2
   TPM_LEFTALIGN = &H0
@@ -2964,7 +3046,7 @@ Private Enum ucsb_TPM_wFlags
   TPM_VERNEGANIMATION = &H2000
   TPM_NOANIMATION = &H4000
 End Enum
-Private Enum ucsb_SND_FLAGS
+Private Enum SND_FLAGS
     SND_ALIAS = &H10000 ' name is a WIN.INI [sounds] entry
     SND_ALIAS_ID = &H110000 ' name is a WIN.INI [sounds]Entry identifier
     SND_ALIAS_START = 0 ' must be > 4096 to keep strings insame section of resource file
@@ -2985,7 +3067,7 @@ Private Enum ucsb_SND_FLAGS
     SND_VALIDFLAGS = &H17201F ' Set of valid flag bits.
 End Enum
 
-Private Enum ucsb_ShellImageListFlags
+Private Enum ShellImageListFlags
     SHIL_LARGE = &H0
     SHIL_SMALL = &H1
     SHIL_EXTRALARGE = &H2
@@ -3035,7 +3117,7 @@ Private Const KEY_READ = ((STANDARD_RIGHTS_READ Or _
                         KEY_ENUMERATE_SUB_KEYS Or _
                         KEY_NOTIFY) And _
                         (Not SYNCHRONIZE))
-Private Enum ucsb_Shell_Flags_1
+Private Enum Shell_Flags_1
     fShowAllObjects = &H1
     fShowExtensions = &H2
     fNoConfirmRecycle = &H4
@@ -3055,7 +3137,7 @@ Private Enum ucsb_Shell_Flags_1
     fNoNetCrawling = &H10000
 End Enum
 
-Private Enum ucsb_Shell_Flags_2
+Private Enum Shell_Flags_2
     fSepProcess = &H1
     fStartPanelOn = &H2
     fShowStartPage = &H4
@@ -3085,7 +3167,7 @@ Private Const PM_REMOVE             As Long = 1&
 
 Private Const SECURITY_IMPERSONATION = &H20000
 
-Private Enum ucsb_GDT_Types
+Private Enum GDT_Types
     DRIVE_UNKNOWN = 0
     DRIVE_NO_ROOT_DIR = 1
     DRIVE_REMOVABLE = 2
@@ -3095,19 +3177,23 @@ Private Enum ucsb_GDT_Types
     DRIVE_RAMDISK = 6
 End Enum
 
-Public Enum ucsb_COMPARE_FLAGS
-    SORT_STRINGSORT = &H1000&
-    SORT_DIGITSASNUMBERS = &H8          'Sort 1 2 10 instead of 1 10 2
-    LINGUISTIC_IGNORECASE = &H10&
-    LINGUISTIC_IGNOREDIACRITIC = &H20&
-    NORM_IGNORECASE = &H1&
-    NORM_IGNORENONSPACE = &H2&
-    NORM_IGNORESYMBOLS = &H4&
-    NORM_IGNOREKANATYPE = &H10000
-    NORM_IGNOREWIDTH = &H20000
-    NORM_LINGUISTIC_CASING = &H8000000
+#If TWINBASIC Then
+[EnumId("869CCDEE-23AD-4F26-BC13-E75177292B10")]
+[Description("These are just the regular flags renamed so as to not conflict.")]
+#End If
+Public Enum SB_COMPARE_FLAGS
+    SBCF_SORT_STRINGSORT = &H1000&
+    SBCF_SORT_DIGITSASNUMBERS = &H8          'Sort 1 2 10 instead of 1 10 2
+    SBCF_LINGUISTIC_IGNORECASE = &H10&
+    SBCF_LINGUISTIC_IGNOREDIACRITIC = &H20&
+    SBCF_NORM_IGNORECASE = &H1&
+    SBCF_NORM_IGNORENONSPACE = &H2&
+    SBCF_NORM_IGNORESYMBOLS = &H4&
+    SBCF_NORM_IGNOREKANATYPE = &H10000
+    SBCF_NORM_IGNOREWIDTH = &H20000
+    SBCF_NORM_LINGUISTIC_CASING = &H8000000
 End Enum
-Private Enum ucsb_CSTR_RETURNS
+Private Enum CSTR_RETURNS
     CSTR_FAIL = 0&
     CSTR_LESS_THAN = 1&
     CSTR_EQUAL = 2&
@@ -3140,7 +3226,7 @@ Private Type UNICODE_STRING
 End Type
 
 Private Type OBJECT_ATTRIBUTES
-	Length As Long
+    Length As Long
     RootDirectory As LongPtr
     ObjectName As LongPtr
     Attributes As Long
@@ -3247,7 +3333,7 @@ Private Type SFV_CREATE
     psfvcb As IShellFolderViewCB
 End Type
 
-Private Enum ucsb_DRAWICON_FLAGS
+Private Enum DRAWICON_FLAGS
     DI_MASK = &H1
     DI_IMAGE = &H2
     DI_NORMAL = &H3
@@ -3267,7 +3353,7 @@ Private Const GBF_VALIDBITS = GBF_DIRECT Or GBF_COPY
 Private Const TMT_DIBDATA = 2
 Private Const TMT_GLYPHDIBDATA = 8
 
-Private Enum ucsb_PBSTYLE
+Private Enum PBSTYLE
     PBS_SMOOTH = &H1&
     PBS_VERTICAL = &H4&
     PBS_MARQUEE = &H8&             ' control must be themed & v6 of common controls installed
@@ -3277,7 +3363,7 @@ Private Const PBM_SETMARQUEE = WM_USER + 10
 
 '---
 'TaskDialog Declares
-Private Enum ucsb_TDICONS
+Private Enum TDICONS
     TD_WARNING_ICON = -1 'exclamation point in a yellow 'yield' triangle (same image as IDI_EXCLAMATION)
     TD_ERROR_ICON = -2 'round red circle containg 'X' (same as IDI_HAND)
     TD_INFORMATION_ICON = -3 'round blue circle containing 'i' (same image as IDI_ASTERISK)
@@ -3294,7 +3380,7 @@ Private Enum ucsb_TDICONS
 End Enum
 
 'taskdialog common button flags
-Private Enum ucsb_TDBUTTONS
+Private Enum TDBUTTONS
     TDCBF_OK_BUTTON = &H1&      'return value 1 (IDOK)
     TDCBF_YES_BUTTON = &H2&     'return value 6 (IDYES)
     TDCBF_NO_BUTTON = &H4&      'return value 7 (IDNO)
@@ -3302,7 +3388,7 @@ Private Enum ucsb_TDBUTTONS
     TDCBF_RETRY_BUTTON = &H10&   'return value 4 (IDRETRY)
     TDCBF_CLOSE_BUTTON = &H20&   'return value 8 (IDCLOSE)
 End Enum
-Private Enum ucsb_TDRESULT
+Private Enum TDRESULT
     TD_OK = 1
     TD_YES = 6
     TD_NO = 7
@@ -3350,13 +3436,13 @@ Private Const PBFVS_PARTIAL = 4
 Private Const NAV_BACKBUTTON = 1
 Private Const NAV_FORWARDBUTTON = 2
 Private Const NAV_MENUBUTTON = 3
-Private Enum ucsb_NAV_BB_STATE
+Private Enum NAV_BB_STATE
     NAV_BB_NORMAL = 1
     NAV_BB_HOT = 2
     NAV_BB_PRESSED = 3
     NAV_BB_DISABLED = 4
 End Enum
-Private Enum ucsb_NAV_FB_STATE
+Private Enum NAV_FB_STATE
     NAV_FB_NORMAL = 1
     NAV_FB_HOT = 2
     NAV_FB_PRESSED = 3
@@ -3446,11 +3532,11 @@ Private Const IDC_APPSTARTING = 32650
 
 Private Type TrackMouseEventStruct
     cbSize As Long
-    dwFlags As ucsb_TME_Flags
+    dwFlags As TME_Flags
     hWndTrack As LongPtr
     dwHoverTime As Long
 End Type
-Private Enum ucsb_TME_Flags
+Private Enum TME_Flags
     TME_HOVER = &H1
     TME_LEAVE = &H2
     TME_NONCLIENT = &H10
@@ -3565,13 +3651,13 @@ Private Type BitmapData
     Reserved        As LongPtr
 End Type
 
-Private Enum ucsb_ImageTypes
+Private Enum ImageTypes
   IMAGE_BITMAP = 0
   IMAGE_ICON = 1
   IMAGE_CURSOR = 2
   IMAGE_ENHMETAFILE = 3
 End Enum
-Private Enum ucsb_LoadResourceFlags
+Private Enum LoadResourceFlags
   LR_DEFAULTCOLOR = &H0
   LR_MONOCHROME = &H1
   LR_COLOR = &H2
@@ -3604,7 +3690,7 @@ Private Type IconEntry
     ieImageOffset   As Long
 End Type
 
-Private Enum ucsb_IL_DrawStyle
+Private Enum IL_DrawStyle
   ILD_NORMAL = &H0
   ILD_TRANSPARENT = &H1
   ILD_MASK = &H10
@@ -3627,7 +3713,7 @@ End Enum
 
 Private Const ILCF_MOVE = &H0
 
-Private Enum ucsb_IL_CreateFlags
+Private Enum IL_CreateFlags
   ILC_MASK = &H1
   ILC_COLOR = &H0
   ILC_COLORDDB = &HFE
@@ -3646,7 +3732,7 @@ Private Enum ucsb_IL_CreateFlags
 End Enum
 Private Const CLR_NONE = &HFFFFFFFF
 
-Private Enum ucsb_PERCEIVED
+Private Enum PERCEIVED
   PERCEIVED_TYPE_CUSTOM = -3
   PERCEIVED_TYPE_UNSPECIFIED = -2
   PERCEIVED_TYPE_FOLDER = -1
@@ -3662,7 +3748,7 @@ Private Enum ucsb_PERCEIVED
   PERCEIVED_TYPE_GAMEMEDIA = 9
   PERCEIVED_TYPE_CONTACTS = 10
 End Enum
-Private Enum ucsb_PERCEIVEDFLAG
+Private Enum PERCEIVEDFLAG
     PERCEIVEDFLAG_UNDEFINED = &H0 'No perceived type was found (PERCEIVED_TYPE_UNSPECIFIED.
     PERCEIVEDFLAG_SOFTCODED = &H1 'The perceived type was determined through an association in the registry.
     PERCEIVEDFLAG_HARDCODED = &H2 'The perceived type is inherently known to Windows.
@@ -3672,7 +3758,7 @@ Private Enum ucsb_PERCEIVEDFLAG
     PERCEIVEDFLAG_ZIPFOLDER = &H40 'The perceived type is supported by Windows compressed folders.
 End Enum
 
-Private Enum ucsb_PMS_Flags
+Private Enum PMS_Flags
     PMSF_NORMAL = &H0
     PMSF_MULTIPLE = &H1
     PMSF_DONT_STRIP_SPACES = &H10000
@@ -3692,7 +3778,7 @@ Private Type SHFILEOPSTRUCT
 Private Const InterpolationModeHighQualityBicubic = 7
 Private Const UnitPixel = 2
 
-Private Enum ucsb_DT_Flags
+Private Enum DT_Flags
     DT_BOTTOM = &H8&
     DT_CENTER = &H1&
     DT_LEFT = &H0&
@@ -3717,7 +3803,7 @@ Private Enum ucsb_DT_Flags
     DT_WORD_ELLIPSIS = &H40000
 End Enum
 
-Public Enum ucsb_StaticControlStyles
+Public Enum StaticControlStyles
     SS_LEFT = &H0
     SS_CENTER = &H1
     SS_RIGHT = &H2
@@ -3775,22 +3861,22 @@ Private Const ANTIALIASED_QUALITY As Byte = (4)
 Private Const CLEARTYPE_QUALITY As Byte = (5)
 Private Const CLEARTYPE_NATURAL_QUALITY As Byte = (6)
 
-Private Enum ucsb_FontWeight
-        FW_DONTCARE = 0
-        FW_THIN = 100
-        FW_EXTRALIGHT = 200
-        FW_LIGHT = 300
-        FW_NORMAL = 400
-        FW_MEDIUM = 500
-        FW_SEMIBOLD = 600
-        FW_BOLD = 700
-        FW_EXTRABOLD = 800
-        FW_HEAVY = 900
-        FW_ULTRALIGHT = FW_EXTRALIGHT
-        FW_REGULAR = FW_NORMAL
-        FW_DEMIBOLD = FW_SEMIBOLD
-        FW_ULTRABOLD = FW_EXTRABOLD
-        FW_BLACK = FW_HEAVY
+Private Enum FontWeight
+    FW_DONTCARE = 0
+    FW_THIN = 100
+    FW_EXTRALIGHT = 200
+    FW_LIGHT = 300
+    FW_NORMAL = 400
+    FW_MEDIUM = 500
+    FW_SEMIBOLD = 600
+    FW_BOLD = 700
+    FW_EXTRABOLD = 800
+    FW_HEAVY = 900
+    FW_ULTRALIGHT = FW_EXTRALIGHT
+    FW_REGULAR = FW_NORMAL
+    FW_DEMIBOLD = FW_SEMIBOLD
+    FW_ULTRABOLD = FW_EXTRABOLD
+    FW_BLACK = FW_HEAVY
 End Enum
 Private Const LF_FACESIZE = 32
 Private Type LOGFONT 'LOGFONTA, use with CreateFontIndirectA
@@ -3798,7 +3884,7 @@ Private Type LOGFONT 'LOGFONTA, use with CreateFontIndirectA
         LFWidth As Long
         LFEscapement As Long
         LFOrientation As Long
-        LFWeight As ucsb_FontWeight
+        LFWeight As FontWeight
         LFItalic As Byte
         LFUnderline As Byte
         LFStrikeOut As Byte
@@ -3814,7 +3900,7 @@ Private Type LOGFONTW
     LFWidth As Long
     LFEscapement As Long
     LFOrientation As Long
-    LFWeight As ucsb_FontWeight
+    LFWeight As FontWeight
     LFItalic As Byte
     LFUnderline As Byte
     LFStrikeOut As Byte
@@ -3920,7 +4006,7 @@ Private Const MK_RBUTTON = 2
 Private Const MK_SHIFT = 4
 Private Const MK_XBUTTON1 = &H20
 Private Const MK_XBUTTON2 = &H40
-Private Enum ucsb_SWP_Flags
+Private Enum SWP_Flags
     SWP_NOSIZE = &H1
     SWP_NOMOVE = &H2
     SWP_NOZORDER = &H4
@@ -3942,11 +4028,11 @@ Private Const HWND_TOP = 0&
 Private Const HWND_BOTTOM = 1&
 
 Private Type MINMAXINFO
-   ptReserved As Point
-   ptMaxSize As Point
-   ptMaxPosition As Point
-   ptMinTrackSize As Point
-   ptMaxTrackSize As Point
+   ptReserved As POINT
+   ptMaxSize As POINT
+   ptMaxPosition As POINT
+   ptMinTrackSize As POINT
+   ptMaxTrackSize As POINT
 End Type
 
 Private Const SPI_GETNONCLIENTMETRICS = &H29
@@ -3955,7 +4041,7 @@ Private SND_NAVIGATESTART As String
 Private SND_DEFAULTBEEP As String
 Private SND_CRITICAL As String
 
-Private Enum ucsb_StockObjects
+Private Enum StockObjects
     WHITE_BRUSH = 0
     LTGRAY_BRUSH = 1
     GRAY_BRUSH = 2
@@ -4014,7 +4100,7 @@ Private Const SB_SETTIPTEXTW  As Long = (WM_USER + 17)
 Private Const SB_GETICON      As Long = (WM_USER + 20)
 Private Const SB_SETBKCOLOR   As Long = (&H2000 + 1) 'CCM_SETBKCOLOR
 
-Private Enum ucsb_sbPanelStyleConstants
+Private Enum sbPanelStyleConstants
     sbNormal = 0
     sbNoBorders = SBT_NOBORDERS
     sbPopOut = SBT_POPOUT
@@ -4022,9 +4108,9 @@ End Enum
 
 Private Type MENUITEMINFOW
     cbSize As Long
-    fMask As ucsb_MII_Mask
-    fType As ucsb_MF_Type
-    fState As ucsb_MF_State
+    fMask As MII_Mask
+    fType As MF_Type
+    fState As MF_State
     wID As Long                       ' MIIM_ID
     hSubMenu As LongPtr            ' MIIM_SUBMENU
     hbmpChecked As LongPtr      ' MIIM_CHECKMARKS
@@ -4034,7 +4120,7 @@ Private Type MENUITEMINFOW
     cch As Long                       ' MIIM_TYPE
     hbmpItem As LongPtr
 End Type
-Private Enum ucsb_MII_Mask
+Private Enum MII_Mask
   MIIM_STATE = &H1
   MIIM_ID = &H2
   MIIM_SUBMENU = &H4
@@ -4044,7 +4130,7 @@ Private Enum ucsb_MII_Mask
   MIIM_BITMAP = &H80
   MIIM_STRING = &H40
 End Enum
-Private Enum ucsb_MenuFlags
+Private Enum MenuFlags
   MF_INSERT = &H0
   MF_ENABLED = &H0
   MF_UNCHECKED = &H0
@@ -4074,7 +4160,7 @@ Private Enum ucsb_MenuFlags
   MF_RIGHTJUSTIFY = &H4000
   MF_MOUSESELECT = &H8000&
 End Enum
-Private Enum ucsb_MF_Type
+Private Enum MF_Type
   MFT_STRING = MF_STRING
   MFT_BITMAP = MF_BITMAP
   MFT_MENUBARBREAK = MF_MENUBARBREAK
@@ -4085,7 +4171,7 @@ Private Enum ucsb_MF_Type
   MFT_RIGHTORDER = &H2000
   MFT_RIGHTJUSTIFY = MF_RIGHTJUSTIFY
 End Enum
-Private Enum ucsb_MF_State
+Private Enum MF_State
   MFS_GRAYED = &H3
   MFS_DISABLED = MFS_GRAYED
   MFS_CHECKED = MF_CHECKED
@@ -4104,7 +4190,7 @@ Private Type NMMOUSE
      hdr As NMHDR
      dwItemSpec As LongPtr
      dwItemData As LongPtr
-     PT As Point
+     PT As POINT
      dwHitInfo As LongPtr
 End Type
 
@@ -4145,7 +4231,7 @@ Private Const GDT_NONE                      As Long = 1
 Private Const GDTR_MAX                      As Long = &H2
 Private Const GDTR_MIN                      As Long = &H1
 
-Private Enum ucsb_DTSTYLES
+Private Enum DTSTYLES
     DTS_SHORTDATEFORMAT = &H0
     DTS_UPDOWN = &H1
     DTS_SHOWNONE = &H2
@@ -4294,7 +4380,7 @@ Private Const CBEM_GETITEM = CBEM_GETITEMA
 Private Const CBEM_SETUNICODEFORMAT = CCM_SETUNICODEFORMAT '8192 + 5
 Private Const CBEM_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT '8192 + 6
 Private Const CBEM_SETWINDOWTHEME = CCM_SETWINDOWTHEME '8192 + 11
-Private Enum ucsb_ComboBox_Styles
+Private Enum ComboBox_Styles
     CBS_SIMPLE = &H1&
     CBS_DROPDOWN = &H2&
     CBS_DROPDOWNLIST = &H3&
@@ -4339,7 +4425,7 @@ Private Const CBENF_RETURN = 2
 Private Const CBENF_ESCAPE = 3
 Private Const CBENF_DROPDOWN = 4
 
-Private Enum ucsb_CBEX_ExStyles
+Private Enum CBEX_ExStyles
     CBES_EX_NOEDITIMAGE = &H1
     CBES_EX_NOEDITIMAGEINDENT = &H2
     CBES_EX_PATHWORDBREAKPROC = &H4
@@ -4349,7 +4435,7 @@ Private Enum ucsb_CBEX_ExStyles
     CBES_EX_TEXTENDELLIPSIS = &H20
 End Enum
 Private Type COMBOBOXEXITEM
-    Mask As ucsb_COMBOBOXEXITEM_Mask
+    Mask As COMBOBOXEXITEM_Mask
     iItem As LongPtr
     pszText As String
     cchTextMax As Long
@@ -4360,7 +4446,7 @@ Private Type COMBOBOXEXITEM
     lParam As LongPtr
 End Type
 Private Type COMBOBOXEXITEMW
-    Mask As ucsb_COMBOBOXEXITEM_Mask
+    Mask As COMBOBOXEXITEM_Mask
     iItem As LongPtr
     pszText As LongPtr      '// LPCSTR
     cchTextMax As Long
@@ -4370,7 +4456,7 @@ Private Type COMBOBOXEXITEMW
     iIndent As Long
     lParam As LongPtr
 End Type
-Private Enum ucsb_COMBOBOXEXITEM_Mask
+Private Enum COMBOBOXEXITEM_Mask
     CBEIF_TEXT = &H1
     CBEIF_IMAGE = &H2
     CBEIF_SELECTEDIMAGE = &H4
@@ -4494,7 +4580,7 @@ Private Const CDIS_DROPHILITED = &H1000
 
 Private Const IDD_LISTVIEW = 101
 
-Private Enum ucsb_LVStyles
+Private Enum LVStyles
   LVS_ICON = &H0
   LVS_REPORT = &H1
   LVS_SMALLICON = &H2
@@ -4519,7 +4605,7 @@ Private Enum ucsb_LVStyles
   LVS_ALIGNMASK = &HC00
 End Enum   ' LVStyles
 
-Private Enum ucsb_LVStylesEx
+Private Enum LVStylesEx
   LVS_EX_GRIDLINES = &H1
   LVS_EX_SUBITEMIMAGES = &H2
   LVS_EX_CHECKBOXES = &H4
@@ -4750,7 +4836,7 @@ Private Const I_GROUPIDNONE As Long = (-2)
 Private Const LPSTR_TEXTCALLBACKA = (-1)
 Private Const LPSTR_TEXTCALLBACKW = (-1)
 
-Private Enum ucsb_LV_VIEW
+Private Enum LV_VIEW
     LV_VIEW_ICON = &H0
     LV_VIEW_DETAILS = &H1
     LV_VIEW_SMALLICON = &H2
@@ -4764,7 +4850,7 @@ Private Enum ucsb_LV_VIEW
     LV_VIEW_CUSTOM = &H100
 End Enum
 
-Private Enum ucsb_LVTVI_Flags
+Private Enum LVTVI_Flags
     LVTVIF_AUTOSIZE = &H0
     LVTVIF_FIXEDWIDTH = &H1
     LVTVIF_FIXEDHEIGHT = &H2
@@ -4772,7 +4858,7 @@ Private Enum ucsb_LVTVI_Flags
     '6.0
     LVTVIF_EXTENDED = &H4
 End Enum
-Private Enum ucsb_LVTVI_Mask
+Private Enum LVTVI_Mask
     LVTVIM_TILESIZE = &H1
     LVTVIM_COLUMNS = &H2
     LVTVIM_LABELMARGIN = &H4
@@ -5394,11 +5480,11 @@ Private Const LWS_USEVISUALSTYLE As Long = &H8 ' Unusable
 Private Const LWS_TRANSPARENT As Long = &H1 ' Unusable
 Private Type LHITTESTINFO
     PT As POINT
-    Item As lItem
+    Item As LITEM
 End Type
 Private Type NMLINK
     hdr As NMHDR
-    Item As lItem
+    Item As LITEM
 End Type
 
 Private Const EMF_CENTERED = &H1
@@ -5496,7 +5582,7 @@ Private Const HEADER_CLASS     As String = "SysHeader"
 
 'header info
 
-Private Enum ucsb_HeaderStyles
+Private Enum HeaderStyles
     HDS_HORZ = &H0
     HDS_BUTTONS = &H2
     HDS_HIDDEN = &H8
@@ -5509,7 +5595,7 @@ Private Enum ucsb_HeaderStyles
     HDS_NOSIZING = &H800
     HDS_OVERFLOW = &H1000
 End Enum
-Private Enum ucsb_HDMASK
+Private Enum HDMASK
     HDI_WIDTH = &H1
     HDI_HEIGHT = HDI_WIDTH
     HDI_TEXT = &H2
@@ -5525,7 +5611,7 @@ Private Enum ucsb_HDMASK
     HDI_STATE = &H200
 End Enum
 
-Private Enum ucsb_HeaderHitTestFlags
+Private Enum HeaderHitTestFlags
     HHT_NOWHERE = &H1
     HHT_ONHEADER = &H2
     HHT_ONDIVIDER = &H4
@@ -5543,13 +5629,13 @@ Private Enum ucsb_HeaderHitTestFlags
     HHT_ONDROPDOWN = &H2000
     HHT_ONOVERFLOW = &H4000
 End Enum
-Private Enum ucsb_HeaderImageListFlags
+Private Enum HeaderImageListFlags
     HDSIL_NORMAL = 0
     HDSIL_STATE = 1
 End Enum
 Private Type HDHITTESTINFO
     PT As POINT
-    Flags As ucsb_HeaderHitTestFlags
+    Flags As HeaderHitTestFlags
     iItem As Long
 End Type
 
@@ -5673,7 +5759,7 @@ Private Const HDIS_FOCUSED = &H1
 ' Header Item Type
 
 Private Type HDITEM
-    Mask As ucsb_HDMASK
+    Mask As HDMASK
     CXY As Long
     pszText As String
     hBm As LongPtr
@@ -5689,7 +5775,7 @@ Private Type HDITEM
     State As Long
 End Type
 Private Type HDITEMW
-    Mask As ucsb_HDMASK
+    Mask As HDMASK
     CXY As Long
     pszText As LongPtr
     hBm As LongPtr
@@ -5927,32 +6013,32 @@ If IID.Data1 = &H117 And IID.Data2 = &H0 And IID.Data3 = &H0 Then
         IOleIPAO_QueryInterface = S_OK
     Else
         This.OriginalIOleIPAO.QueryInterface(IID, pvObj)
-        IOleIPAO_QueryInterface = Err.LastHResult
+        IOleIPAO_QueryInterface = Err.LastHresult
     End If
 Else
     This.OriginalIOleIPAO.QueryInterface(IID, pvObj)
-    IOleIPAO_QueryInterface = Err.LastHResult
+    IOleIPAO_QueryInterface = Err.LastHresult
 End If
 End Function
 
 Private Function IOleIPAO_AddRef(ByRef This As VTableIPAODataStruct) As Long
 This.OriginalIOleIPAO.AddRef
-IOleIPAO_AddRef = Err.LastHResult
+IOleIPAO_AddRef = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_Release(ByRef This As VTableIPAODataStruct) As Long
 This.OriginalIOleIPAO.Release
-IOleIPAO_Release = Err.LastHResult
+IOleIPAO_Release = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_GetWindow(ByRef This As VTableIPAODataStruct, ByRef hWnd As LongPtr) As Long
 This.OriginalIOleIPAO.GetWindow(hWnd)
-IOleIPAO_GetWindow = Err.LastHResult
+IOleIPAO_GetWindow = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_ContextSensitiveHelp(ByRef This As VTableIPAODataStruct, ByVal EnterMode As Long) As Long
 This.OriginalIOleIPAO.ContextSensitiveHelp(EnterMode)
-IOleIPAO_ContextSensitiveHelp = Err.LastHResult
+IOleIPAO_ContextSensitiveHelp = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_TranslateAccelerator(ByRef This As VTableIPAODataStruct, ByRef Msg As MSG) As Long
@@ -5966,32 +6052,32 @@ IOleIPAO_TranslateAccelerator = S_OK
 This.IOleIPAO.TranslateAccelerator Handled, IOleIPAO_TranslateAccelerator, Msg.hWnd, Msg.message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
 If Handled = False Then
     This.OriginalIOleIPAO.TranslateAccelerator(VarPtr(Msg))
-    IOleIPAO_TranslateAccelerator = Err.LastHResult
+    IOleIPAO_TranslateAccelerator = Err.LastHresult
 End If
 Exit Function
 CATCH_EXCEPTION:
     This.OriginalIOleIPAO.TranslateAccelerator(VarPtr(Msg))
-    IOleIPAO_TranslateAccelerator = Err.LastHResult
+    IOleIPAO_TranslateAccelerator = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_OnFrameWindowActivate(ByRef This As VTableIPAODataStruct, ByVal Activate As Long) As Long
 This.OriginalIOleIPAO.OnFrameWindowActivate(Activate)
-IOleIPAO_OnFrameWindowActivate = Err.LastHResult
+IOleIPAO_OnFrameWindowActivate = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_OnDocWindowActivate(ByRef This As VTableIPAODataStruct, ByVal Activate As Long) As Long
 This.OriginalIOleIPAO.OnDocWindowActivate(Activate)
-IOleIPAO_OnDocWindowActivate = Err.LastHResult
+IOleIPAO_OnDocWindowActivate = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_ResizeBorder(ByRef This As VTableIPAODataStruct, ByRef RC As OLERECT, ByVal UIWindow As IOleInPlaceUIWindow, ByVal FrameWindow As Long) As Long
 This.OriginalIOleIPAO.ResizeBorder(VarPtr(RC), UIWindow, FrameWindow)
-IOleIPAO_ResizeBorder = Err.LastHResult
+IOleIPAO_ResizeBorder = Err.LastHresult
 End Function
 
 Private Function IOleIPAO_EnableModeless(ByRef This As VTableIPAODataStruct, ByVal Enable As Long) As Long
 This.OriginalIOleIPAO.EnableModeless(Enable)
-IOleIPAO_EnableModeless = Err.LastHResult
+IOleIPAO_EnableModeless = Err.LastHresult
 End Function
 
 
@@ -6058,7 +6144,7 @@ End If
 End Sub
 
 Public Property Get LogActive() As Boolean: LogActive = log_bActive: End Property
-[ Hidden ]
+[Hidden]
 Public Property Let LogActive(bVal As Boolean)
 If bVal <> log_bActive Then
     log_bActive = bVal
@@ -6318,7 +6404,7 @@ Private Sub IShellView_SaveViewState() Implements IShellView2.SaveViewState
 DebugAppend "Entry: IShellView_SaveViewState", 1111
 Err.ReturnHResult = E_NOTIMPL
 End Sub
-Private Sub IShellView_SelectItem(ByVal pidlItem As LongPtr, ByVal uFlags As SVSI_Flags) Implements IShellView2.SelectItem
+Private Sub IShellView_SelectItem(ByVal pidlItem As LongPtr, ByVal uFlags As SVSIF) Implements IShellView2.SelectItem
 DebugAppend "Entry: IShellView_SelectItem", 1111
 If pidlItem Then
     Dim lp As LongPtr
@@ -6363,7 +6449,7 @@ Else
     DebugAppend "ISV_SelectItem entered by no pidl", 1111
 End If
 End Sub
-Private Function IShellView_GetItemObject(ByVal uItem As SVGIO_Flags, riid As UUID) As LongPtr Implements IShellView2.GetItemObject
+Private Function IShellView_GetItemObject(ByVal uItem As SVGIO, riid As UUID) As LongPtr Implements IShellView2.GetItemObject
 DebugAppend "Entry: IShellView_GetItemObject", 1111
 Select Case uItem
     Case SVGIO_BACKGROUND
@@ -6430,7 +6516,7 @@ Private Sub IShellView2_GetView(pvid As UUID, ByVal uView As SV2GV_Flags) Implem
         nView = m_ViewMode
     End If
     Select Case nView
-    	Case SB_VIEW_ICON, SB_VIEW_MDICON, SB_VIEW_XLICON, SB_VIEW_THUMBNAIL, SB_VIEW_CUSTOM: pvid = VID_LargeIcons
+        Case SB_VIEW_ICON, SB_VIEW_MDICON, SB_VIEW_XLICON, SB_VIEW_THUMBNAIL, SB_VIEW_CUSTOM: pvid = VID_LargeIcons
         Case SB_VIEW_SMALLICON: pvid = VID_SmallIcons
         Case SB_VIEW_LIST: pvid = VID_List
         Case SB_VIEW_DETAILS: pvid = VID_Details
@@ -6442,7 +6528,7 @@ Private Sub IShellView2_HandleRename(ByVal pidlNew As LongPtr) Implements IShell
     Err.ReturnHResult = E_NOTIMPL
 End Sub
 
-Private Sub IShellView2_SelectItemAndPosition(ByVal pidlItem As LongPtr, ByVal uFlags As SVSI_Flags, pt As POINT) Implements IShellView2.SelectItemAndPosition
+Private Sub IShellView2_SelectItemAndPosition(ByVal pidlItem As LongPtr, ByVal uFlags As SVSIF, pt As POINT) Implements IShellView2.SelectItemAndPosition
     Dim idx As Long
     idx = LVFindItemByPidl(pidlItem)
     IFolderView2_SelectItem idx, uFlags
@@ -6608,7 +6694,7 @@ lp = CLng(GetLVItemlParam(hLVS, iItemIndex))
 If lp = -1 Then Exit Sub
 ppidl = LVEntries(lp).pidlRel
 End Sub
-Private Sub IFolderView2_ItemCount(ByVal uFlags As SVGIO_Flags, pcItems As Long) Implements IFolderView2.ItemCount
+Private Sub IFolderView2_ItemCount(ByVal uFlags As SVGIO, pcItems As Long) Implements IFolderView2.ItemCount
 DebugAppend "Entry: IFolderView2_ItemCount, Flags=" & uFlags, 1111
 If uFlags = SVGIO_SELECTION Then
     pcItems = CLng(SendMessage(hLVS, LVM_GETSELECTEDCOUNT, 0, ByVal 0))
@@ -6618,7 +6704,7 @@ Else
     pcItems = CLng(SendMessage(hLVS, LVM_GETITEMCOUNT, 0, ByVal 0))
 End If
 End Sub
-Private Sub IFolderView2_Items(ByVal uFlags As SVGIO_Flags, riid As UUID, ppv As LongPtr) Implements IFolderView2.Items
+Private Sub IFolderView2_Items(ByVal uFlags As SVGIO, riid As UUID, ppv As LongPtr) Implements IFolderView2.Items
 DebugAppend "Entry: IFolderView2_Items", 1111
 On Error GoTo e0
 If (uFlags And SVGIO_SELECTION) = SVGIO_SELECTION Then
@@ -6723,7 +6809,7 @@ Private Sub IFolderView2_GetAutoArrange() Implements IFolderView2.GetAutoArrange
 DebugAppend "Entry: IFolderView2_GetAutoArrange", 1111
 If Me.AutoArrange = False Then Err.ReturnHResult = S_FALSE
 End Sub
-Private Sub IFolderView2_SelectItem(ByVal iItem As Long, ByVal dwFlags As SVSI_Flags) Implements IFolderView2.SelectItem
+Private Sub IFolderView2_SelectItem(ByVal iItem As Long, ByVal dwFlags As SVSIF) Implements IFolderView2.SelectItem
 DebugAppend "Entry: IFolderView2_SelectItem", 1111
 Dim bDeselOthers As Boolean
 Dim bSel As Boolean
@@ -6748,7 +6834,7 @@ If (dwFlags And SVSI_SELECTIONMARK) = SVSI_SELECTIONMARK Then
     SendMessage hLVS, LVM_SETSELECTIONMARK, 0, ByVal iItem
 End If
 End Sub
-Private Sub IFolderView2_SelectAndPositionItems(ByVal cidl As Long, apidl As LongPtr, apt As POINT, ByVal dwFlags As SVSI_Flags) Implements IFolderView2.SelectAndPositionItems
+Private Sub IFolderView2_SelectAndPositionItems(ByVal cidl As Long, apidl As LongPtr, apt As POINT, ByVal dwFlags As SVSIF) Implements IFolderView2.SelectAndPositionItems
 DebugAppend "Entry: IFolderView2_SelectAndPositionItems", 1111
 On Error GoTo e0
 Dim pidlCur As LongPtr
@@ -6756,8 +6842,8 @@ Dim ptCur As POINT
 Dim i As Long
 Dim idx As Long
 For i = 0 To cidl - 1
-    CopyMemory pidlCur, ByVal VarPtr(apidl) + ((i - 1) * LenB(pidlCur)), LenB(pidlCur)
-    CopyMemory ptCur, ByVal VarPtr(apt) + ((i - 1) * 8), 8
+    CopyMemory pidlCur, ByVal PointerAdd(VarPtr(apidl), (i - 1) * LenB(pidlCur)), LenB(pidlCur)
+    CopyMemory ptCur, ByVal PointerAdd(VarPtr(apt), (i - 1) * 8), 8
     idx = LVFindItemByPidl(pidlCur)
     IFolderView2_SelectItem idx, dwFlags
     If (m_ViewMode = SB_VIEW_SMALLICON) Or (m_ViewMode = SB_VIEW_ICON) Or (m_ViewMode = SB_VIEW_MDICON) Or (m_ViewMode = SB_VIEW_XLICON) Then
@@ -6807,7 +6893,7 @@ If (siItem Is Nothing) = False Then
     If (pStore Is Nothing) = False Then
         Set ppcp = pStore
         If ppcp.IsPropertyWritable(VarPtr(propkey)) Then GoTo out 'Is S_OK if writable
-        Dim uAtr As SFGAO_Flags
+        Dim uAtr As SFGAOF
         siItem.GetAttributes SFGAO_READONLY Or SFGAO_SYSTEM, uAtr
         If ((uAtr And SFGAO_READONLY) = SFGAO_READONLY) Or ((uAtr And SFGAO_SYSTEM) = SFGAO_SYSTEM) Then GoTo Out
         'We should be able to write now
@@ -6860,7 +6946,7 @@ If idx >= 0 Then
     End If
     lCt = Header_GetItemCount(hLVSHdr)
     For i = 0 To UBound(sProps)
-    	sProp = Mid$(sProps(i), 6) 'String is prop:canonicalname
+        sProp = Mid$(sProps(i), 6) 'String is prop:canonicalname
         For j = 0 To lCt - 1
             lp = CLng(GetHDItemlParam(hLVSHdr, j))
             If uColData(lp).szSystemName = sProp Then
@@ -6908,7 +6994,7 @@ If idx >= 0 Then
     End If
     lCt = Header_GetItemCount(hLVSHdr)
     For i = 0 To UBound(sProps)
-    	sProp = Mid$(sProps(i), 6) 'String is prop:canonicalname
+        sProp = Mid$(sProps(i), 6) 'String is prop:canonicalname
         For j = 0 To lCt - 1
             lp = CLng(GetHDItemlParam(hLVSHdr, j))
             If uColData(lp).szSystemName = sProp Then
@@ -7168,7 +7254,7 @@ Else
     Set ppsia = siaSelected
 End If
 End Sub
-Private Sub IFolderView2_GetSelectionState(ByVal pidl As LongPtr, pdlFlags As SVSI_Flags)
+Private Sub IFolderView2_GetSelectionState(ByVal pidl As LongPtr, pdlFlags As SVSIF)
 DebugAppend "Entry: IFolderView2_GetSelectionState", 1111
 Dim idx As Long
 idx = LVFindItemByPidl(pidl)
@@ -7387,7 +7473,7 @@ Private Sub IFolderViewSettings_GetIconSize(puIconSize As Long) Implements IFold
     Dim himl As LongPtr
     Dim cy As Long
     Select Case m_ViewMode
-        	Case SB_VIEW_SMALLICON, SB_VIEW_LIST, SB_VIEW_DETAILS
+            Case SB_VIEW_SMALLICON, SB_VIEW_LIST, SB_VIEW_DETAILS
                 himl = SendMessage(hLVS, LVM_GETIMAGELIST, LVSIL_SMALL, ByVal 0)
                 ImageList_GetIconSize himl, puIconSize, cy
             Case Else
@@ -7463,7 +7549,7 @@ Dim pidlItem As LongPtr
 Dim sa1 As SAFEARRAY1D
 Dim pSA As Long
 
-CopyMemory ByVal VarPtr(pSA), ByVal (VarPtr(pvfi) + 8&), LenB(pidlItem) 'Offset 8 is where the data begins. Here, a pointer to the SAFEARRAY
+CopyMemory ByVal VarPtr(pSA), ByVal PointerAdd(VarPtr(pvfi), 8), LenB(pidlItem) 'Offset 8 is where the data begins. Here, a pointer to the SAFEARRAY
 CopyMemory ByVal VarPtr(sa1), ByVal pSA, LenB(sa1) 'We now have the full SAFEARRAY struct...
 pidlItem = sa1.pvData '...and pvData is our pidl.
 
@@ -7539,7 +7625,7 @@ DebugAppend "Entry: IWebBrowserApp_Document", 1111
 Set IWebBrowserApp_Document = Me
 End Property
 
-Private Property Get IWebBrowserApp_TopLevelContainer() As Integer
+Private Property Get IWebBrowserApp_TopLevelContainer() As Boolean
 DebugAppend "Entry: IWebBrowserApp_TopLevelContainer", 1111
 End Property
 
@@ -7595,7 +7681,7 @@ DebugAppend "Entry: IWebBrowserApp_LocationURL"
 IWebBrowserApp_LocationURL = m_sCurPath
 End Property
 
-Private Property Get IWebBrowserApp_Busy() As Integer
+Private Property Get IWebBrowserApp_Busy() As Boolean
 DebugAppend "Entry: IWebBrowserApp_Busy", 1111
 End Property
 
@@ -7636,22 +7722,22 @@ DebugAppend "Entry: IWebBrowserApp_Path", 1111
 IWebBrowserApp_Path = m_sCurPath
 End Property
 
-Private Property Get IWebBrowserApp_Visible() As Integer
+Private Property Get IWebBrowserApp_Visible() As Boolean
 DebugAppend "Entry: Get IWebBrowserApp_Visible", 1111
-If Extender.visible Then IWebBrowserApp_Visible = 1
+If Extender.visible Then IWebBrowserApp_Visible = True
 End Property
-Private Property Let IWebBrowserApp_Visible(ByVal Value As Integer)
+Private Property Let IWebBrowserApp_Visible(ByVal Value As Boolean)
 DebugAppend "Entry: Let IWebBrowserApp_Visible", 1111
-Extender.visible = (Value <> 0)
+Extender.visible = Value
 End Property
 
-Private Property Get IWebBrowserApp_StatusBar() As Integer
+Private Property Get IWebBrowserApp_StatusBar() As Boolean
 DebugAppend "Entry: Get IWebBrowserApp_StatusBar", 1111
-If Me.ShowStatusBar Then IWebBrowserApp_StatusBar = 1
+If Me.ShowStatusBar Then IWebBrowserApp_StatusBar = True
 End Property
-Private Property Let IWebBrowserApp_StatusBar(ByVal Value As Integer)
+Private Property Let IWebBrowserApp_StatusBar(ByVal Value As Boolean)
 DebugAppend "Entry: Let IWebBrowserApp_StatusBar", 1111
-Me.ShowStatusBar = (Value <> 0)
+Me.ShowStatusBar = Value
 End Property
 
 Private Property Get IWebBrowserApp_StatusText() As String
@@ -7672,17 +7758,17 @@ DebugAppend "Entry: LET IWebBrowserApp_Toolbar", 1111
 If Value Then Me.ListControlBox = True
 End Property
 
-Private Property Get IWebBrowserApp_MenuBar() As Integer
+Private Property Get IWebBrowserApp_MenuBar() As Boolean
 DebugAppend "Entry: IWebBrowserApp_MenuBar", 1111
 End Property
-Private Property Let IWebBrowserApp_MenuBar(ByVal Value As Integer)
+Private Property Let IWebBrowserApp_MenuBar(ByVal Value As Boolean)
 DebugAppend "Entry: IWebBrowserApp_MenuBar", 1111
 End Property
 
-Private Property Get IWebBrowserApp_Fullscreen() As Integer
+Private Property Get IWebBrowserApp_Fullscreen() As Boolean
 DebugAppend "Entry: IWebBrowserApp_Fullscreen", 1111
 End Property
-Private Property Let IWebBrowserApp_Fullscreen(ByVal bFullScreen As Integer)
+Private Property Let IWebBrowserApp_Fullscreen(ByVal bFullScreen As Boolean)
 DebugAppend "Entry: IWebBrowserApp_Fullscreen", 1111
 End Property
 #End Region
@@ -8090,6 +8176,7 @@ mDispSecZn = PropBag.ReadProperty("ShowSecurityZone", mDefDispSecZn)
 mNoScroll = PropBag.ReadProperty("NoScroll", mDefNoScroll)
 mShowFP = PropBag.ReadProperty("DropdownShowFullPath", mDefShowFP)
 mAlphaShadow = PropBag.ReadProperty("ListViewAlphaShadow", mDefAlphaShadow)
+mLVDB = PropBag.ReadProperty("ListViewDoubleBuffer", mDefLVDB)
 DebugAppend "ReadProp ViewMode=" & m_ViewMode
 pvCreate
     
@@ -8259,6 +8346,7 @@ PropBag.WriteProperty "ShowSecurityZone", mDispSecZn, mDefDispSecZn
 PropBag.WriteProperty "NoScroll", mNoScroll, mDefNoScroll
 PropBag.WriteProperty "DropdownShowFullPath", mShowFP, mDefShowFP
 PropBag.WriteProperty "ListViewAlphaShadow", mAlphaShadow, mDefAlphaShadow
+PropBag.WriteProperty "ListViewDoubleBuffer", mLVDB, mDefLVDB
 DebugAppend "UserControl_WriteProperties()", 1
     
 End Sub
@@ -8832,6 +8920,7 @@ mDispSecZn = mDefDispSecZn
 mNoScroll = mDefNoScroll
 mShowFP = mDefShowFP
 mAlphaShadow = mDefAlphaShadow
+mLVDB = mDefLVDB
 pvCreate
 End Sub
 
@@ -9616,7 +9705,7 @@ Private Sub IDropTarget_DragEnter(ByVal pDataObject As IDataObject, ByVal grfKey
         tFMT.cfFormat = CF_PREFERREDDROPEFFECT
         tFMT.dwAspect = DVASPECT_CONTENT
         tFMT.lIndex = -1
-        tFMT.TYMED = TYMED_HGLOBAL
+        tFMT.tymed = TYMED_HGLOBAL
     
         pDataObj.GetData tFMT, tSTG
         lpGlobal = GlobalLock(tSTG.data)
@@ -9961,6 +10050,23 @@ Static iid As UUID
  If (iid.Data1 = 0) Then Call DEFINE_UUID(iid, &H7B8A2D95, CInt(&HAC9), CInt(&H11D1), &H89, &H6C, &H0, &HC0, &H4F, &HB6, &HBF, &HC4)
  CLSID_InternetZoneManager = iid
 End Function
+Public Function CLSID_MyComputer() As UUID
+'{20D04FE0-3AEA-1069-A2D8-08002B30309D}
+Static iid As UUID
+ If (iid.Data1 = 0) Then Call DEFINE_UUID(iid, &H20D04FE0, CInt(&H3AEA), CInt(&H1069), &HA2, &HD8, &H08, &H00, &H2B, &H30, &H30, &H9D)
+ CLSID_MyComputer = iid
+End Function
+
+
+Private Function IsMyComputer(pItem As IUnknownUnrestricted) As BOOL
+    Dim pPersist As IPersist
+    Dim hr As Long = pItem.QueryInterface(IID_IPersist, pPersist)
+    If pPersist IsNot Nothing Then
+        Dim tGUID As UUID
+        pPersist.GetClassID tGUID
+        Return IsEqualGUID(tGUID, CLSID_MyComputer)
+    End If
+End Function
 
 Private Function dbg_lkuph(hw As LongPtr) As String
 Select Case hw
@@ -10029,7 +10135,7 @@ End Function
 Private Function ListView_SetBkColor(hWnd As LongPtr, clrBk As Long) As Boolean
   ListView_SetBkColor = SendMessage(hWnd, LVM_SETBKCOLOR, 0, ByVal clrBk)
 End Function
-Private Function ListView_SetView(hWnd As LongPtr, iView As ucsb_LV_VIEW) As LongPtr
+Private Function ListView_SetView(hWnd As LongPtr, iView As LV_VIEW) As LongPtr
   ListView_SetView = SendMessage(hWnd, LVM_SETVIEW, iView, ByVal 0&)
 End Function
 Private Function ListView_SetWorkAreas(hWnd As LongPtr, nWorkAreas As Long, prc() As RECT) As Boolean
@@ -10239,7 +10345,7 @@ End Function
 Private Function ListView_SetCheckState(hwndLV As LongPtr, i As Long, fCheck As Long) As LongPtr
 '#define ListView_SetCheckState(hwndLV, i, fCheck) \
 '  ListView_SetItemState(hwndLV, i, INDEXTOSTATEIMAGEMASK((fCheck)?2:1), LVIS_STATEIMAGEMASK)
-ListView_SetCheckState = ListView_SetItemState(hwndLV, i, IndexToStateImageMask(IIf(fCheck, 2, 1)), LVIS_STATEIMAGEMASK)
+ListView_SetCheckState = ListView_SetItemState(hwndLV, i, INDEXTOSTATEIMAGEMASK(IIf(fCheck, 2, 1)), LVIS_STATEIMAGEMASK)
 End Function
 
 Private Function ListView_GetItemCount(hWnd As LongPtr) As LongPtr
@@ -10375,7 +10481,7 @@ End Function
 
 
 
-Private Function ListView_SetExtendedStyle(hWnd As LongPtr, lST As ucsb_LVStylesEx) As LongPtr
+Private Function ListView_SetExtendedStyle(hWnd As LongPtr, lST As LVStylesEx) As LongPtr
 Dim lStyle As LongPtr
 
 lStyle = SendMessage(hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
@@ -10383,10 +10489,10 @@ lStyle = lStyle Or lST
 Call SendMessage(hWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, ByVal lStyle)
 
 End Function
-Private Function ListView_GetStyle(hWnd As LongPtr) As ucsb_LVStyles
+Private Function ListView_GetStyle(hWnd As LongPtr) As LVStyles
 ListView_GetStyle = CLng(GetWindowLong(hWnd, GWL_STYLE))
 End Function
-Private Function ListView_SetStyle(hWnd As LongPtr, dwStyle As ucsb_LVStyles) As LongPtr
+Private Function ListView_SetStyle(hWnd As LongPtr, dwStyle As LVStyles) As LongPtr
 ListView_SetStyle = SetWindowLong(hWnd, GWL_STYLE, dwStyle)
 End Function
 
@@ -10661,7 +10767,7 @@ End Function
 Private Function ListView_SetCheckStateEx(hwndLV As LongPtr, i As Long, nIndex As Long) As LongPtr
 '#define ListView_SetCheckState(hwndLV, i, fCheck) \
 '  ListView_SetItemState(hwndLV, i, INDEXTOSTATEIMAGEMASK((fCheck)?2:1), LVIS_STATEIMAGEMASK)
-ListView_SetCheckStateEx = ListView_SetItemState(hwndLV, i, IndexToStateImageMask(nIndex), LVIS_STATEIMAGEMASK)
+ListView_SetCheckStateEx = ListView_SetItemState(hwndLV, i, INDEXTOSTATEIMAGEMASK(nIndex), LVIS_STATEIMAGEMASK)
 End Function
 
 
@@ -10831,25 +10937,7 @@ Private Function GetHDItemlParam(hwndHD As LongPtr, iItem As Long) As LongPtr
   GetHDItemlParam = tHDI.lParam
 End Function
 
-Private Function MAKELPARAM(wLow As Long, wHigh As Long) As LongPtr
-  MAKELPARAM = MakeLong(wLow, wHigh)
-End Function
-Private Function MakeLong(wLow As Long, wHigh As Long) As Long
-  MakeLong = LoWord(wLow) Or (&H10000 * LoWord(wHigh))
-End Function
-Private Function IndexToStateImageMask(ByVal Index As Long) As Long
-IndexToStateImageMask = Index * (2 ^ 12)
-End Function
-Private Function LoWord(ByVal DWord As Long) As Integer
-If DWord And &H8000& Then
-    LoWord = DWord Or &HFFFF0000
-Else
-    LoWord = DWord And &HFFFF&
-End If
-End Function
-Private Function HiWord(ByVal DWord As Long) As Integer
-HiWord = (DWord And &HFFFF0000) \ &H10000
-End Function
+
 
 Private Function LPWSTRtoStr(lPtr As LongPtr, Optional ByVal fFree As Boolean = True) As String
 SysReAllocString VarPtr(LPWSTRtoStr), lPtr
@@ -10892,7 +10980,7 @@ Else
             Exit Sub
         End If
     End If
-    Dim lAtr As SFGAO_Flags
+    Dim lAtr As SFGAOF
     psi.GetAttributes SFGAO_FOLDER Or SFGAO_STREAM, lAtr
     If m_BrowseZip Then
         If ((lAtr And SFGAO_FOLDER) = SFGAO_FOLDER) Then 'And ((lAtr And SFGAO_STREAM) = 0) Then '
@@ -10927,11 +11015,11 @@ End Sub
     Public Property Get BrowserStartLastPath() As Boolean: BrowserStartLastPath = mStartLast: End Property
     Attribute BrowserStartLastPath.VB_Description = "On startup, navigate to the last directory from the previous session. Note: BrowserStartBlank will override this if set to True."
     Public Property Let BrowserStartLastPath(bVal As Boolean): mStartLast = bVal: End Property
-    [ Hidden ]
+    [Hidden]
     Public Property Let DPIScaleX(Value As Single): m_ScaleX = Value: End Property
     Public Property Get DPIScaleX() As Single: DPIScaleX = m_ScaleX: End Property
     Attribute DPIScaleX.VB_MemberFlags = "400"
-    [ Hidden ]
+    [Hidden]
     Public Property Let DPIScaleY(Value As Single): m_ScaleY = Value: End Property
     Public Property Get DPIScaleY() As Single: DPIScaleY = m_ScaleY: End Property
     Attribute DPIScaleY.VB_MemberFlags = "400"
@@ -10948,7 +11036,7 @@ End Sub
     Public Property Let ShellTreeInLayout(bVal As Boolean): m_ShellTree = bVal: End Property
     Public Property Get ShellTreeStatus() As Boolean: ShellTreeStatus = mShellTreeVis: End Property
     Attribute ShellTreeStatus.VB_MemberFlags = "400"
-    [ Hidden ]
+    [Hidden]
     Public Property Let ShellTreeStatus(bVisible As Boolean): mShellTreeVis = bVisible: End Property
     Public Property Get CustomRoot() As String: CustomRoot = mCustomRoot: End Property
     Attribute CustomRoot.VB_Description = "Set a custom root for the directory dropdown. Leave blank to disable-- then the Desktop will be the root, or Computer if the ComputerAsRoot option is enabled."
@@ -11011,7 +11099,7 @@ End Sub
             Dim siItem As IShellItem
             Dim i As Long
             Dim li As Long
-            Dim lAtr As SFGAO_Flags
+            Dim lAtr As SFGAOF
             Dim hr As Long
             If InStr(sPath, "%") Then
                 sPath = ExpandEnvVars(sPath)
@@ -11109,13 +11197,13 @@ End Sub
     End Property
     Public Property Get BrowserPathPidl() As LongPtr: BrowserPathPidl = pidlFQCur: End Property
     Attribute BrowserPathPidl.VB_MemberFlags = "400"
-    [ Hidden ]
+    [Hidden]
     Public Property Let BrowserPathPidl(pidlFQ As LongPtr)
     If Ambient.UserMode Then
         If bBlockLoad = True Then Exit Property
         Dim siItem As IShellItem
         Dim lpPath As LongPtr, sPath As String
-        Dim lAtr As SFGAO_Flags
+        Dim lAtr As SFGAOF
         
         SHCreateItemFromIDList pidlFQ, IID_IShellItem, siItem
         If (siItem Is Nothing) = False Then
@@ -11173,7 +11261,7 @@ End Sub
     End Property
     Public Property Get BrowserPathItem() As IShellItem: Set BrowserPathItem = siCurPath: End Property
     Attribute BrowserPathItem.VB_MemberFlags = "400"
-    [ Hidden ]
+    [Hidden]
     Public Property Let BrowserPathItem(pItem As IShellItem): BrowserOpenItem pItem: End Property
     Public Property Get HighPerformanceMode() As Boolean: HighPerformanceMode = mHighPerfMode: End Property
     Attribute HighPerformanceMode.VB_Description = "Use low-level APIs to load folders as quickly as possible. Only works on standard file system locations on local disks. Virtual locations, some special folders, and network locations are not supported. Will not be used if ColumnPreload is True. "
@@ -11182,7 +11270,7 @@ End Sub
     Attribute MultiSelect.VB_Description = "Sets whether more than one file can be selected in the browser."
     Public Property Let MultiSelect(bVal As Boolean)
     If bVal <> m_MultiSelect Then
-        Dim dwStyle As ucsb_LVStyles
+        Dim dwStyle As LVStyles
         dwStyle = CLng(GetWindowLong(hLVS, GWL_STYLE))
         If bVal Then
             dwStyle = dwStyle And Not LVS_SINGLESEL
@@ -11198,7 +11286,7 @@ End Sub
     Public Property Let AllowRename(bVal As Boolean)
     If bVal <> m_AllowRename Then
         m_AllowRename = bVal
-        Dim dwStyle As ucsb_LVStyles
+        Dim dwStyle As LVStyles
         dwStyle = CLng(GetWindowLong(hLVS, GWL_STYLE))
         If m_AllowRename Then
             dwStyle = dwStyle Or LVS_EDITLABELS
@@ -11213,7 +11301,7 @@ End Sub
     Public Property Let AlignTop(bVal As Boolean)
     If mAlignTop <> bVal Then
         mAlignTop = bVal
-        Dim dwStyle As ucsb_LVStyles
+        Dim dwStyle As LVStyles
         dwStyle = CLng(GetWindowLong(hLVS, GWL_STYLE))
         If mAlignTop Then
             dwStyle = dwStyle And Not LVS_ALIGNLEFT
@@ -11230,7 +11318,7 @@ End Sub
     Public Property Let NoLabelWrap(bVal As Boolean)
     If mNoLblWrap <> bVal Then
         mNoLblWrap = bVal
-        Dim dwStyle As ucsb_LVStyles
+        Dim dwStyle As LVStyles
         dwStyle = CLng(GetWindowLong(hLVS, GWL_STYLE))
         If mNoLblWrap Then
             dwStyle = dwStyle Or LVS_NOLABELWRAP
@@ -11245,7 +11333,7 @@ End Sub
     Public Property Let ShowSelAlways(bVal As Boolean)
     If mShowSelAlw <> bVal Then
         mShowSelAlw = bVal
-        Dim dwStyle As ucsb_LVStyles
+        Dim dwStyle As LVStyles
         dwStyle = CLng(GetWindowLong(hLVS, GWL_STYLE))
         If mShowSelAlw Then
             dwStyle = dwStyle Or LVS_SHOWSELALWAYS
@@ -11260,7 +11348,7 @@ End Sub
     Public Property Let AutoArrange(bVal As Boolean)
     If mAutoArr <> bVal Then
         mAutoArr = bVal
-        Dim dwStyle As ucsb_LVStyles
+        Dim dwStyle As LVStyles
         dwStyle = CLng(GetWindowLong(hLVS, GWL_STYLE))
         If mAutoArr Then
             dwStyle = dwStyle Or LVS_AUTOARRANGE
@@ -11449,7 +11537,7 @@ End Sub
     Attribute AutosizeColumns.VB_Description = "If enabled, sizes columns to fit in the current ListView width."
     Public Property Let AutosizeColumns(bVal As Boolean)
     If bVal <> m_AutoSzCol Then
-        Dim dwEXS As ucsb_LVStylesEx
+        Dim dwEXS As LVStylesEx
         dwEXS = CLng(SendMessage(hLVS, LVM_GETEXTENDEDLISTVIEWSTYLE, 0&, ByVal 0&))
         If bVal Then
             dwEXS = dwEXS Or LVS_EX_AUTOSIZECOLUMNS
@@ -11613,7 +11701,7 @@ End Sub
     If bVal <> m_Checkboxes Then
         m_Checkboxes = bVal
         If hLVS <> 0& Then
-            Dim dwStyle As ucsb_HeaderStyles
+            Dim dwStyle As HeaderStyles
             dwStyle = CLng(GetWindowLong(hLVSHdr, GWL_STYLE))
             Dim HDI As HDITEMW
             If m_Checkboxes = True Then
@@ -11708,7 +11796,7 @@ End Sub
         StatusBarHeight = 0&
     End If
     End Property
-    [ Hidden ]
+    [Hidden]
     Public Property Let StatusBarHeight(cy As Long)
     cyStatusBar = cy
     SendMessage m_hStatusBar, SB_SETMINHEIGHT, cyStatusBar, ByVal 0&
@@ -12217,7 +12305,7 @@ End Sub
     End Property
     Public Property Get Bookmarks() As String: Bookmarks = m_Bookmarks: End Property
     Attribute Bookmarks.VB_MemberFlags = "400"
-    [ Hidden ]
+    [Hidden]
     Public Property Let Bookmarks(sBkmSet As String)
     m_Bookmarks = sBkmSet
     SaveSetting mRegDataName, "UserData", "Bookmarks", m_Bookmarks
@@ -12227,7 +12315,7 @@ End Sub
     Public Property Let SpecialFoldersInBookmarks(bVal As Boolean): mSFinBKM = bVal: End Property
     Public Property Get MaxHistoryDisplayed() As Long: MaxHistoryDisplayed = mMaxHist: End Property
     Attribute MaxHistoryDisplayed.VB_Description = "The maximum number of history entries displayed in the back/forward history menu."
-    [ Description ("The maximum number of history entries displayed in the back/forward history menu.") ]
+    [Description("The maximum number of history entries displayed in the back/forward history menu.")]
     Public Property Let MaxHistoryDisplayed(lVal As Long): mMaxHist = lVal: End Property
     Public Property Get ShowFooterAfterSearch() As Boolean: ShowFooterAfterSearch = mFtrPostSearch: End Property
     Attribute ShowFooterAfterSearch.VB_Description = "Automatically display a footer bar after a search is completed, with options to repeat the search in several other places."
@@ -12313,7 +12401,7 @@ End Sub
         PreviewPaneWidth = 0&
     End If
     End Property
-    [ Hidden ]
+    [Hidden]
     Public Property Let PreviewPaneWidth(cx As Long)
     '(note: there's no Let for height, just adjust the usercontrol height to change that)
     'easiest way: mimic the sizer move
@@ -12340,7 +12428,7 @@ End Sub
     End Property
     Public Property Get PreviewPaneWidthLocked() As Boolean: PreviewPaneWidthLocked = bPvLockCX: End Property
     Attribute PreviewPaneWidthLocked.VB_MemberFlags = "400"
-    [ Hidden ]
+    [Hidden]
     Public Property Let PreviewPaneWidthLocked(bVal As Boolean)
     If bVal = False Then
         bPvLockCX = False
@@ -12390,7 +12478,7 @@ End Sub
         DetailsPaneHeight = 0&
     End If
     End Property
-    [ Hidden ]
+    [Hidden]
     Public Property Let DetailsPaneHeight(cy As Long)
     If m_DtPane Then
         bSMove = True
@@ -12406,7 +12494,7 @@ End Sub
     End Property
     Public Property Get DetailsPaneHeightLocked() As Boolean: DetailsPaneHeightLocked = bDtLockCY: End Property
     Attribute DetailsPaneHeightLocked.VB_MemberFlags = "400"
-    [ Hidden ]
+    [Hidden]
     Public Property Let DetailsPaneHeightLocked(bVal As Boolean)
     If bVal = False Then
         bDtLockCY = False
@@ -12519,7 +12607,7 @@ End Sub
     Public Property Let AllowSorting(bVal As Boolean)
     If bVal = m_AllowSorting Then Exit Property
     m_AllowSorting = bVal
-    Dim hdrStyle As ucsb_HeaderStyles
+    Dim hdrStyle As HeaderStyles
     hdrStyle = CLng(GetWindowLong(hLVSHdr, GWL_STYLE))
     If m_AllowSorting Then
         hdrStyle = hdrStyle Or HDS_BUTTONS
@@ -12539,7 +12627,7 @@ End Sub
     Public Property Let HeaderNoSizing(bVal As Boolean)
     If bVal = m_NoHdrSize Then Exit Property
     m_NoHdrSize = bVal
-    Dim hdrStyle As ucsb_HeaderStyles
+    Dim hdrStyle As HeaderStyles
     hdrStyle = CLng(GetWindowLong(hLVSHdr, GWL_STYLE))
     If m_NoHdrSize Then
         hdrStyle = hdrStyle Or HDS_NOSIZING
@@ -12594,7 +12682,7 @@ End Sub
     Attribute DropdownShowFullPath.VB_Description = "Show the full path in the folder dropdown."
     Public Property Let DropDownShowFullPath(nVal As ComboPathOptions)
     If nVal <> mShowFP Then
-    	mShowFP = nVal
+        mShowFP = nVal
         If mShowFP = SBCPO_UseExplorer Then
             mFullPath = mExpFullPath
         Else
@@ -12630,9 +12718,9 @@ End Sub
     Attribute HideColumnHeader.VB_Description = "Hide the column header when the file list is in Details view."
     Public Property Let HideColumnHeader(bVal As Boolean)
     m_HideColumnHeader = bVal
-    Dim dwStyle As ucsb_LVStyles
+    Dim dwStyle As LVStyles
     dwStyle = CLng(GetWindowLong(hLVS, GWL_STYLE))
-    Dim dwHdrS As ucsb_HeaderStyles
+    Dim dwHdrS As HeaderStyles
     dwHdrS = CLng(GetWindowLong(hLVSHdr, GWL_STYLE))
     
     DebugAppend "HideColumnHeader style present=" & (dwHdrS And HDS_HIDDEN)
@@ -12649,7 +12737,7 @@ End Sub
     Public Property Get StatusText() As String: StatusText = mStatusText: End Property
     Attribute StatusText.VB_Description = "The current text of the status bar."
     Attribute StatusText.VB_MemberFlags = "400"
-    [ Hidden ]
+    [Hidden]
     Public Property Let StatusText(sText As String): UpdateStatus sText: End Property
     Public Property Get StatusTextStart() As String: StatusTextStart = mDefStatusText: End Property
     Attribute StatusTextStart.VB_Description = "Display a startup message in the Status Bar."
@@ -12673,7 +12761,7 @@ End Sub
     Attribute SelectedFile.VB_MemberFlags = "400"
     SelectedFile = tSelectedFile.sName
     End Property
-    [ Hidden ]
+    [Hidden]
     Public Property Let SelectedFile(sName As String)
     Dim i As Long
     ' Dim lp As Long
@@ -12710,7 +12798,7 @@ End Sub
     Public Property Get SelectedFiles() As Variant
     SelectedFiles = sSelectedFileNames
     End Property
-    [ Hidden ]
+    [Hidden]
     Public Property Let SelectedFiles(sNames As Variant)
     Dim i As Long
     'Dim lp As Long
@@ -12742,7 +12830,7 @@ End Sub
     Public Property Get SelectedColumn() As Long: SelectedColumn = CLng(SendMessage(hLVS, LVM_GETSELECTEDCOLUMN, 0, ByVal 0&)): End Property
     Attribute SelectedColumn.VB_Description = "Set the active column."
     Attribute SelectedColumn.VB_MemberFlags = "400"
-    [ Hidden ]
+    [Hidden]
     Public Property Let SelectedColumn(ByVal lVal As Long)
     If (PropPicture Is Nothing) = False Then
      If PropPictureAlignment = SBPicAlignTile And PropPictureWatermark = False Then Exit Property
@@ -12766,7 +12854,7 @@ End Sub
     Public Property Let HeaderHotTracking(bVal As Boolean)
     If m_HdrHotTrack <> bVal Then
         m_HdrHotTrack = bVal
-        Dim dwStyle As ucsb_HeaderStyles
+        Dim dwStyle As HeaderStyles
         dwStyle = CLng(GetWindowLong(hLVSHdr, GWL_STYLE))
         If m_HdrHotTrack Then
             dwStyle = dwStyle Or HDS_HOTTRACK
@@ -12781,7 +12869,7 @@ End Sub
     Public Property Let HeaderOverflowButton(bVal As Boolean)
     If m_HdrOverflow <> bVal Then
         m_HdrOverflow = bVal
-        Dim dwStyle As ucsb_HeaderStyles
+        Dim dwStyle As HeaderStyles
         dwStyle = CLng(GetWindowLong(hLVSHdr, GWL_STYLE))
         If m_HdrOverflow Then
             dwStyle = dwStyle Or HDS_OVERFLOW
@@ -12796,7 +12884,7 @@ End Sub
     Public Property Let FilterBar(bVal As Boolean)
     If bVal <> m_FilterBar Then
         m_FilterBar = bVal
-        Dim dwStyle As ucsb_HeaderStyles
+        Dim dwStyle As HeaderStyles
         dwStyle = CLng(GetWindowLong(hLVSHdr, GWL_STYLE))
         If m_FilterBar Then
             dwStyle = dwStyle Or HDS_FILTERBAR
@@ -12886,12 +12974,24 @@ End Sub
         End If
     End If
     End Property
+    Public Property Get ListViewDoubleBuffer() As Boolean: ListViewDoubleBuffer = mLVDB: End Property
+    Attribute ListViewDoubleBuffer.VB_Description = "Apply the LVS_EX_DOUBLEBUFFER style."
+    Public Property Let ListViewDoubleBuffer(bVal As Boolean)
+    If mLVDB <> bVal Then
+        mLVDB = bVal
+        If mLVDB Then
+            SendMessage hLVS, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_DOUBLEBUFFER, ByVal LVS_EX_DOUBLEBUFFER
+        Else
+            SendMessage hLVS, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_DOUBLEBUFFER, ByVal 0&
+        End If
+    End If
+    End Property
     Public Property Get NoScroll() As Boolean: NoScroll = mNoScroll: End Property
     Attribute NoScroll.VB_Description = "Sets the LvS_NOSCROLL style."
     Public Property Let NoScroll(bVal As Boolean)
     If mNoScroll <> bVal Then
         mNoScroll = bVal
-        Dim dwStyle As ucsb_LVStyles
+        Dim dwStyle As LVStyles
         dwStyle = CLng(GetWindowLong(hLVS, GWL_STYLE))
         If mNoScroll Then
             dwStyle = dwStyle Or LVS_NOSCROLL
@@ -14596,7 +14696,7 @@ End Sub
 
 
     Private Sub chkColFilter_Click() Handles chkColFilter.Click
-    Dim dwHdrStyle As ucsb_HeaderStyles
+    Dim dwHdrStyle As HeaderStyles
     dwHdrStyle = CLng(GetWindowLong(hLVCHdr, GWL_STYLE))
     If chkColFilter.Value = vbChecked Then
         dwHdrStyle = dwHdrStyle Or HDS_FILTERBAR
@@ -15634,7 +15734,7 @@ End Sub
     Call CoTaskMemFree(pKFD.pszSecurity)
     End Sub
     
-    Private Function AddShellItemToMenu(hMenu As LongPtr, psi As IShellItem, id As Long, nPos As Long, Optional dwState As ucsb_MF_State = -1&) As LongPtr
+    Private Function AddShellItemToMenu(hMenu As LongPtr, psi As IShellItem, id As Long, nPos As Long, Optional dwState As MF_State = -1&) As LongPtr
     Dim lpCap As LongPtr, sCap As String
     Dim mii As MENUITEMINFOW
     Dim hIcon As LongPtr
@@ -16124,7 +16224,7 @@ End Sub
     Dim tFMT As FORMATETC
     With tFMT
         .cfFormat = lFmt
-        .TYMED = ty
+        .tymed = ty
         .dwAspect = dva
         .lIndex = lIndex
         .pDVTARGETDEVICE = lDev
@@ -16149,12 +16249,12 @@ End Sub
         Call CopyMemory(ByVal lpGlobal, nVal, LenB(nVal))
         DebugAppend "adddil.copymem"
         Call GlobalUnlock(hGlobal)
-        sTg.TYMED = TYMED_HGLOBAL
+        sTg.tymed = TYMED_HGLOBAL
         sTg.data = lpGlobal
         fmt.cfFormat = CF_PREFERREDDROPEFFECT
         fmt.dwAspect = DVASPECT_CONTENT
         fmt.lIndex = -1
-        fmt.TYMED = TYMED_HGLOBAL
+        fmt.tymed = TYMED_HGLOBAL
         ido.SetData fmt, sTg, 1
     Else
         DebugAppend "failed to get hglobal"
@@ -16195,14 +16295,14 @@ End Sub
         Call CopyMemory(ByVal lpGlobal, tDD, LenB(tDD))
         Call GlobalUnlock(hGlobal)
         
-        sTg.TYMED = TYMED_HGLOBAL
+        sTg.tymed = TYMED_HGLOBAL
         sTg.data = lpGlobal
          
         
         fmt.cfFormat = CF_DROPDESCRIPTION
         fmt.dwAspect = DVASPECT_CONTENT
         fmt.lIndex = -1
-        fmt.TYMED = TYMED_HGLOBAL
+        fmt.tymed = TYMED_HGLOBAL
             
         ido.SetData fmt, sTg, 1
     End If
@@ -16850,7 +16950,7 @@ End Sub
         DebugAppend "LVFindItemByPidl.Error->" & Err.Description & ",0x" & Hex$(Err.Number)
     End Function
     
-    Private Sub ShowBalloonTipEx(hWnd As LongPtr, sTitle As String, sText As String, btIcon As ucsb_BalloonTipIconConstants)
+    Private Sub ShowBalloonTipEx(hWnd As LongPtr, sTitle As String, sText As String, btIcon As BalloonTipIconConstants)
     Dim lr As LongPtr
     Dim tEBT As EDITBALLOONTIP
     tEBT.cbStruct = LenB(tEBT)
@@ -16901,7 +17001,7 @@ End Sub
         tFMT.cfFormat = CF_UNICODETEXT
         tFMT.dwAspect = DVASPECT_CONTENT
         tFMT.lIndex = -1
-        tFMT.TYMED = TYMED_HGLOBAL
+        tFMT.tymed = TYMED_HGLOBAL
     
         pdo.GetData tFMT, tSTG
         lpText = GlobalLock(tSTG.data)
@@ -16912,7 +17012,7 @@ End Sub
         tFMT.cfFormat = CF_TEXT
         tFMT.dwAspect = DVASPECT_CONTENT
         tFMT.lIndex = -1
-        tFMT.TYMED = TYMED_HGLOBAL
+        tFMT.tymed = TYMED_HGLOBAL
     
         pdo.GetData tFMT, tSTG
         lpText = GlobalLock(tSTG.data)
@@ -16927,7 +17027,7 @@ End Sub
     '</EhFooter>
     End Function
     
-    Private Function SimpleDialog(sMessage As String, Optional dwBtn As ucsb_TDBUTTONS = TDCBF_OK_BUTTON, Optional sTitle As String, Optional sMainText As String, Optional dwIco As ucsb_TDICONS, Optional hWndOwner As LongPtr, Optional hInst As LongPtr) As ucsb_TDBUTTONS
+    Private Function SimpleDialog(sMessage As String, Optional dwBtn As TDBUTTONS = TDCBF_OK_BUTTON, Optional sTitle As String, Optional sMainText As String, Optional dwIco As TDICONS, Optional hWndOwner As LongPtr, Optional hInst As LongPtr) As TDBUTTONS
     Dim dwIcon As Long
     Dim pnButton As Long
         
@@ -17873,7 +17973,7 @@ End Sub
         SHCreateItemFromIDList pidl, IID_IShellItem, siFocus
         If pidl Then CoTaskMemFree pidl
     End If
-    Dim uAtr As SFGAO_Flags
+    Dim uAtr As SFGAOF
     siFocus.GetAttributes SFGAO_CAPABILITYMASK Or SFGAO_CONTENTSMASK Or SFGAO_DISPLAYATTRMASK Or SFGAO_STORAGECAPMASK Or SFGAO_SYSTEM, uAtr
     DebugAppend "Attrib=" & dbg_sfgao_tostring(uAtr)
     DebugAppend "LVSetSelection file=" & LVEntries(lp).sName & ",sType=" & LVEntries(lp).sType & ",bFolder=" & LVEntries(lp).bFolder
@@ -18407,7 +18507,7 @@ End Sub
     Private Function GetShellItemFileName(siItem As IShellItem, dwType As SIGDN) As String
     'A more robust alternative to IShellItem.GetDisplayName, which fails with at least fonts, if not more
     Dim lpPath As LongPtr
-    Dim uAtr As SFGAO_Flags
+    Dim uAtr As SFGAOF
     siItem.GetAttributes SFGAO_CAPABILITYMASK Or SFGAO_CONTENTSMASK Or SFGAO_DISPLAYATTRMASK Or SFGAO_STORAGECAPMASK, uAtr
     If (((uAtr And SFGAO_FILESYSTEM) = SFGAO_FILESYSTEM) Or ((uAtr And SFGAO_STREAM) = SFGAO_STREAM) Or ((uAtr And SFGAO_FOLDER) = SFGAO_FOLDER)) Or (dwType = SIGDN_NORMALDISPLAY) Then 'Normal file or type, no issues
         siItem.GetDisplayName dwType, lpPath
@@ -18437,7 +18537,7 @@ End Sub
             siItem.BindToHandler 0&, BHID_DataObject, IID_IDataObject, pdo
             Dim tSTG As STGMEDIUM, tFMT As FORMATETC
             tFMT.cfFormat = CF_HDROP
-            tFMT.TYMED = TYMED_HGLOBAL
+            tFMT.tymed = TYMED_HGLOBAL
             tFMT.dwAspect = DVASPECT_CONTENT
             tFMT.lIndex = -1
             
@@ -18739,7 +18839,7 @@ End Sub
         DebugAppend "RegisterCurPath->RegisteredPending, lPathRegCookie=" & lPathRegCookie
         pWindow.Register Me, CLng(hLVS), SWC_BROWSER, lPathRegCookie
         bPathRegd = True
-        DebugAppend "RegisterCurPath->lPathRegCookie=" & lPathRegCookie & ",hr=" & Err.LastHResult, 1111
+        DebugAppend "RegisterCurPath->lPathRegCookie=" & lPathRegCookie & ",hr=" & Err.LastHresult, 1111
         Exit Sub
     e0:
         DebugAppend "RegisterCurPath.Error->" & Err.Description & ", 0x" & Hex$(Err.Number), 1111
@@ -18823,7 +18923,7 @@ End Sub
                 End If
                 
             End If
-            Dim dwAtr As SFGAO_Flags
+            Dim dwAtr As SFGAOF
             If (siLink Is Nothing) = False Then
                 siLink.GetAttributes SFGAO_FOLDER Or SFGAO_STREAM, dwAtr
                 If (((dwAtr And SFGAO_FOLDER) = SFGAO_FOLDER) And (m_BrowseZip = True)) Or (((dwAtr And SFGAO_FOLDER) = SFGAO_FOLDER) And ((dwAtr And SFGAO_STREAM) = 0) And (m_BrowseZip = False)) Then
@@ -19478,8 +19578,8 @@ End Sub
     'End Function
     
     Private Function pvCreateColListView() As Long
-    Dim dwStyle As ucsb_LVStyles
-    Dim dwStyleEx As ucsb_LVStylesEx
+    Dim dwStyle As LVStyles
+    Dim dwStyleEx As LVStylesEx
     Dim prc As RECT
     
     dwStyle = LVS_AUTOARRANGE Or LVS_SHOWSELALWAYS Or LVS_ALIGNTOP Or LVS_REPORT Or _
@@ -19501,7 +19601,7 @@ End Sub
     
     hLVCHdr = SendMessage(hLVC, LVM_GETHEADER, 0&, ByVal 0&)
     
-    'Dim dwHdrStyle As ucsb_HeaderStyles
+    'Dim dwHdrStyle As HeaderStyles
     'dwHdrStyle = GetWindowLong(hLVCHdr, GWL_STYLE)
     'dwHdrStyle = dwHdrStyle Or HDS_FILTERBAR
     'Call SetWindowLong(hLVCHdr, GWL_STYLE, dwHdrStyle)
@@ -19836,7 +19936,7 @@ End Sub
      End If
      
     
-    '  Dim dwCallback As ucsb_LVITEM_state
+    '  Dim dwCallback As LVITEM_state
     '   If bUseChecks Then
     '     dwCallback = LVIS_STATEIMAGEMASK
     '   End If
@@ -19849,7 +19949,7 @@ End Sub
     End Function
     
     Private Sub InitLV()
-    Dim dwStyle As ucsb_LVStyles, dwExWinStyle As WindowStylesEx
+    Dim dwStyle As LVStyles, dwExWinStyle As WindowStylesEx
     Dim i As Long
     DebugAppend "InitLV Viewmode=" & m_ViewMode
     dwStyle = LVS_SHAREIMAGELISTS
@@ -19911,8 +20011,9 @@ End Sub
         Call ListView_SetImageList(hLVS, ObjPtr(imlSys16), LVSIL_GROUPHEADER)
     End If
     
-    Dim dwStyleEx As ucsb_LVStylesEx
-    dwStyleEx = LVS_EX_AUTOAUTOARRANGE Or LVS_EX_JUSTIFYCOLUMNS Or LVS_EX_DOUBLEBUFFER Or LVS_EX_TRANSPARENTSHADOWTEXT
+    Dim dwStyleEx As LVStylesEx
+    dwStyleEx = LVS_EX_AUTOAUTOARRANGE Or LVS_EX_JUSTIFYCOLUMNS Or LVS_EX_TRANSPARENTSHADOWTEXT
+    If mLVDB Then dwStyleEx = dwStyleEx Or LVS_EX_DOUBLEBUFFER
     If m_FullRowSel Then dwStyleEx = dwStyleEx Or LVS_EX_FULLROWSELECT
     If m_SnapToGrid Then dwStyleEx = dwStyleEx Or LVS_EX_SNAPTOGRID
     If m_AutoSzCol Then dwStyleEx = dwStyleEx Or LVS_EX_AUTOSIZECOLUMNS
@@ -20000,7 +20101,7 @@ End Sub
         ' End If
             Subclass2 hLVSHdr, AddressOf HdrWndProc, hLVSHdr
         End If
-        Dim dwHdrStyle As ucsb_HeaderStyles
+        Dim dwHdrStyle As HeaderStyles
         dwHdrStyle = CLng(GetWindowLong(hLVSHdr, GWL_STYLE))
         dwHdrStyle = dwHdrStyle Or HDS_DRAGDROP
         If m_HdrOverflow Then dwHdrStyle = dwHdrStyle Or HDS_OVERFLOW
@@ -20711,8 +20812,9 @@ End Sub
     'If m_DisableWhileLoading Then EnableWindow hLVS, 0&
     UnregisterCurPath
     Dim i As Long, j As Long
+    Dim nLoopErr As Long
     Dim siParent As IShellItem
-    Dim lAtr As SFGAO_Flags, lAtrP As SFGAO_Flags
+    Dim lAtr As SFGAOF, lAtrP As SFGAOF
     Dim nCur As Long, nCurFol As Long, nCurFil As Long
     Dim bIsFldr As Boolean, bIsZip As Boolean
     Dim sName As String, snlc As String
@@ -20720,7 +20822,7 @@ End Sub
     Dim sNameParse As String
     Dim sFull As String
     Dim sParFull As String
-    Dim dwLinkAtr As SFGAO_Flags
+    Dim dwLinkAtr As SFGAOF
     Dim bLnkFldr As Boolean, bLnkGen As Boolean
     Dim lpDisp As LongPtr, sDisp As String
     Dim sExt As String
@@ -21107,7 +21209,7 @@ End Sub
     '    Do While (pEnum.Next(1&, siChild, pc) = S_OK)
         '*********************************************************
         
-        
+        On Error GoTo e2
         Dim pDir As FILE_DIRECTORY_INFORMATION
         Dim hFind As LongPtr
         Dim bytBuffer() As Byte
@@ -21359,10 +21461,12 @@ End Sub
                 
             Loop
         End If
-        NtClose hFind
+        
     enumdone:
+    On Error GoTo e0
+    NtClose hFind
     lvlftt2 = GetTickCount()
-    DebugAppend "LVLoadFolderEx loop time=" & (lvlftt2 - lvlftt1) & "ms" ', 11
+    DebugAppend "LVLoadFolderEx loop time=" & (lvlftt2 - lvlftt1) & "ms", 5511
     
         nAdjustOrder = 0
         bInLVLFLoop = False
@@ -21406,7 +21510,7 @@ End Sub
         End If
     
     lvlftt3 = GetTickCount()
-    DebugAppend "LVLoadFolderEx interval=" & (lvlftt3 - lvlftt2) & "ms" ', 11
+    DebugAppend "LVLoadFolderEx interval=" & (lvlftt3 - lvlftt2) & "ms", 5511
     
     loaddone:
     
@@ -21627,6 +21731,15 @@ End Sub
     e0:
     DebugAppend "LVLoadFolderEx->Error: " & Err.Description & ", 0x" & Hex$(Err.Number), 2
     Call SendMessage(hLVS, WM_SETREDRAW, 1&, ByVal 0&)
+    Exit Sub
+    e2:
+    DebugAppend "LVLoadFolder->FileProcessError: " & Err.Description & ", 0x" & Hex$(Err.Number) & ", LastFile=" & sFull, 2000
+    nLoopErr += 1
+    If nLoopErr > 50 Then 'We're very likely erroring on every file; give up
+        Resume enumdone
+    Else
+        Resume nxt
+    End If
     End Sub
     
     '*2
@@ -21732,6 +21845,7 @@ End Sub
     UpdateStatus mStrOpening
     If m_DisableWhileLoading Then EnableWindow hLVS, 0&
     UnregisterCurPath
+    Dim nLoopErr As Long
     Dim i As Long, j As Long
     Dim pEnum As IEnumShellItems
     Dim siChild As IShellItem
@@ -21739,8 +21853,8 @@ End Sub
     Dim pc As Long
     Dim bLnkFldr As Boolean
     Dim siLink As IShellItem, sLink As String, pidlLink As Long
-    Dim dwLnkAtr As SFGAO_Flags
-    Dim lAtr As SFGAO_Flags, lAtrP As SFGAO_Flags
+    Dim dwLnkAtr As SFGAOF
+    Dim lAtr As SFGAOF, lAtrP As SFGAOF
     Dim nCur As Long, nCurFol As Long, nCurFil As Long
     Dim psf As IShellFolder
     Dim bIsFldr As Boolean, bIsZip As Boolean
@@ -22196,7 +22310,7 @@ End Sub
     '*********************************************************
     'START FILE ENUMERATION
     '   
-        
+        On Error GoTo e2
         Do While (pEnum.Next(1&, siChild, pc) = S_OK)
             FastDoEvents
             Dim lppn As LongPtr
@@ -22223,7 +22337,7 @@ End Sub
             End If
             Set si2Child = siChild
             Dim pshr As Long
-            DebugAppend "Preparing to load pstore..."
+            'DebugAppend "Preparing to load pstore..."
             pshr = si2Child.GetPropertyStoreForKeys(pkSet(0), npkSet, GPS_OPENSLOWITEM Or GPS_BESTEFFORT Or GPS_DEFAULT, IID_IPropertyStore, pStore)
             pStore.GetValue PKEY_SFGAOFlags, vpv
             PropVariantToVariant vpv, vbv
@@ -22380,74 +22494,78 @@ End Sub
             Set upi = siChild
             upi.GetParentAndItem pidlPar, psf, pidlRel
             If bColPreload = True Then
-            On Error Resume Next
-            If (psf Is Nothing) = False Then
-    '            DebugAppend "psf is valid, set pIcon with pidlRel=" & pidlRel & ",pidl=" & pidlPar
-    '            Set pIcon = psf
-                Set pUnk = psf
-                hr = pUnk.QueryInterface(IID_IShellIcon, pIcon)
-    '           DebugAppend "QueryInterface=0x" & Hex$(hr)
-                If hr = S_OK Then
-                    pIcon.GetIconOf pidlRel, GIL_FORSHELL, lpIcon
-                Else
-    
-                  pidlcb = ILCombine(pidlPar, pidlRel)
-    '              DebugAppend "pidlcb=" & pidlcb
-                  lpIcon = GetFileIconIndexPIDL(pidlcb, SHGFI_SMALLICON)
-    '              DebugAppend "lpIcon via pidlcb=" & lpIcon
-                  If lpIcon = -1 Then lpIcon = 0
-                  If lpIcon = 0 Then
-                    'Fonts folder requires custom handling here; let me know if anywhere else needs it
-                    Dim cFn As Long
-                    cFn = Len(mFontFolder)
-                    If True Then 'Left$(sParFull, cFn) = mFontFolder Then
-                        Dim psfPar As IShellFolder
-                        Dim pidlt1 As LongPtr, pidlrelt1 As LongPtr
-                        Dim upipar As IParentAndItem
-                        Set upipar = siParent
-                        upipar.GetParentAndItem pidlt1, psfPar, pidlrelt1
-                        If (psfPar Is Nothing) = False Then
-    '                        DebugAppend "Got psfPar"
-                            Dim punk2 As IUnknownUnrestricted
-                            Set punk2 = psfPar
-                            hr = 0&
-                            hr = punk2.QueryInterface(IID_IShellIcon, pIcon)
-    '                        DebugAppend "SI->icn=0x" & Hex$(hr)
-                            If hr = S_OK Then
-                                pIcon.GetIconOf pidlRel, GIL_FORSHELL, lpIcon
-    '                            DebugAppend "psfPar::lpIcon=" & lpIcon
+                
+                If (psf Is Nothing) = False Then
+        '            DebugAppend "psf is valid, set pIcon with pidlRel=" & pidlRel & ",pidl=" & pidlPar
+        '            Set pIcon = psf
+                    Set pUnk = psf
+                    hr = pUnk.QueryInterface(IID_IShellIcon, pIcon)
+        '           DebugAppend "QueryInterface=0x" & Hex$(hr)
+                    If hr = S_OK Then
+                        pIcon.GetIconOf pidlRel, GIL_FORSHELL, lpIcon
+                    Else
+        
+                    pidlcb = ILCombine(pidlPar, pidlRel)
+        '              DebugAppend "pidlcb=" & pidlcb
+                    lpIcon = GetFileIconIndexPIDL(pidlcb, SHGFI_SMALLICON)
+        '              DebugAppend "lpIcon via pidlcb=" & lpIcon
+                    If lpIcon = -1 Then lpIcon = 0
+                    If lpIcon = 0 Then
+                        'Fonts folder requires custom handling here; let me know if anywhere else needs it
+                        Dim cFn As Long
+                        cFn = Len(mFontFolder)
+                        If True Then 'Left$(sParFull, cFn) = mFontFolder Then
+                            Dim psfPar As IShellFolder
+                            Dim pidlt1 As LongPtr, pidlrelt1 As LongPtr
+                            Dim upipar As IParentAndItem
+                            Set upipar = siParent
+                            upipar.GetParentAndItem pidlt1, psfPar, pidlrelt1
+                            If (psfPar Is Nothing) = False Then
+        '                        DebugAppend "Got psfPar"
+                                Dim punk2 As IUnknownUnrestricted
+                                Set punk2 = psfPar
+                                hr = 0&
+                                hr = punk2.QueryInterface(IID_IShellIcon, pIcon)
+        '                        DebugAppend "SI->icn=0x" & Hex$(hr)
+                                If hr = S_OK Then
+                                    On Error Resume Next
+                                    pIcon.GetIconOf pidlRel, GIL_FORSHELL, lpIcon
+                                    On Error GoTo e2
+        '                            DebugAppend "psfPar::lpIcon=" & lpIcon
+                                End If
                             End If
+                            'PASTE
                         End If
-                        'PASTE
                     End If
-                  End If
+                    End If
+        '            If lpIcon = 0 Then
+        '                DebugAppend "No icon retrieved, using parent..."
+        '                If pidlPar Then
+        '                    lpIcon = GetFileIconIndexPIDL(pidlPar, SHGFI_SMALLICON)
+        '                Else
+        '                    lpIcon = GetFileIconIndex(sParFull, SHGFI_SMALLICON)
+        '                End If
+        '            End If
+        '            DebugAppend "lpIcon=" & lpIcon
+                    If lpIcon = -1 Then lpIcon = 0
+                Else
+                    DebugAppend "psf NOT valid"
                 End If
-    '            If lpIcon = 0 Then
-    '                DebugAppend "No icon retrieved, using parent..."
-    '                If pidlPar Then
-    '                    lpIcon = GetFileIconIndexPIDL(pidlPar, SHGFI_SMALLICON)
-    '                Else
-    '                    lpIcon = GetFileIconIndex(sParFull, SHGFI_SMALLICON)
-    '                End If
-    '            End If
-    '            DebugAppend "lpIcon=" & lpIcon
-                If lpIcon = -1 Then lpIcon = 0
-            Else
-                DebugAppend "psf NOT valid"
-            End If
             Else
                 lpIcon = I_IMAGECALLBACK
             End If
+                    
             If bColPreload = True Then
                 If m_DisableOvr = False Then
         
                     If mExtOverlay Then
-                         
+                        On Error Resume Next
                         Set pIconOvr = psf
                         pIconOvr.GetOverlayIndex pidlRel, VarPtr(lpIconOvr)
                         pIconOvr.GetOverlayIconIndex pidlRel, VarPtr(lpOvrN)
+                        On Error GoTo e2
                     End If
-                    On Error GoTo e0
+                    
             '        DebugAppend sName & " ovr=" & lpIconOvr & ", ovrn=" & lpOvrN
                     If (lpIconOvr > 15) Or (lpIconOvr < 0) Then
                         'Overlay icons are a mess. On Win7 there's a bunch in root that return 16, which is invalid
@@ -22714,7 +22832,7 @@ End Sub
                                 ImageList_SetOverlayImage himl_Thumb, nPos, LVEntries(nCur).nOverlay
                                 DebugAppend "nPos=" & nPos & ",hIcon=" & hIcon & ",nOvr=" & nOvr & ",idx=" & LVEntries(nCur).nOverlay, 11
                                 bOvrAdded(LVEntries(nCur).nOverlay) = True
-                                On Error GoTo e0
+                                On Error GoTo e2
                             End If
                         End If
     skipovr:
@@ -22770,7 +22888,7 @@ End Sub
                             Call DestroyIcon(hIcon)
                             ImageList_SetOverlayImage himlLarge, nPos, LVEntries(nCur).nOverlay
                             bOvrAdded(LVEntries(nCur).nOverlay) = True
-                            On Error GoTo e0
+                            On Error GoTo e2
                         End If
     skipovr2:
                     End If
@@ -22847,6 +22965,7 @@ End Sub
             Set siChild = Nothing
     '        Set psf = Nothing
             nCur = nCur + 1
+
     nxt:
             If pidlcb Then CoTaskMemFree pidlcb
             If nCur = 30 Then
@@ -22873,8 +22992,9 @@ End Sub
                 End If
             End If
         Loop
-        DebugAppend "LVLoadFolder::Finished enum loop", 2000
     enumdone:
+        On Error GoTo e0
+        DebugAppend "LVLoadFolder::Finished enum loop", 2000
         nAdjustOrder = 0
         bInLVLFLoop = False
     ''    Set psfCur = psfNew 'psf
@@ -23134,7 +23254,7 @@ End Sub
     RaiseEvent DirectoryChanged(sRpt, siParent, pidlFQCur)
     
     lvlftt2 = GetTickCount()
-    DebugAppend "LVLoadFolder time=" & Round((lvlftt2 - lvlftt1) / 1000, 3) & "s", 11
+    DebugAppend "LVLoadFolder time=" & Round((lvlftt2 - lvlftt1) / 1000, 3) & "s", 5511
     If bShowLoadTimeAsStatus Then
         UpdateStatus "Load Time (Standard): Total time=" & (lvlftt2 - lvlftt1) & "ms"
     End If
@@ -23143,6 +23263,16 @@ End Sub
     DebugAppend "LVLoadFolder->Error: " & Err.Description & ", 0x" & Hex$(Err.Number), 2000
     StopLoadingMarquee
     Call SendMessage(hLVS, WM_SETREDRAW, 1&, ByVal 0&)
+    Exit Sub
+    e2:
+    DebugAppend "LVLoadFolder->FileProcessError: " & Err.Description & ", 0x" & Hex$(Err.Number) & ", LastFile=" & sFull, 2000
+    nLoopErr += 1
+    If nLoopErr > 50 Then 'We're very likely erroring on every file; give up
+        Resume enumdone
+    Else
+        Resume nxt
+    End If
+    
     End Sub
     
     Private Sub AppendPidlRec(sPath As String, pidl1 As LongPtr, pidl2 As LongPtr)
@@ -23196,7 +23326,7 @@ End Sub
     'Sync any changes with LVLoadFolder
     'Set iForceIndex to overwrite an existing entry instead of add a new one
     'Set iForcePos to insert at a position other than end of list
-    Dim lAtr As SFGAO_Flags
+    Dim lAtr As SFGAOF
     Dim nCur As Long, nCurFol As Long, nCurFil As Long
     Dim psf As IShellFolder
     Dim bIsFldr As Boolean, bIsZip As Boolean
@@ -23874,7 +24004,7 @@ End Sub
       Do
         CopyMemory ByVal VarPtr(uFSI.NextEntryOffset), ByVal lStreamInfo, 24
         If uFSI.StreamNameLength <= 260 Then
-            CopyMemory ByVal VarPtr(uFSI.StreamName(0)), ByVal lStreamInfo + 24, uFSI.StreamNameLength
+            CopyMemory ByVal VarPtr(uFSI.StreamName(0)), ByVal PointerAdd(lStreamInfo, 24), uFSI.StreamNameLength
         End If
         sStreamName = Left(uFSI.StreamName, uFSI.StreamNameLength \ 2)
     
@@ -24797,7 +24927,7 @@ End Sub
                             If pidlFQItem Then CoTaskMemFree pidlFQItem
                         End If
                         isi.GetPropertyStore GPS_DEFAULT Or GPS_BESTEFFORT Or GPS_OPENSLOWITEM, IID_IPropertyStore, pps
-                        Dim lAtr As SFGAO_Flags
+                        Dim lAtr As SFGAOF
                         pps.GetValue PKEY_SFGAOFlags, vpv
                         PropVariantToVariant vpv, vbv
                         lAtr = CLng(vbv)
@@ -25096,7 +25226,7 @@ End Sub
     sNP = GetShellItemFileName(siItem2, SIGDN_DESKTOPABSOLUTEPARSING)
     DebugAppend "LVRenameEntry " & sName & " to " & sNew
     
-    Dim lAtr2 As SFGAO_Flags
+    Dim lAtr2 As SFGAOF
     siItem2.GetAttributes SFGAO_CAPABILITYMASK Or SFGAO_CONTENTSMASK Or SFGAO_DISPLAYATTRMASK Or SFGAO_STORAGECAPMASK, lAtr2
     
     If m_BrowseZip Then
@@ -25427,7 +25557,7 @@ End Sub
     '
     'Dim lCol() As Long
     'ReDim lCol(mCurCols - 1)
-    'Dim lFmt() As ucsb_LVCOLUMN_fmt
+    'Dim lFmt() As LVCOLUMN_fmt
     'ReDim lFmt(mCurCols - 1)
     ''j = 1
     'Dim i As Long
@@ -25536,7 +25666,7 @@ End Sub
             lEfct = DROPEFFECT_COPY
         End If
         If ((siFocus Is Nothing) = False) And (bForceBk = False) Then
-            Dim lAtr As SFGAO_Flags
+            Dim lAtr As SFGAOF
             siFocus.GetAttributes SFGAO_FOLDER, lAtr
             If (lAtr And SFGAO_FOLDER) = SFGAO_FOLDER Then
                 Set siDrop = siFocus
@@ -25866,7 +25996,7 @@ End Sub
     
     hr = GetHandlerCLSID(sExt, tHandler)
     If hr = 1 Then
-        DebugAppend "Got handler CLSID; attempting to create IPreviewHandler"
+        Debug.Print "Got handler CLSID; attempting to create IPreviewHandler " & dbg_GUIDToString(tHandler)
         UpdateStatus mLoadPvStr
         If hGlobalPV Then GlobalFree hGlobalPV
         hr = CoCreateInstance(tHandler, 0, CLSCTX_LOCAL_SERVER Or CLSCTX_INPROC_SERVER, IID_IPreviewHandler, ipv)
@@ -26692,7 +26822,7 @@ End Sub
                         
                         If sTmpPr <> "" Then bOk = True
                     End If
-                    Dim uAtr As SFGAO_Flags, uAtrCP As SFGAO_Flags
+                    Dim uAtr As SFGAOF, uAtrCP As SFGAOF
                     siItem.GetAttributes SFGAO_READONLY Or SFGAO_SYSTEM, uAtr
                     siCurPath.GetAttributes SFGAO_READONLY Or SFGAO_SYSTEM, uAtrCP
                     
@@ -26736,7 +26866,7 @@ End Sub
                         End If
                         tDispProps(nDispProp).sInvite = GetPropertyKeyEditInvite(.pKey)
                         tDispProps(nDispProp).dwDispType = GetPropertyKeyDataType(.pKey)
-                        If tDispProps(nDispProp).dwDispType = PDDT_BOOLEAN Then
+                        If tDispProps(nDispProp).dwDispType = PDDT_Boolean Then
                             'I can't find any file where an editable boolean property appears in an Explorer details pane, so I'm unable
                             'to test/implement this. A full dump of the system property store suggests these are so rare a user is very
                             'unlikely to encounter and want/be able to edit anyway
@@ -27082,7 +27212,7 @@ End Sub
                 End If
             End If
         End If
-        If (tDispProps(i).dwDispType = PDDT_BOOLEAN) And (tDispProps(i).fReadOnly = S_OK) Then
+        If (tDispProps(i).dwDispType = PDDT_Boolean) And (tDispProps(i).fReadOnly = S_OK) Then
             'PLACEHOLDER: Not implemented in the display/edit field either as no properties seem
             '             to use this at all. If you are implementing this, just do like above
             '             except using boolean as the propvariant subtype.
@@ -27464,7 +27594,7 @@ End Sub
     UserControl_Resize
     End Sub
     
-    Private Sub SBAddPanel(Optional ByVal Style As ucsb_sbPanelStyleConstants = [sbNormal], _
+    Private Sub SBAddPanel(Optional ByVal Style As sbPanelStyleConstants = [sbNormal], _
                         Optional ByVal MinWidth As Long = MIN_PANELWIDTH, _
                         Optional ByVal Width As Long, _
                         Optional ByVal Autosize As sbAutosizeStyleConstants = [sbNoAutosize], _
@@ -27774,7 +27904,7 @@ End Sub
     End If
     End Function
     
-    Private Function FileAttribsToSFGAO(dwAtr As FILE_ATTRIBUTES) As SFGAO_Flags
+    Private Function FileAttribsToSFGAO(dwAtr As FILE_ATTRIBUTES) As SFGAOF
     If (dwAtr And FILE_ATTRIBUTE_DIRECTORY) = FILE_ATTRIBUTE_DIRECTORY Then FileAttribsToSFGAO = FileAttribsToSFGAO Or SFGAO_FOLDER
     If (dwAtr And FILE_ATTRIBUTE_HIDDEN) = FILE_ATTRIBUTE_HIDDEN Then FileAttribsToSFGAO = FileAttribsToSFGAO Or SFGAO_HIDDEN Or SFGAO_GHOSTED
     If (dwAtr And FILE_ATTRIBUTE_ENCRYPTED) = FILE_ATTRIBUTE_ENCRYPTED Then FileAttribsToSFGAO = FileAttribsToSFGAO Or SFGAO_ENCRYPTED
@@ -28262,7 +28392,7 @@ End Sub
     End If
     End Sub
     
-    Private Sub pvDrawBack(fState As ucsb_NAV_BB_STATE, Optional bForceRedraw As Boolean = False)
+    Private Sub pvDrawBack(fState As NAV_BB_STATE, Optional bForceRedraw As Boolean = False)
     If fState = iNavStateCur Then
         If bForceRedraw = False Then Exit Sub
     End If
@@ -28285,7 +28415,7 @@ End Sub
     End If
     iNavStateCur = fState
     End Sub
-    Private Sub pvDrawFwd(fState As ucsb_NAV_FB_STATE, Optional bForceRedraw As Boolean = False)
+    Private Sub pvDrawFwd(fState As NAV_FB_STATE, Optional bForceRedraw As Boolean = False)
     If fState = iFwdNavStateCur Then
         If bForceRedraw = False Then Exit Sub
     End If
@@ -28466,7 +28596,7 @@ End Sub
     Dim lpIcon As Long
     Dim pcl As Long, pcl2 As Long
     Dim nCur As Long
-    Dim lAtr As SFGAO_Flags
+    Dim lAtr As SFGAOF
     Dim lpName As LongPtr, sName As String
     Dim lpFull As LongPtr, sFull As String
     Dim hr As Long
@@ -29103,7 +29233,7 @@ End Sub
     Dim pcl As Long
     Dim sTarget As String
     Dim sStart As String
-    Dim lAtr As SFGAO_Flags
+    Dim lAtr As SFGAOF
     Dim i As Long
     
     If lCustomSetIdx Then
@@ -29171,7 +29301,7 @@ End Sub
     Dim sName As String
     Dim sDisp As String
     Dim pcl As Long
-    Dim lAtr As SFGAO_Flags
+    Dim lAtr As SFGAOF
     
     '
     'If UBound(sTmpSearchSet) = 0 Then
@@ -29825,7 +29955,7 @@ End Sub
     End If
     
     If CreateSearchLibrary(pObjects) = S_OK Then
-        pObjects.AddObject ByVal ObjPtr(siCurPath)
+        pObjects.AddObject siCurPath
         
         Set ppia = pObjects
         Set pObjects = Nothing
@@ -29912,7 +30042,7 @@ End Sub
     defcsl:
     If (ppia Is Nothing) Then
         If CreateSearchLibrary(pObjects) = S_OK Then
-            pObjects.AddObject ByVal ObjPtr(pLocation)
+            pObjects.AddObject pLocation
             Set ppia = pObjects
         End If
     End If
@@ -30273,6 +30403,7 @@ End Sub
         End If
     Next i
     
+    
     If nCurrentCBItemIndex > UBound(cbItems) Then
         'Set the index to the last folder added
         nCurrentCBItemIndex = UBound(cbItems)
@@ -30409,7 +30540,7 @@ End Sub
     Next i
     End Sub
     
-    Private Sub SwitchView(lNewView As ucsb_LV_VIEW, Optional bInit As Boolean = False)
+    Private Sub SwitchView(lNewView As LV_VIEW, Optional bInit As Boolean = False)
     On Error GoTo hErr
     If IsVMRestricted(lNewView) Then Exit Sub
     If Ambient.UserMode = False Then Exit Sub
@@ -33036,7 +33167,7 @@ End Sub
     Dim lp As LongPtr
     Dim sCol As String
     Dim bNF As Boolean
-    Dim uAtr As SFGAO_Flags
+    Dim uAtr As SFGAOF
     Dim hMnIcon As LongPtr
     Dim lCnt As Long
     Dim hBmpRes() As LongPtr, nBmpRes As Long
@@ -33848,7 +33979,7 @@ End Sub
                 End If
             End If
         'New Folder
-            If (mEnableNewFolder = True) And (mFilesOnly = False) Then
+            If (mEnableNewFolder = True) And (mFilesOnly = False) And (m_Mode <> SBCTL_DrivesOnly) Then
                 DebugAppend "ShowViewMenu@NewFolderItem"
                 If (siCurPath Is Nothing) Then
                     bCanPaste = False
@@ -35073,13 +35204,14 @@ End Sub
     
     End Function
     Private Function GetFileIconIndexPIDL(pidl As LongPtr, uType As Long) As Long
-      Dim sfi As SHFILEINFO
-      If SHGetFileInfo(pidl, 0, sfi, LenB(sfi), SHGFI_PIDL Or SHGFI_SYSICONINDEX Or uType) Then
+    Debug.Print "GFI fallback"
+      Dim sfi As SHFILEINFOW
+      If SHGetFileInfoW(pidl, 0, sfi, LenB(sfi), SHGFI_PIDL Or SHGFI_SYSICONINDEX Or uType) Then
         GetFileIconIndexPIDL = sfi.iIcon
       End If
     End Function
     
-    Private Function GetFileAtrDirPidl(pidl As LongPtr) As SFGAO_Flags
+    Private Function GetFileAtrDirPidl(pidl As LongPtr) As SFGAOF
     Dim sfi As SHFILEINFO
     'sfi.dwAttributes = SFGAO_FOLDER Or SFGAO_STREAM
     If SHGetFileInfo(pidl, 0&, sfi, LenB(sfi), SHGFI_PIDL Or SHGFI_ATTRIBUTES) Then
@@ -35134,7 +35266,7 @@ End Sub
     Next
     End Function
     
-    Public Sub SetAdvancedStringSort(bEnabled As Boolean, Optional dwFlags As ucsb_COMPARE_FLAGS, Optional sLocaleName As String = "", Optional bReSortList As Boolean = False)
+    Public Sub SetAdvancedStringSort(bEnabled As Boolean, Optional dwFlags As SB_COMPARE_FLAGS, Optional sLocaleName As String = "", Optional bReSortList As Boolean = False)
     mAdvSortFlags = dwFlags
     mAdvSortLocale = sLocaleName
     If bEnabled <> mUseAdvancedSort Then
@@ -35440,18 +35572,38 @@ End Sub
     End If
     End Sub
     
+    
+    Private Function MAKELPARAM(wLow As Long, wHigh As Long) As LongPtr
+      MAKELPARAM = MakeLong(wLow, wHigh)
+    End Function
+    Private Function MakeLong(wLow As Long, wHigh As Long) As Long
+      MakeLong = LoWord(wLow) Or (&H10000 * LoWord(wHigh))
+    End Function
+
+    Private Function LoWord(ByVal DWord As Long) As Integer
+    If DWord And &H8000& Then
+        LoWord = DWord Or &HFFFF0000
+    Else
+        LoWord = DWord And &HFFFF&
+    End If
+    End Function
+    Private Function HiWord(ByVal DWord As Long) As Integer
+    HiWord = (DWord And &HFFFF0000) \ &H10000
+    End Function
+    
     Private Function INDEXTOOVERLAYMASK(iOverlay As Long) As Long
       INDEXTOOVERLAYMASK = ((iOverlay) << 8)
     End Function
-    
-    ' Private Function IndexToStateImageMask(ByVal Index As Long) As Long
-    ' IndexToStateImageMask = Index * (2 ^ 12)
-    ' End Function
-    
+    Private Function OVERLAYMASKTOINDEX(iOverlay As Long) As Long
+      OVERLAYMASKTOINDEX = ((iOverlay) >> 8)
+    End Function
     Private Function STATEIMAGEMASKTOINDEX(ByVal ImgState As Long) As Long
     STATEIMAGEMASKTOINDEX = ((ImgState) >> 12) 'ImgState / (2 ^ 12)
     End Function
-    
+    Private Function INDEXTOSTATEIMAGEMASK(ByVal Index As Long) As Long
+    INDEXTOSTATEIMAGEMASK = ((Index) << 12) 'Index * (2 ^ 12)
+    End Function
+       
     Private Function PackWords(ByVal inLo As Integer, ByVal inHi As Integer) As Long
         PackWords = (CLng(inLo) And &HFFFF&) Or ((inHi And &H7FFF&) * &H10000)
         If (inHi And &H8000&) Then PackWords = PackWords Or &H80000000 ' Append high bit
@@ -35484,6 +35636,13 @@ End Sub
     Private Function UnsignedAdd(ByVal Start As Long, ByVal Incr As Long) As Long
     UnsignedAdd = ((Start Xor &H80000000) + Incr) Xor &H80000000
     End Function
+    Private Function PointerAdd(ByVal Start As LongPtr, ByVal Incr As LongPtr) As LongPtr
+    #If Win64 Then
+    Return ((Start Xor &H8000000000000000^) + Incr) Xor &H8000000000000000^
+    #Else
+    Return ((Start Xor &H80000000) + Incr) Xor &H80000000
+    #End If
+    End Function
     
     ' Private Function MakeLong(wLow As Long, wHigh As Long) As Long
     '   MakeLong = LoWord(wLow) Or (&H10000 * LoWord(wHigh))
@@ -35494,13 +35653,17 @@ End Sub
     ' End Function
     
     Private Function LargeIntToLongLong(pLI As LARGE_INTEGER) As LongLong
-	CopyMemory LargeIntToLongLong, pLI, 8
+    #If TWINBASIC Then 'assume WinDevLib or other correct LI
+    Return pLI.QuadPart
+    #Else
+    CopyMemory LargeIntToLongLong, pLI, 8
+    #End If
     End Function
-    Private Function LargeIntToLongLongB(Low As Long, High As Long) As LongLong
-    Dim pli As LARGE_INTEGER
-    pli.lowpart = Low: pli.highpart = High
-	CopyMemory LargeIntToLongLongB, pli, 8
-    End Function
+    ' Private Function LargeIntToLongLongB(Low As Long, High As Long) As LongLong
+    ' Dim pli As LARGE_INTEGER
+    ' pli.lowpart = Low: pli.highpart = High
+    ' CopyMemory LargeIntToLongLongB, pli, 8
+    ' End Function
   
     Private Function SpecialFolderPath(tID As UUID) As String
     Dim pkm As New KnownFolderManager
@@ -37428,7 +37591,7 @@ End Function
     Dim siTar As IShellItem, siSrc As IShellItem
     Dim ifTar As IShellItemImageFactory
     Dim hBmp As LongPtr
-    Dim lAtr As SFGAO_Flags
+    Dim lAtr As SFGAOF
     
     ManualLoadIconForLink = -1&
     
@@ -38006,7 +38169,7 @@ End Function
     Dim j As Long
     Dim pidlPar As LongPtr
     Dim isfParent As IShellFolder
-    Dim nPType As ucsb_PERCEIVED
+    Dim nPType As PERCEIVED
     Dim bImgFacFail As Boolean 'on thumbnail failure, set to indicate ISIIF ICONONLY should be tried
     Dim clrMsk As Long
     Dim isi As IShellItem
@@ -38668,19 +38831,26 @@ End Function
        
     End Function
     
-    Private Function FilePtypeL(sFileOrExt As String) As ucsb_PERCEIVED
+Public Function PKEY_StorageProviderUIStatus() As PROPERTYKEY
+'{E77E90DF-6271-4F5B-834F-2DD1F245DDA4, 2
+Static iid As PROPERTYKEY
+ If (iid.fmtid.Data1 = 0) Then Call DEFINE_PROPERTYKEY(iid, &HE77E90DF, CInt(&H6271), CInt(&H4F5B), &H83, &H4F, &H2D, &HD1, &HF2, &H45, &HDD, &HA4, 2)
+ PKEY_StorageProviderUIStatus = iid
+End Function
+
+    Private Function FilePtypeL(sFileOrExt As String) As PERCEIVED
     'Pass a full path, file name, or extension
     Dim sEx As String
     
-    Dim lType As ucsb_PERCEIVED
+    Dim lType As PERCEIVED
     Dim hr As Long
-    Dim lFlag As ucsb_PERCEIVEDFLAG
+    Dim lFlag As PERCEIVEDFLAG
     Dim lpsz As LongPtr
     'DebugAppend "FilePtypeL sFileOrExt=" & sFileOrExt
     Dim sFN As String, lpfnm As LongPtr
     If InStr(sFileOrExt, "\") Then
         lpfnm = PathFindFileNameW(StrPtr(sFileOrExt))
-        sFN = LPWSTRtoStr(lpfnm)
+        sFN = LPWSTRtoStr(lpfnm, False)
     Else
         sFN = sFileOrExt
     End If
@@ -38705,7 +38875,7 @@ End Function
     
     Private Function FileSupportsThumbView(sFullPath As String) As Boolean
     
-    Dim lType As ucsb_PERCEIVED
+    Dim lType As PERCEIVED
     lType = FilePtypeL(sFullPath)
     If (lType = PERCEIVED_TYPE_IMAGE) Or (lType = PERCEIVED_TYPE_APPLICATION) Then
         FileSupportsThumbView = True
@@ -39087,7 +39257,7 @@ End Function
         
         'Walk the string and retrieve the first byte of each WORD.
         While intTemp <> 0
-            CopyMemory intTemp, ByVal pOLESTR + i, 2
+            CopyMemory intTemp, ByVal PointerAdd(pOLESTR, i), 2
             ByteArray(intCount) = intTemp
             intCount = intCount + 1
             i = i + 2
@@ -39132,18 +39302,7 @@ End Function
     
     End Sub
     
-    Private Function dbg_PKEYToString(tpk As PROPERTYKEY) As String
-    Dim sGID As String
-    
-    sGID = dbg_GUIDToString(tpk.fmtid, False)
-    dbg_PKEYToString = "{" & sGID & ", " & tpk.pid & "}"
-    End Function
-    Private Function dbg_SHCToString(tpk As SHCOLUMNID) As String
-    Dim sGID As String
-    
-    sGID = dbg_GUIDToString(tpk.fmtid, False)
-    dbg_SHCToString = "{" & sGID & ", " & tpk.pid & "}"
-    End Function
+
     Private Function dbg_GetCDISStr(lVal As Long) As String
     Dim sRet As String
      If lVal = CDIS_SELECTED Then sRet = "CDIS_SELECTED"
@@ -39175,7 +39334,18 @@ End Function
     If sRet = "" Then sRet = "(unknown)"
     dbg_LVITEM_stateStr = sRet
     End Function
+    Private Function dbg_PKEYToString(tpk As PROPERTYKEY) As String
+    Dim sGID As String
     
+    sGID = dbg_GUIDToString(tpk.fmtid, False)
+    dbg_PKEYToString = "{" & sGID & ", " & tpk.pid & "}"
+    End Function
+    Private Function dbg_SHCToString(tpk As SHCOLUMNID) As String
+    Dim sGID As String
+    
+    sGID = dbg_GUIDToString(tpk.fmtid, False)
+    dbg_SHCToString = "{" & sGID & ", " & tpk.pid & "}"
+    End Function
     Private Function dbg_GUIDToString(tg As UUID, Optional bBrack As Boolean = True) As String
     'StringFromGUID2 never works, even "working" code from vbaccelerator AND MSDN
     dbg_GUIDToString = Right$("00000000" & Hex$(tg.Data1), 8) & "-" & Right$("0000" & Hex$(tg.Data2), 4) & "-" & Right$("0000" & Hex$(tg.Data3), 4) & _
@@ -39185,6 +39355,22 @@ End Function
     If bBrack Then dbg_GUIDToString = "{" & dbg_GUIDToString & "}"
     End Function
     
+    Public Sub dbg_setsel()
+    Dim lr As Long
+    Dim lpLVI As LVITEMW
+    
+    'pSetLVItemState = False
+
+    With lpLVI
+           .Mask = LVIF_STATE
+           '.iItem = 1 ' iItem
+           .iSubItem = 0
+           .StateMask = LVIS_SELECTED Or LVIS_FOCUSED
+           .State = LVIS_SELECTED Or LVIS_FOCUSED
+    End With
+    
+    lr = CLng(SendMessage(hLVS, LVM_SETITEMSTATE, 1, ByVal VarPtr(lpLVI)))
+    End Sub
     Private Sub dbg_linkinfo(pLNK As IShellLinkW)
     Dim psdi As IShellLinkDataList
     Dim pPF As IPersistFile
@@ -39378,7 +39564,7 @@ End Function
     DebugAppend "SIGDN_URL::" & LPWSTRtoStr(lp)
     End Sub
     
-    Private Function dbg_svsiflagstr(dw As SVSI_Flags) As String
+    Private Function dbg_svsiflagstr(dw As SVSIF) As String
     Dim sOut As String
     If (dw And SVSI_CHECK) = SVSI_CHECK Then sOut = sOut & "SVSI_CHECK|"
     If (dw And SVSI_CHECK2) = SVSI_CHECK2 Then sOut = sOut & "SVSI_CHECK2|"
@@ -39396,7 +39582,7 @@ End Function
     dbg_svsiflagstr = sOut
     End Function
 
-    Private Function dbg_sfgao_tostring(atr As SFGAO_Flags) As String
+    Private Function dbg_sfgao_tostring(atr As SFGAOF) As String
     Dim sOut As String
     If (atr And SFGAO_BROWSABLE) = SFGAO_BROWSABLE Then sOut = sOut & "SFGAO_BROWSEABLE,"
     If (atr And SFGAO_CANCOPY) = SFGAO_CANCOPY Then sOut = sOut & "SFGAO_CANCOPY,"
@@ -42033,7 +42219,7 @@ End Function
                                 svlError = svlRes
                                 If svlRes = S_OK Then svlPrc = True
                             Else
-                                Dim lDrvT As ucsb_GDT_Types
+                                Dim lDrvT As GDT_Types
                                 lDrvT = GetDriveType(StrPtr(svlOld))
                                 If lDrvT = DRIVE_FIXED Then
                                     svlRes = SetVolumeLabelW(StrPtr(svlOld), StrPtr(sBuf))
@@ -42617,7 +42803,7 @@ End Function
     'If bBefore Then Exit Function
     If lng_hWnd = hLVS Then
         If (lvrCol > 0) And ((m_ViewMode = SB_VIEW_DETAILS)) Then ' Or (m_ViewMode = SB_VIEW_TILE) Or (m_ViewMode = SB_VIEW_CONTENTS)) Then 'check if column is there, but only show in details view
-            DebugAppend "RatingCol is ACTIVE"
+            'DebugAppend "RatingCol is ACTIVE"
               Dim PT              As POINT
             ' HitTestInfo     As HD_HITTESTINFO
             Dim Count           As Long
@@ -42772,7 +42958,7 @@ End Function
         End If '
     End If
     '--------END CODE FOR RATING COLUMN-----------------------------------------------------------------------------
-    
+
     Exit Function
     
     e0:
@@ -42786,9 +42972,8 @@ End Function
     Resume Next
     
     End Function
+ 
     
-
-
             
     #End Region
     

@@ -28,6 +28,7 @@
 		"FontStrikethru": false,
 		"FontTransparent": true,
 		"FontUnderline": false,
+		"ForceResizeToContainer": false,
 		"ForeColor": -2147483630,
 		"FormDesignerId": "{152922CC-D332-4D27-BEF0-7D0887461FEF}",
 		"ForwardFocus": false,
@@ -42,14 +43,13 @@
 		"MaskPicture": "",
 		"MouseIcon": "",
 		"MousePointer": "vbDefault",
-		"Name": "myToolWindow",
+		"Name": "ucShellTree",
 		"OLEDropMode": "vbOLEDropNone",
 		"Palette": "",
 		"PaletteMode": "vbPaletteModeContainer",
 		"Picture": "",
 		"PictureDpiScaling": true,
 		"Public": true,
-		"ResizeToContainer": true,
 		"RightToLeft": false,
 		"ScaleHeight": 70.5,
 		"ScaleLeft": 0,
@@ -66,10 +66,11 @@
 			"gridHeight": 10,
 			"gridWidth": 10,
 			"lockedControls": [],
+			"multiColoredGrabbers": false,
 			"showGrid": true,
 			"showOutlines": false
 		},
-		"__lastUpdateMarker": 35144478,
+		"__lastUpdateMarker": 2290030061,
 		"_children": [
 			{
 				"Enabled": false,
@@ -82,7 +83,8 @@
 				"Top": 13,
 				"Width": 27,
 				"_className": "Timer",
-				"_clsid": "{33AD4F28-6699-11CF-B70C-00AA0060D393}"
+				"_clsid": "{33AD4F28-6699-11CF-B70C-00AA0060D393}",
+				"_isInvisible": true
 			}
 		],
 		"_className": "UserControl",
