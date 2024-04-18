@@ -1,7 +1,7 @@
 # ShellControls
 ## Shell Browser and Shell Tree Controls
-## ucShellBrowse v12.0 R1 and ucShellTree v2.9.1
-### Updated 03 Feb 2023 / 27 Jan 2024
+## ucShellBrowse v12.1 R1 and ucShellTree v2.9.2  **BETA**
+### Updated 18 Apr 2024
 
 This repository contains a twinBASIC x86/x64 compatible port of my shell controls, ucShellBrowse and ucShellTree.
 
@@ -17,22 +17,98 @@ There's still some work to do in twinBASIC to complete user control support, but
 
 ### Using these controls in your project
 
-**Requires [twinBASIC Beta 432](https://github.com/twinbasic/twinbasic/releases) or newer**
+**Requires [twinBASIC Beta 513](https://github.com/twinbasic/twinbasic/releases) or newer**
 
 >[!IMPORTANT]
->Now requires twinBASIC 432 or newer; it was broken in 424-431. You can still use it in 239-423 as well.
+>Now requires twinBASIC 513 or newer.
 
 The demos are all set to open and run, to set these up in your project:
 
-These projects use tbShellLib, the x64-compatible successor to oleexp.tlb written in twinBASIC. First add a reference to 'twinBASIC Shell Library' in Settings->COM Type Library / Active-X References by clicking TWINPACK PACKAGES and selecting it from the list, or manually downloading it from it's [repository](https://github.com/fafalone/tbShellLib).
+These projects use WinDevLib, the x64-compatible successor to oleexp.tlb written in twinBASIC. First add a reference to 'Windows Development Library for twinBASIC' in Settings->COM Type Library / Active-X References by clicking TWINPACK PACKAGES and selecting it from the list, or manually downloading it from it's [repository](https://github.com/fafalone/WinDevLib).
 
-ShellControls.twinpack contains both controls as a tB Package and can be added via the same references location (Import the file, it's not on the package server yet). This reference must come before WinNativeForms; tbShellLib must still be added. Note that packages are read-only when added to a project. As of twinBASIC Beta 239, you can now experiment with building this as an Active-X DLL. You can then use the controls in VB6; however they're not working in VBA yet.
+----
+
+Files:\
+ShellControlsTB.twinproj - Project file for building OCX controls.
+
+ShellControlsPackage.twinpack - Contains both controls as a tB Package and can be added via the same references location (Import the file, it's not on the package server yet). This reference must come before WinNativeForms; tbShellLib must still be added. Note that packages are read-only when added to a project.
+
+tbShellBrowseDemo.twinproj - Main ucShellBrowse demo project.
+
+tbShellTree.twinproj - Main ucShellTree demo project.
+
+FileDialogDemo.twinproj - Demo of combining ucShellBrowse and ucShellTree controls to make a highly customizable Open File dialog. 
+
+UCSBDemoVB.twinproj - Demonstrates use of ucShellBrowse configured as replacements for the built in VB/tB file controls (DriveListBox, DirListBox, and FileListBox). 
 
 As an alternative, to have them in an editable form, for ucShellTree, you need to import ucShellTree.twin and ucShellTree.tbcontrol. For ucShellBrowse, import ucShellBrowse.twin and ucShellBrowse.tbcontrol.
 
 ### Update
 
-**IMPORTANT:** These controls now require [twinBASIC Beta 432](https://github.com/twinbasic/twinbasic/releases). The changes in/for this release allow building them as Active-X DLLs that can be used in VB6; however they're not working in VBA yet. They also require WinDevLib 7.0 or newer, if you're adding them to your own project.
+**IMPORTANT:** These controls now require [twinBASIC Beta 513](https://github.com/twinbasic/twinbasic/releases). 
+
+**Update highlights:**\
+-Thumbnail view in ucShellBrowse is now fixed
+-OCX builds now working in all hosts, tested in tB, VB6, Excel/Access 2021 x64. 
+-New ucShellTree features
+
+**ucShellBrowse v12.1.0 BETA Update**
+
+```
+'New in v12.1 BETA (Released 18 April 2024)
+'
+'-Made LVS_EX_DOUBLEBUFFER an optional style (ListViewDoubleBuffer, default True)
+'
+'-Updated IWebBrowser[App] implementation to use Boolean for VARIANT_BOOL instead
+' of Integer (along with updating tbShellLib version which made this change).
+'
+'-Pointer math operations are now large-address safe, allowing safe use in apps
+' or as an OCX with LARGEADDRESSAWARE enabled.
+'
+'-Errors loading a single file are no longer fatal to the entire folder; also
+' generally improved error handling in load folder routines.
+'
+'-(Bug fix) Thumbnail view broken in all modes except 32bit compiled.
+```
+
+**ucShellTree v2.9.2 BETA Update**
+
+```
+'v2.9.2 
+'
+'Special thanks to VBForums user Mith for his incredible work helping with new features
+'and bug fixes! Credit goes to him for most of the changes in 2.9.2 alpha and final.
+'
+'-Added ShowOnlyFileCheckboxes option: When Checkboxes = True and ShowFiles = True, will 
+' show checkboxes only for files.
+'
+'-Try to load cached icons first
+'
+'-Minor sizing adjustment to eliminate 4px border.
+'
+'-(Bug fix) Default share/shortcut overlays not showing.
+'
+'-(Bug fix) New icon methods didn't properly support running without ComCtl6.
+'
+'-(Bug fix) Always Show extensions wasn't working.
+'
+'-(Bug fix) Disabling of Wow64 redirection wasn't reverted on terminate.
+'
+'-(Bug fix) If DPI awareness was on, IconSize would continuously grow.
+'
+'v2.9.2 (ALPHA, 29 Jan 2024)
+'-New FileExtensions property to choose between following Explorer's setting for hiding
+' known extensions, over forcing them to always show.
+'
+'-Added property CheckedPathCount.
+'
+'-Added UserOption mNeverExpandZip, to prevent expansion of .zip when ShowFiles = True.
+'
+'-(Bug fix) Border property not restored correctly due to re-reading it with the wrong
+'           name from the property bag.
+'
+'-(Bug fix) Opening to a custom root would add the root as a child of itself.
+```
 
 **ucShellTree v2.9.1 Update**
 ```
