@@ -1,26 +1,25 @@
 [FormDesignerId("8CE9DEA3-CF96-4344-87A8-3F6F9ECBBD42")]
-[ClassId("5671D988-7A34-498C-B5B9-F9854B25E541")]
-[InterfaceId("DDE0D44A-E6A2-469F-A0A1-5F3F6C7962FF")]
-[EventInterfaceId("801C05C1-C578-4EC4-8069-F0466A2330C6")]
+[ClassId("64B7FBF6-FCB5-470D-A624-EB45FDD4A7A0")]
+[InterfaceId("D656BF4B-2A6B-4835-B172-F646811CD3E9")]
+[EventInterfaceId("0F271F22-C9E5-4128-AC76-0C816C54B2CB")]
 [COMControl]
-[Description("ShellControls ucShellBrowse")]
 Public Class ucShellBrowse
 Option Explicit
 
-Private Const mVersionStr = "ucShellBrowse 12.1"
+Private Const mVersionStr = "ucShellBrowse 12.2"
 Private Const mVersionApp = "ucShellBrowse"
 Private Const mVersionMjr = 12
-Private Const mVersionMnr = 1
+Private Const mVersionMnr = 2
 #Region "README"
 'ShellControls TB
 '{665DCB9F-F70C-493C-B293-5B808EA80DA1}
 '
 ' ***********************************************************************
 ' *                                                                     *
-' * ucShellBrowse v12.1 - twinBASIC Version - x84/x64 compatible *BETA* *
+' * ucShellBrowse v12.2 - twinBASIC Version - x84/x64 compatible *BETA* *
 ' * Shell Browser Control                                               *
 ' *                                                                     *
-' * Released: April 18th,  2024                                         *
+' * Released: 12 May 2024                                               *
 ' *                                                                     *
 ' * Author: Jon Johnson (aka fafalone).                                 *
 ' * (c) 2017-2024                                                       *
@@ -219,6 +218,14 @@ Private Const mVersionMnr = 1
 '---------------------------------------------------------------------------------
 '
 '------------------------------------CHANGELOG------------------------------------
+'
+'New in v12.2 BETA (Released 12 May 2024)
+'
+'-(Bug fix) Workaround for Details or List view to Small Icon view freeze issue.
+'
+'-(Bug fix) PathCompactPath Unicode mismatch caused crashing on Windows 11.
+'
+'-(Bug fix) m_GroupSubset and m_GroupSubsetLinkText weren't initialized.
 '
 'New in v12.1 BETA (Released 18 April 2024)
 '
@@ -734,8 +741,9 @@ Private Const cxSmallIconColumnWidth As Single = 160 'Default: 160. Small icon v
 Private Const bPreserveDefColFirstInColSort As Boolean = True 'Default: True. In the Column Select popup, Advanced Mode enables column sorting. This option will keep defaults up top.
 
 'NOTE :: You can set the folders for the 'Special Folders' submenu on the bookmark menu in the GetSpecialFolderMenuItem sub.
+
 '******************************************************************************************************************
-'*-
+
 '**********************************DEBUGGING OPTIONS***********************************
 Private Const dbg_PrintToImmediate As Boolean = False 'This control has very extensive debug information, you may not want
                                                       'to see that in your IDE.
@@ -2759,7 +2767,7 @@ Private Declare PtrSafe Function OleGetClipboard Lib "ole32" (ppDataObj As IData
 Private Declare PtrSafe Function OleTranslateColor Lib "oleaut32" (ByVal Color As Long, ByVal hpal As LongPtr, ByRef RGBResult As Long) As Long
 Private Declare PtrSafe Function OpenClipboard Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function OpenThemeData Lib "uxtheme" (ByVal hWnd As LongPtr, ByVal pszClassList As LongPtr) As LongPtr
-Private Declare PtrSafe Function PathCompactPath Lib "shlwapi" Alias "PathCompactPathW" (ByVal hDC As LongPtr, ByVal pszPath As String, ByVal dx As Long) As Long
+Private Declare PtrSafe Function PathCompactPath Lib "shlwapi" Alias "PathCompactPathW" (ByVal hDC As LongPtr, ByVal pszPath As LongPtr, ByVal dx As Long) As Long
 Private Declare PtrSafe Function PathFileExistsW Lib "shlwapi" (ByVal lpszPath As LongPtr) As Long
 Private Declare PtrSafe Function PathIsDirectoryW Lib "shlwapi" (ByVal lpszPath As LongPtr) As Long
 Private Declare PtrSafe Function PathFindFileNameW Lib "shlwapi" (ByVal pszPath As LongPtr) As LongPtr
@@ -8806,6 +8814,8 @@ m_CompAsRoot = m_def_CompAsRoot
 m_MultiSelect = m_def_MultiSelect
 m_ViewMode = m_def_ViewMode
 m_GroupMode = m_def_GroupMode
+m_GroupSubsetLinkText = m_def_GroupSubsetLinkText
+m_GroupSubset = m_def_GroupSubset
 m_InsColp = m_def_InsColp
 m_Filter = m_def_Filter
 m_FolderFilter = m_def_FolderFilter
@@ -10077,6 +10087,9 @@ Select Case hw
      Case hCombo: dbg_lkuph = "hCombo"
      Case hCBEd: dbg_lkuph = "hCbEd"
      Case hLVS: dbg_lkuph = "hLVS"
+     Case UserControl.hWnd: dbg_lkuph = "UserControl.hWnd"
+     Case UserControl.ContainerHwnd: dbg_lkuph = "UserControl.ContainerHwnd"
+     Case Else: dbg_lkuph = "Unknown (" & CStr(hw) & ")"
 End Select
 End Function
 Private Function IsIDE() As Boolean
@@ -22561,8 +22574,8 @@ End Sub
                     If mExtOverlay Then
                         On Error Resume Next
                         Set pIconOvr = psf
-                        pIconOvr.GetOverlayIndex pidlRel, VarPtr(lpIconOvr)
-                        pIconOvr.GetOverlayIconIndex pidlRel, VarPtr(lpOvrN)
+                        pIconOvr.GetOverlayIndex pidlRel, lpIconOvr
+                        pIconOvr.GetOverlayIconIndex pidlRel, lpOvrN
                         On Error GoTo e2
                     End If
                     
@@ -23593,8 +23606,8 @@ End Sub
             If m_DisableOvr = False Then
                 If mExtOverlay Then
                     Set pIconOvr = psf
-                    pIconOvr.GetOverlayIndex pidlRel, VarPtr(lpIconOvr)
-                    pIconOvr.GetOverlayIconIndex pidlRel, VarPtr(lpOvrN)
+                    pIconOvr.GetOverlayIndex pidlRel, lpIconOvr
+                    pIconOvr.GetOverlayIconIndex pidlRel, lpOvrN
                 End If
                 On Error GoTo e0
         '        DebugAppend sName & " ovr=" & lpIconOvr & ", ovrn=" & lpOvrN
@@ -28539,10 +28552,11 @@ End Sub
     GetClientRect hSearchBox, rc
     cxBox = (rc.Right) - HiWord(dwMar)
     If cxCue > cxBox Then
+        sCue = sCue & String$(MAX_PATH - Len(sCue), 0)
         If m_ScaleX = 1 Then
-            PathCompactPath GetDC(hSearchBox), sCue, cxBox - 8
+            PathCompactPath GetDC(hSearchBox), StrPtr(sCue), cxBox - 8
         Else
-            PathCompactPath GetDC(hSearchBox), sCue, cxBox - (8 * m_ScaleX)
+            PathCompactPath GetDC(hSearchBox), StrPtr(sCue), cxBox - (8 * m_ScaleX)
         End If
     End If
     SendMessage hSearchBox, EM_SETCUEBANNER, 0&, ByVal StrPtr(sCue)
@@ -28716,7 +28730,7 @@ End Sub
                     pIcon.GetIconOf pidlRel, GIL_FORSHELL, lpIcon
                     On Error Resume Next
                     Set pIconOvr = psf
-                    pIconOvr.GetOverlayIndex pidlRel, VarPtr(lpIconOvr)
+                    pIconOvr.GetOverlayIndex pidlRel, lpIconOvr
                     On Error GoTo e0
                     cbItems(nCur).nIcon = lpIcon
                     cbItems(nCur).sDisp = sName
@@ -28755,7 +28769,7 @@ End Sub
                                     pIcon.GetIconOf pidlRel, GIL_FORSHELL, lpIcon
                                     On Error Resume Next
                                     Set pIconOvr = psf
-                                    pIconOvr.GetOverlayIndex pidlRel, VarPtr(lpIconOvr2)
+                                    pIconOvr.GetOverlayIndex pidlRel, lpIconOvr2
                                     On Error GoTo e0
                                     cbItems(nCur).nIcon = lpIcon
                                     cbItems(nCur).sDisp = sName
@@ -30720,7 +30734,14 @@ End Sub
             GoTo out
         End If
         DebugAppend "SwitchView::CRITTEST, sending LVM_SETVIEW"
-        hr = CLng(SendMessage(hLVS, LVM_SETVIEW, m_ViewMode, ByVal 0&))
+        'BUGBUGBUGBGU: Switching from Details or List directly to small icon causes
+        '   LVM_SETVIEW to hang. 
+        If (m_ViewMode = SB_VIEW_SMALLICON) And ((lOldView = SB_VIEW_DETAILS) Or (lOldView = SB_VIEW_LIST)) Then
+            hr = CLng(SendMessage(hLVS, LVM_SETVIEW, LV_VIEW_ICON, ByVal 0&))
+            hr = CLng(SendMessage(hLVS, LVM_SETVIEW, m_ViewMode, ByVal 0&))
+        Else
+            hr = CLng(SendMessage(hLVS, LVM_SETVIEW, m_ViewMode, ByVal 0&))
+        End If
         DebugAppend "LVM_SETVIEW 0x" & Hex$(hr)
         LVAdjustLabelWidth
         If (lOldView = SB_VIEW_CONTENTS) And (lNewView = LV_VIEW_DETAILS) Then RefreshView
@@ -35204,7 +35225,7 @@ End Sub
     
     End Function
     Private Function GetFileIconIndexPIDL(pidl As LongPtr, uType As Long) As Long
-    Debug.Print "GFI fallback"
+    ' Debug.Print "GFI fallback"
       Dim sfi As SHFILEINFOW
       If SHGetFileInfoW(pidl, 0, sfi, LenB(sfi), SHGFI_PIDL Or SHGFI_SYSICONINDEX Or uType) Then
         GetFileIconIndexPIDL = sfi.iIcon
@@ -38601,10 +38622,8 @@ End Function
     Call SHCreateItemFromIDList(pidl, IID_IShellItem2, psi)
     If (psi Is Nothing) = False Then
         psi.GetProperty PKEY_ThumbnailStream, vProp
-    '    PropVariantToVariant vProp, vrProp
-    
-        If VarType(vProp) = VT_STREAM Then 'vbDataObject Then
-                Dim vt As Integer
+        If VarType(vProp) = VT_STREAM Then
+            Dim vt As Integer
             vt = VT_UNKNOWN
             CopyMemory ByVal VarPtr(vProp), ByVal VarPtr(vt), 2&
     
@@ -41066,7 +41085,7 @@ End Function
             
         Case WM_SETFOCUS
     '        If (hCBEd <> 0&) And (lng_hWnd = hCBEd) Then
-                DebugAppend "CBE SetFocus " & lng_hWnd, 2
+                Debug.Print "CBE SetFocus " & dbg_lkuph(lng_hWnd), 2
                 hFocused = lng_hWnd
                 pvSetIPAO
     '        End If
@@ -41075,7 +41094,7 @@ End Function
             
         Case WM_KILLFOCUS
             If IsVBCtl(hFocusFwd) Then hFocused = hFocusFwd
-            DebugAppend "Got Combo KillFocus, bCbEditFocus=" & bCbEditFocus, 4
+            Debug.Print "Got Combo KillFocus, bCbEditFocus=" & bCbEditFocus, 4
             If bCbEditFocus Then
                 bCbEditFocus = False
                 lSel = CLng(SendMessageW(hCombo, CB_GETCURSEL, 0&, ByVal 0&))
@@ -41509,6 +41528,7 @@ End Function
     '        End If
         
         Case WM_SETFOCUS
+            Debug.Print "ucWndProc::WM_SETFOCUS, hWnd=" & dbg_lkuph(lng_hWnd)
             If lng_hWnd = hLVS Then
     '            If bFirstIPAOEvt = True Then
                 If hFocused <> hLVS Then
@@ -41517,6 +41537,16 @@ End Function
                     Call pvSetIPAO
                 End If
     '            End If
+            Else
+                If (m_Mode = SBCTL_FilesOnly) Then
+                    hFocused = hLVS
+                    SetFocusAPI hLVS
+                    Call pvSetIPAO
+                Else
+                    hFocused = hCombo
+                    SetFocusAPI hCombo
+                    Call pvSetIPAO
+                End If
             End If
         
         
