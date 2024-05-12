@@ -1,7 +1,9 @@
 # ShellControls
 ## Shell Browser and Shell Tree Controls
-## ucShellBrowse v12.1 R1 and ucShellTree v2.9.2  **BETA**
-### Updated 18 Apr 2024
+## ucShellBrowse v12.2 and ucShellTree v2.9.2  **BETA**
+### Updated 12 May 2024
+
+### CRITICAL BUG FIX RELEASED - ucShellBrowse v12.2
 
 This repository contains a twinBASIC x86/x64 compatible port of my shell controls, ucShellBrowse and ucShellTree.
 
@@ -51,6 +53,20 @@ As an alternative, to have them in an editable form, for ucShellTree, you need t
 -Thumbnail view in ucShellBrowse is now fixed
 -OCX builds now working in all hosts, tested in tB, VB6, Excel/Access 2021 x64. 
 -New ucShellTree features
+
+**ucShellBrowse v12.2.0 BETA Update - CRITICAL BUG FIXES**
+
+```
+
+'New in v12.2 BETA (Released 12 May 2024)
+'
+'-(Bug fix) Workaround for Details or List view to Small Icon view freeze issue.
+'
+'-(Bug fix) PathCompactPath Unicode mismatch caused crashing on Windows 11.
+'
+'-(Bug fix) m_GroupSubset and m_GroupSubsetLinkText weren't initialized.
+```
+
 
 **ucShellBrowse v12.1.0 BETA Update**
 
