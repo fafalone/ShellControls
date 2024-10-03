@@ -225,3 +225,24 @@ Shows combining ucShellBrowse and ucShellTree:
 ----
 
 I'll add more in the future. Note that while due to the difference in typelib and IPAO-hooking methods, you can't directly import VB projects with these controls, you should be able to recreate any of the other screen shots.
+
+![image](https://github.com/user-attachments/assets/6d0995e6-0759-4e19-9251-cbb7ee4e2e9c)
+
+![image](https://github.com/user-attachments/assets/f2376a89-15e1-4676-9be0-48ef7daaba64)
+
+You can open special locations like 'Devices and Printers' and 'Programs and Features', and use the right-click menu to carry out their custom actions like Uninstall a program, or Set As Default for a printer.
+
+![image](https://github.com/user-attachments/assets/3f9326b3-95ac-4fe3-9994-9eac78aa2a20)
+
+The search feature. You can start a quick search by just typing a string in the box on the form and pressing enter, or double-click the box to bring up the popup with additional options. You can optionally have the control box disabled, but have a menu item on right-click that brings up the popup (with additional box to type text in).
+
+![image](https://github.com/user-attachments/assets/15491d4f-5907-4678-b15d-f06cd2bf0780)
+
+You can configure it to be a simple thumbnail list, which includes thumbnails of embedded mp3 album art as shown on the right. Note that Windows doesn't come with a built-in FLAC handler, but if you install a 32-bit one, the control will be able to read/write those too.
+
+![image](https://github.com/user-attachments/assets/bc6b8708-7b38-4822-a8ae-170b91c4447f)
+![image](https://github.com/user-attachments/assets/ba075ca6-a4b5-48ed-92c4-c7f4849999bb)
+
+Any property that's able to be edited can be set through the control, including through a popup date/time control or dropdown list where needed.
+
+
