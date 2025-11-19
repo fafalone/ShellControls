@@ -1,8 +1,9 @@
 [FormDesignerId("8CE9DEA3-CF96-4344-87A8-3F6F9ECBBD42")]
-[ClassId("64B7FBF6-FCB5-470D-A624-EB45FDD4A7A0")]
-[InterfaceId("D656BF4B-2A6B-4835-B172-F646811CD3E9")]
-[EventInterfaceId("0F271F22-C9E5-4128-AC76-0C816C54B2CB")]
+[ClassId("5671D988-7A34-498C-B5B9-F9854B25E541")]
+[InterfaceId("DDE0D44A-E6A2-469F-A0A1-5F3F6C7962FF")]
+[EventInterfaceId("801C05C1-C578-4EC4-8069-F0466A2330C6")]
 [COMControl]
+[Description("ShellControls ucShellBrowse")]
 Public Class ucShellBrowse
 Option Explicit
 
@@ -218,6 +219,11 @@ Private Const mVersionMnr = 2
 '---------------------------------------------------------------------------------
 '
 '------------------------------------CHANGELOG------------------------------------
+'
+'New in v12.2 BETA 2 (Released 19 Nov 2025)
+'-Updates to work with twinBASIC 896+
+'
+'-(Bug fix) Major GDI handle leaks during redraw
 '
 'New in v12.2 BETA (Released 12 May 2024)
 '
@@ -1954,6 +1960,9 @@ Private m_hFontMsg As LongPtr
 Private m_cyFontDtTxt As Long
 Private m_hFontDtAlt As LongPtr
 Private m_hFontDtHdrAlt As LongPtr
+Private hbrSearchStatic As LongPtr, clrnCacheSearchStatic As Long
+Private hbrSearchEdit As LongPtr, clrnCacheSearchEdit As Long
+Private hbrDtStatic As LongPtr, clrnCacheDtStatic As Long
 
 Private cyDefSBox As Long
 Private cyDefCbo As Long
@@ -2292,7 +2301,7 @@ Private Type CBEntry
     bDeleted As Boolean
     bUseColset As Boolean 'user has changed the default columns, so use those instead of Explorer
     bHasProgress As Boolean 'Computer and any device with drive list
-    lColSet() As LongPtr
+    lColSet() As Long
     bUCDVisMap() As Boolean
 End Type
 Private cbItems() As CBEntry
@@ -8756,6 +8765,10 @@ Private Sub UserControl_Terminate() Handles UserControl.Terminate
     Set PropFontLV = Nothing
     Set PropFontDt = Nothing
     
+    If hbrSearchStatic Then DeleteObject hbrSearchStatic
+    If hbrSearchEdit Then DeleteObject hbrSearchEdit
+    If hbrDtStatic Then DeleteObject hbrDtStatic
+
     If hFontLVHdrMain Then DeleteObject hFontLVHdrMain
     
     If dbg_PrintToFile Then
@@ -9640,16 +9653,12 @@ End Function
     
     End Sub
     
-Private Sub IDropTarget_DragEnter(ByVal pDataObject As IDataObject, ByVal grfKeyState As Long, ByVal pt As LongLong, pdwEffect As DROPEFFECTS) Implements IDropTarget.DragEnter
+Private Sub IDropTarget_DragEnter(ByVal pDataObject As IDataObject, ByVal grfKeyState As Long, ByVal pt As POINT, pdwEffect As DROPEFFECTS) Implements IDropTarget.DragEnter
        DebugAppend "DragEnter"
        sFolder = ""
         ReDim mDropPathList(0)
         bGotDropPathList = False
        mDragOver = m_sCurPathDisp
-        Dim PTT As POINT
-        ' pt.x = ptX
-        ' pt.y = ptY
-        CopyMemory PTT, pt, 8
        bNoDrop = False
        m_sAltDrop = ""
        If grfKeyState And MK_RBUTTON Then
@@ -9682,7 +9691,7 @@ Private Sub IDropTarget_DragEnter(ByVal pDataObject As IDataObject, ByVal grfKey
        DebugAppend "DragEnter::PreferredEffect=" & pdwEffect
     End If
     skp:
-       pDTH.DragEnter m_hWnd, pDataObject, PTT, pdwEffect
+       pDTH.DragEnter m_hWnd, pDataObject, pt, pdwEffect
     If (grfKeyState And MK_LBUTTON) = MK_LBUTTON Then
     
         mIDOCalcdDef = GetDefaultDropEffect(pDataObject)
@@ -9774,34 +9783,30 @@ Private Sub IDropTarget_DragEnter(ByVal pDataObject As IDataObject, ByVal grfKey
     
     End Function
 
-Private Sub IDropTarget_DragOver(ByVal grfKeyState As Long, ByVal pt As LongLong, pdwEffect As DROPEFFECTS) Implements IDropTarget.DragOver
+Private Sub IDropTarget_DragOver(ByVal grfKeyState As Long, ByVal pt As POINT, pdwEffect As DROPEFFECTS) Implements IDropTarget.DragOver
     '    DebugAppend "DragOver.Enter::Effect=" & pdwEffect
     On Error GoTo e0
     If pdwEffect = DROPEFFECT_MOVE Then
         AddDropDescription mDataObj, DROPIMAGE_MOVE, mStrMoveTo & " %1", m_sCurPathDisp
     End If
-    Dim PTT As POINT
-    ' pt.x = ptX
-    ' pt.y = ptY
-    CopyMemory PTT, pt, 8
     
-    pDTH.DragOver PTT, pdwEffect
+    pDTH.DragOver pt, pdwEffect
     
-    If (xHover <> PTT.x) Or (yHover <> PTT.y) Then
+    If (xHover <> pt.x) Or (yHover <> pt.y) Then
         lHover1 = GetTickCount()
-        xHover = PTT.x
-        yHover = PTT.y
+        xHover = pt.x
+        yHover = pt.y
         bHoverFired = False
     Else
         If lHover1 = 0 Then 'initial run
             lHover1 = GetTickCount()
-            xHover = PTT.x
-            yHover = PTT.y
+            xHover = pt.x
+            yHover = pt.y
         Else
             If bHoverFired = False Then
                 lHover2 = GetTickCount()
                 If (lHover2 - lHover1) > lRaiseHover Then
-                    DebugAppend "DragHover " & PTT.x & "," & PTT.y & ",t1=" & lHover1 & ",t2=" & lHover2
+                    DebugAppend "DragHover " & pt.x & "," & pt.y & ",t1=" & lHover1 & ",t2=" & lHover2
     '                RaiseEvent DragHover(ptx, pty, grfKeyState)
                     bHoverFired = True 'set flag to not raise again until pt changes
     '                lHover1 = 0
@@ -9820,7 +9825,7 @@ Private Sub IDropTarget_DragOver(ByVal grfKeyState As Long, ByVal pt As LongLong
         Dim sOld As String
         Dim nPrev As LongPtr
         nPrev = lItemIndex
-        LVDT_QueryDragOverItem PTT.x, PTT.y, nPrev, lItemIndex, fGrp
+        LVDT_QueryDragOverItem pt.x, pt.y, nPrev, lItemIndex, fGrp
         If lItemIndex <> nPrev Then
         If (lItemIndex >= 0) Then
             If fGrp Then
@@ -9944,19 +9949,15 @@ Private Sub IDropTarget_DragLeave() Implements IDropTarget.DragLeave
     Set mDataObj = Nothing
 End Sub
 
-Private Sub IDropTarget_Drop(ByVal pDataObj As IDataObject, ByVal grfKeyState As Long, ByVal pt As LongLong, pdwEffect As DROPEFFECTS) Implements IDropTarget.Drop
+Private Sub IDropTarget_Drop(ByVal pDataObj As IDataObject, ByVal grfKeyState As Long, ByVal pt As POINT, pdwEffect As DROPEFFECTS) Implements IDropTarget.Drop
     DebugAppend "IDropTarget_Drop, Effect=" & mCurEf
-    Dim PTT As POINT
-    ' PT.x = ptX
-    ' PT.y = ptY
-    CopyMemory PTT, pt, 8
-    pDTH.Drop pDataObj, PTT, pdwEffect
+    pDTH.Drop pDataObj, pt, pdwEffect
     If mCurEf = DROPEFFECT_NONE Then
         UpdateStatus m_str_CantDrop
     Else
         UpdateStatus m_str_DroppingFiles
         SetWaitCursor
-        If LVHandleDropEx(pDataObj, PTT, pdwEffect, grfKeyState) = -1& Then
+        If LVHandleDropEx(pDataObj, pt, pdwEffect, grfKeyState) = -1& Then
             UpdateStatus m_str_DropError
         End If
         ClearWaitCursor
@@ -13863,11 +13864,9 @@ End Sub
     Else
         Set isiif = siItem
     End If
-    Dim cxy As LongLong
     Dim sztmp As SIZE
     sztmp.cx = cx: sztmp.cy = cy
-    CopyMemory cxy, sztmp, 8
-    isiif.GetImage cxy, dwFlags, GetFileThumbnail
+    isiif.GetImage sztmp, dwFlags, GetFileThumbnail
     Set isiif = Nothing
     On Error GoTo 0
     Exit Function
@@ -13889,18 +13888,17 @@ End Sub
     Else
         Set isiif = siItem
     End If
-    
-    Dim cxy As LongLong
+ 
     Dim sztmp As SIZE
     If cx < cy Then
 
         sztmp.cx = cx: sztmp.cy = cx
-        CopyMemory cxy, sztmp, 8
-        isiif.GetImage cxy, dwFlags, GetIconThumbnail
+ 
+        isiif.GetImage sztmp, dwFlags, GetIconThumbnail
     Else
         sztmp.cx = cy: sztmp.cy = cy
-        CopyMemory cxy, sztmp, 8
-        isiif.GetImage cxy, dwFlags, GetIconThumbnail
+ 
+        isiif.GetImage sztmp, dwFlags, GetIconThumbnail
     End If
     Set isiif = Nothing
     On Error GoTo 0
@@ -14785,7 +14783,7 @@ End Sub
     End Sub
     
     Private Sub cmdColOK_Click() Handles cmdColOK.Click
-    Dim i As Long, j As LongPtr
+    Dim i As Long, j As Long
     Dim lIdx As Long, lCl As Long
     Dim lOrder() As LongPtr, nOd As Long
     
@@ -14801,7 +14799,7 @@ End Sub
     lCnt = CLng(SendMessage(hLVC, LVM_GETITEMCOUNT, 0&, ByVal 0&))
     ReDim lOrder(0)
     For i = 0 To lCnt - 1
-        j = GetLVItemlParam(hLVC, i)
+        j = CLng(GetLVItemlParam(hLVC, i))
         If ListView_GetCheckState(hLVC, i) Then
             ReDim Preserve cbItems(lIdx).lColSet(lCl)
             cbItems(lIdx).lColSet(lCl) = j
@@ -15537,11 +15535,11 @@ End Sub
         isi.GetDisplayName SIGDN_NORMALDISPLAY, lp1
         sCap = LPWSTRtoStr(lp1)
         Set isiif = isi
-        Dim cxy As LongLong
+ 
         Dim sztmp As SIZE
         sztmp.cx = 16 * m_ScaleX: sztmp.cy = 16 * m_ScaleY
-        CopyMemory cxy, sztmp, 8
-        isiif.GetImage cxy, SIIGBF_ICONONLY, hIcon
+ 
+        isiif.GetImage sztmp, SIIGBF_ICONONLY, hIcon
         With mii
             .cbSize = LenB(mii)
             .fMask = MIIM_ID Or MIIM_STRING Or MIIM_BITMAP Or MIIM_STATE
@@ -15758,11 +15756,11 @@ End Sub
     If lpCap Then
         sCap = LPWSTRtoStr(lpCap)
         Set isiif = psi
-        Dim cxy As LongLong
+ 
         Dim sztmp As SIZE
         sztmp.cx = 16 * m_ScaleX: sztmp.cy = 16 * m_FontScaleCXY
-        CopyMemory cxy, sztmp, 8
-        isiif.GetImage cxy, SIIGBF_ICONONLY, hIcon
+ 
+        isiif.GetImage sztmp, SIIGBF_ICONONLY, hIcon
         With mii
             .cbSize = LenB(mii)
             .fMask = MIIM_ID Or MIIM_STRING Or MIIM_BITMAP
@@ -16240,7 +16238,7 @@ End Sub
         .tymed = ty
         .dwAspect = dva
         .lIndex = lIndex
-        .pDVTARGETDEVICE = lDev
+        .ptd = lDev
     End With
    
     If pIDO.QueryGetData(tFMT) = S_OK Then
@@ -19371,10 +19369,9 @@ End Sub
     End If
     If (pDT Is Nothing) = False Then
         DebugAppend "Got drop target, dropping..."
-        Dim ptt As LongLong
-        CopyMemory ptt, PT, LenB(PT)
-        pDT.DragEnter pDataObj, lButton, ptt, pdwEffect
-        pDT.Drop pDataObj, lButton, ptt, DROPEFFECT_MOVE Or DROPEFFECT_COPY Or DROPEFFECT_LINK
+ 
+        pDT.DragEnter pDataObj, lButton, PT, pdwEffect
+        pDT.Drop pDataObj, lButton, PT, DROPEFFECT_MOVE Or DROPEFFECT_COPY Or DROPEFFECT_LINK
         LVHandleDropEx = pdwEffect
         
         Dim siTarget As IShellItem
@@ -25692,10 +25689,11 @@ End Sub
         siDrop.BindToHandler 0&, BHID_SFUIObject, IID_IDropTarget, pDT
         If (pDT Is Nothing) = False Then
             Dim lpName As LongPtr
+            Dim pt0 As POINT
             siDrop.GetDisplayName SIGDN_NORMALDISPLAY, lpName
             DebugAppend "Go for paste on " & LPWSTRtoStr(lpName)
-            pDT.DragEnter pdo, MK_LBUTTON, 0^, lEfct
-            pDT.Drop pdo, MK_LBUTTON, 0^, lEfct
+            pDT.DragEnter pdo, MK_LBUTTON, pt0, lEfct
+            pDT.Drop pdo, MK_LBUTTON, pt0, lEfct
         Else
             If mPlaySnd Then
                 If bSoundDefBeep Then DoSound SND_DEFAULTBEEP
@@ -31867,7 +31865,7 @@ End Sub
                     lCl = UBound(cbItems(lIdx).lColSet)
                     lCl = lCl + 1
                     ReDim Preserve cbItems(lIdx).lColSet(lCl)
-                    cbItems(lIdx).lColSet(lCl) = lp
+                    cbItems(lIdx).lColSet(lCl) = CLng(lp)
                 End If
                 UpdateColumns lIdx
                     
@@ -31893,7 +31891,7 @@ End Sub
     
     Private Sub RemoveFromCurColSet(lIdx As Long, n As Long)
     DebugAppend "RemoveCol(" & lIdx & "," & n & ")"
-    Dim lSetN() As LongPtr
+    Dim lSetN() As Long
     Dim i As Long
     Dim k As Long
     DebugAppend "use=" & cbItems(lIdx).bUseColset
@@ -32165,7 +32163,7 @@ End Sub
     Dim lvi As LVITEM
     Dim bVis As Boolean
     Dim bDelFlag As Boolean
-    Dim lSetC() As LongPtr, nSetC As Long
+    Dim lSetC() As Long, nSetC As Long
     Dim hr As Long
     Dim lECD As Long
     
@@ -37676,10 +37674,10 @@ End Function
             If siTar Is Nothing Then siSrc.BindToHandler 0&, BHID_LinkTargetItem, IID_IShellItem, siTar
             If (siTar Is Nothing) = False Then
                 Set ifTar = siTar
-                Dim sztmp As SIZE, ullSize As LongLong
+                Dim sztmp As SIZE
                 sztmp.cx = cxyDispL: sztmp.cy = cxyDispL
-                CopyMemory ullSize, sztmp, 8
-                hr = ifTar.GetImage(ullSize, SIIGBF_ICONONLY, hBmp)
+       
+                hr = ifTar.GetImage(sztmp, SIIGBF_ICONONLY, hBmp)
                 If hr = S_OK Then
                    Dim clrMsk As Long
                    If IsComCtl6 = False Then
@@ -38519,10 +38517,10 @@ End Function
         Set isiif = si
     End If
     
-    Dim tsz As SIZE, ullsz As LongLong
+    Dim tsz As SIZE
     tsz.cx = cx: tsz.cy = cy
-    CopyMemory ullsz, tsz, 8
-    hr = isiif.GetImage(ullsz, lFlags, hBmp)
+ 
+    hr = isiif.GetImage(tsz, lFlags, hBmp)
     If hr = S_OK Then
         Dim clrMsk As Long
         If IsComCtl6 = False Then
@@ -38560,10 +38558,10 @@ End Function
         Set isiif = si
     End If
     
-    Dim tsz As SIZE, ull As LongLong
+    Dim tsz As SIZE
     tsz.cx = cx: tsz.cy = cy
-    CopyMemory ull, tsz, 8
-    hr = isiif.GetImage(ull, lFlags, hBmp)
+ 
+    hr = isiif.GetImage(tsz, lFlags, hBmp)
     If hr = S_OK Then
     '    If ThumbShouldFrame(hBmp) Then
     '        hr = E_FAIL 'This manual checking should only be needed for IL_AddMasked
@@ -39718,7 +39716,7 @@ End Function
         End If
     Next j
     End Sub
-    Private Function dbg_sfromlarray(ar() As LongPtr) As String
+    Private Function dbg_sfromlarray(ar() As Long) As String
     Dim sz As String
     Dim i As Long
     For i = LBound(ar) To UBound(ar)
@@ -40276,7 +40274,16 @@ End Function
             SetTextColor wParam, clrf
             ' lReturn = CreateSolidBrush(clrb)
             ' bHandled = True
-            SearchEditBkWndProc = CreateSolidBrush(clrb)
+            If hbrSearchStatic = 0 Then
+                hbrSearchStatic = CreateSolidBrush(clrb)
+            Else
+                If clrnCacheSearchStatic <> clrb Then
+                    If hbrSearchStatic Then DeleteObject hbrSearchStatic
+                    hbrSearchStatic = CreateSolidBrush(clrb)
+                    clrnCacheSearchStatic = clrb
+                End If
+            End If
+            SearchEditBkWndProc = hbrSearchStatic
             Exit Function
         End If
     End If
@@ -40392,7 +40399,16 @@ End Function
                 SetTextColor wParam, clrn
                 ' lReturn = CreateSolidBrush(clrn)
                 ' bHandled = True
-                SearchBoxWndProc = CreateSolidBrush(clrn)
+                If hbrSearchEdit = 0 Then
+                    hbrSearchEdit = CreateSolidBrush(clrn)
+                Else
+                    If clrnCacheSearchEdit <> clrn Then
+                        If hbrSearchEdit Then DeleteObject hbrSearchEdit
+                        hbrSearchEdit = CreateSolidBrush(clrn)
+                        clrnCacheSearchEdit = clrn
+                    End If
+                End If
+                SearchBoxWndProc = hbrSearchEdit
                 Exit Function
             End If
         
@@ -41006,7 +41022,16 @@ End Function
                 SetTextColor wParam, clrn 'RGB(12, 0, 0)
                 ' lReturn = CreateSolidBrush(clrt) 'pbDetailPane.BackColor) '1
                 ' bHandled = True
-                DetailHeaderWndProc = CreateSolidBrush(clrt)
+                If hbrDtStatic = 0 Then
+                    hbrDtStatic = CreateSolidBrush(clrt)
+                Else
+                    If clrnCacheDtStatic <> clrt Then
+                        If hbrDtStatic Then DeleteObject hbrDtStatic
+                        hbrDtStatic = CreateSolidBrush(clrt)
+                        clrnCacheDtStatic = clrt
+                    End If
+                End If
+                DetailHeaderWndProc = hbrDtStatic
                 Exit Function
             Else
                 If uMsg = WM_CTLCOLOREDIT Then
