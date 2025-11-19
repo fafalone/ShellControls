@@ -1,6 +1,6 @@
 # ShellControls
 ## Shell Browser and Shell Tree Controls
-## ucShellBrowse v12.2 and ucShellTree v2.9.2  **BETA**
+## ucShellBrowse v12.2 and ucShellTree v2.9.3  **BETA**
 ### Updated 12 May 2024
 
 ### CRITICAL BUG FIX RELEASED - ucShellBrowse v12.2
@@ -47,7 +47,9 @@ As an alternative, to have them in an editable form, for ucShellTree, you need t
 
 ### Update
 
-**IMPORTANT:** These controls now require [twinBASIC Beta 513](https://github.com/twinbasic/twinbasic/releases). 
+**19 Nov 2025** All files updated for compatibility with twinBASIC 896+, to use the latest WinDevLib, and to fix a major memory leak.
+
+**IMPORTANT:** These controls now require [twinBASIC Beta 896](https://github.com/twinbasic/twinbasic/releases). 
 
 **Update highlights:**\
 -Thumbnail view in ucShellBrowse is now fixed
