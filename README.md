@@ -1,7 +1,7 @@
 # ShellControls
 ## Shell Browser and Shell Tree Controls
 ## ucShellBrowse v12.2 and ucShellTree v2.9.3  **BETA**
-### Updated 12 May 2024
+### 19 Nov 2025 All files updated for compatibility with twinBASIC 896+, to use the latest WinDevLib, and to fix a major memory leak.
 
 ### CRITICAL BUG FIX RELEASED - ucShellBrowse v12.2
 
